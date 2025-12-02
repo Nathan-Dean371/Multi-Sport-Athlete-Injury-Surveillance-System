@@ -3,6 +3,7 @@ This Repo contains all work for my FYP of my Bachelor of Science (Honours) in Co
 
 Repo Structure 
 
+```
 injury-surveillance-system/
 ├── mobile/              # React Native app
 ├── web/                 # React admin dashboard  
@@ -14,3 +15,4 @@ injury-surveillance-system/
 │   └── architecture/   # System diagrams
 ├── .github/workflows/   # CI/CD
 └── README.md
+```
