@@ -1,0 +1,92 @@
+
+# ============================================================================
+# Multi-Sport Athlete Injury Surveillance System
+# Docker Compose for Intel/AMD64 Platforms
+# ============================================================================
+
+services:
+  # --------------------------------------------------------------------------
+  # Neo4j Graph Database
+  # --------------------------------------------------------------------------
+  neo4j:
+    image: neo4j:5.25-community
+    container_name: injury-surveillance-neo4j
+    restart: unless-stopped
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/injury-surveillance-dev-password
+      - NEO4J_PLUGINS=["apoc"]
+      
+      # Memory settings
+      - NEO4J_server_memory_heap_initial__size=256m
+      - NEO4J_server_memory_heap_max__size=1G
+      - NEO4J_server_memory_pagecache_size=256m
+      
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    
+    networks:
+      - injury-surveillance-network
+
+  # --------------------------------------------------------------------------
+  # PostgreSQL Database
+  # --------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: injury-surveillance-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=identity_service
+      - POSTGRES_USER=identity_admin
+      - POSTGRES_PASSWORD=identity-service-dev-password
+      - PGDATA=/var/lib/postgresql/data/pgdata
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    
+    networks:
+      - injury-surveillance-network
+
+  # --------------------------------------------------------------------------
+  # pgAdmin (Optional)
+  # --------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: injury-surveillance-pgadmin
+    restart: unless-stopped
+    ports:
+      - "5050:80"
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@example.com
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin-dev-password
+      - PGADMIN_CONFIG_SERVER_MODE=False
+    
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    
+    networks:
+      - injury-surveillance-network
+    
+    depends_on:
+      - postgres
+
+volumes:
+  neo4j-data:
+    name: injury-surveillance-neo4j-data
+  neo4j-logs:
+    name: injury-surveillance-neo4j-logs
+  postgres-data:
+    name: injury-surveillance-postgres-data
+  pgadmin-data:
+    name: injury-surveillance-pgadmin-data
+
+networks:
+  injury-surveillance-network:
+    name: injury-surveillance-network
+    driver: bridge
+# ============================================================================
