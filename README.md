@@ -16,3 +16,7 @@ injury-surveillance-system/
 ├── .github/workflows/   # CI/CD
 └── README.md
 ```
+
+## Documentation
+
+Project documentation has been split into a dedicated repository: [FYP Documentation Repo](https://github.com/Nathan-Dean371/FYP-Documentation-Repo). Use this source repo for code and the documentation repo for all design, decisions, and guides.
