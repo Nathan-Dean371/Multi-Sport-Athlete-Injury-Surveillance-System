@@ -21,9 +21,15 @@ const neo4j = require('neo4j-driver');
 const config = {
   uri: process.env.NEO4J_URI || 'bolt://localhost:7687',
   user: process.env.NEO4J_USER || 'neo4j',
-  password: process.env.NEO4J_PASSWORD || 'your-password-here',
+  password: process.env.NEO4J_PASSWORD || 'injury-surveillance-dev-password',
   database: process.env.NEO4J_DATABASE || 'neo4j'
 };
+
+// Guardrails: fail fast if password placeholder is still in use
+if (config.password === 'your-password-here') {
+  console.error(`${colors.red}✗${colors.reset} NEO4J_PASSWORD is not set. Pass it via env or update the default.`);
+  process.exit(1);
+}
 
 // ANSI color codes for pretty output
 const colors = {
