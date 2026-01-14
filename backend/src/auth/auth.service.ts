@@ -190,7 +190,7 @@ export class AuthService {
        WHERE id = $1`,
       [userId],
     );
-
+    
     if (result.rows.length === 0) {
       return null;
     }
@@ -206,6 +206,7 @@ export class AuthService {
       email: user.email,
       identityType: user.identity_type,
       pseudonymId: user.pseudonym_id,
+      pseudonym: user.pseudonym_id,
     };
   }
 

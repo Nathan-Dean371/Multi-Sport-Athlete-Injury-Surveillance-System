@@ -5,6 +5,8 @@ import { AppService } from './app.service';
 import { Neo4jModule } from './database/neo4j.module';
 import { PostgresModule } from './database/postgres.module';
 import { AuthModule } from './auth/auth.module';
+import { PlayersModule } from './players/players.module';
+import { InjuriesModule } from './injuries/injuries.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -17,6 +19,8 @@ import configuration from './config/configuration';
     Neo4jModule,
     PostgresModule,
     AuthModule,
+    PlayersModule,
+    InjuriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
