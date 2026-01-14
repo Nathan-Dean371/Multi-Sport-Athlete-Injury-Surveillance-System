@@ -102,7 +102,7 @@ SELECT * FROM account_status_summary;
 
 ## Key Features
 
-### 🔒 Security
+### Security
 
 - **Encrypted at rest** (configure in production)
 - **Password hashing** (bcrypt with salt)
@@ -110,7 +110,7 @@ SELECT * FROM account_status_summary;
 - **Failed login tracking** with account locking
 - **2FA support** ready to implement
 
-### 📊 GDPR Compliance
+### GDPR Compliance
 
 - **Complete audit trail** - Every access is logged
 - **Right to erasure** - Deletion request workflow
@@ -118,7 +118,7 @@ SELECT * FROM account_status_summary;
 - **Consent management** - Track GDPR consent
 - **Data minimization** - Only essential PII stored
 
-### 🔑 Pseudonymization
+### Pseudonymization
 
 Each person has:
 - **Real identity** in PostgreSQL (e.g., "John Smith")
