@@ -61,6 +61,12 @@ Each ADR follows this structure:
   - Status: Accepted
   - Summary: Implement stateless JWT authentication with refresh token rotation for mobile and web clients
 
+### Frontend
+
+- **[ADR-0007: React Web Dashboard Technology](./adr-0007-react-web-dashboard.md)**
+  - Status: Proposed
+  - Summary: Use Vite + React + TypeScript for fast, modern web dashboard with Material-UI components
+
 ---
 
 ## Future ADRs
@@ -68,7 +74,6 @@ Each ADR follows this structure:
 The following decisions may need ADRs as development progresses:
 
 ### Planned
-- **ADR-0007**: React Web Dashboard Technology
 - **ADR-0008**: Firebase Cloud Messaging for Notifications
 - **ADR-0009**: Testing Strategy (Unit, Integration, E2E)
 - **ADR-0010**: Deployment Strategy (Docker, CI/CD)
@@ -166,5 +171,5 @@ Review dates are included in each ADR where appropriate.
 ---
 
 **Last Updated**: January 2025
-**Total ADRs**: 6
-**Status Summary**: 6 Accepted, 0 Proposed, 0 Deprecated, 0 Superseded
+**Total ADRs**: 7
+**Status Summary**: 7 Accepted, 0 Proposed, 0 Deprecated, 0 Superseded
