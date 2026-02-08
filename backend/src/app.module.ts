@@ -7,6 +7,8 @@ import { PostgresModule } from './database/postgres.module';
 import { AuthModule } from './auth/auth.module';
 import { PlayersModule } from './players/players.module';
 import { InjuriesModule } from './injuries/injuries.module';
+import { StatusModule } from './status/status.module';
+import { TeamsModule } from './teams/teams.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -21,6 +23,8 @@ import configuration from './config/configuration';
     AuthModule,
     PlayersModule,
     InjuriesModule,
+    StatusModule,
+    TeamsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

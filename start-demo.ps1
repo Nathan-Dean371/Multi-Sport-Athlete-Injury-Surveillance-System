@@ -5,7 +5,7 @@
 # This script opens three PowerShell terminals to run:
 #   1. Docker containers (databases)
 #   2. Backend API server
-#   3. Frontend web application
+#   3. Mobile app (React Native/Expo)
 # ============================================================================
 
 Write-Host "Starting Multi-Sport Injury Surveillance System Demo..." -ForegroundColor Cyan
@@ -60,11 +60,11 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$Pr
 Start-Sleep -Seconds 2
 
 # ============================================================================
-# Terminal 3: Frontend Web App
+# Terminal 3: Mobile App (Expo)
 # ============================================================================
-Write-Host "Opening Terminal 3: Frontend Web App..." -ForegroundColor Cyan
+Write-Host "Opening Terminal 3: Mobile App (Expo)..." -ForegroundColor Cyan
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot\frontend'; Write-Host 'FRONTEND WEB TERMINAL' -ForegroundColor Magenta; Write-Host '=====================' -ForegroundColor Magenta; Write-Host ''; Write-Host 'Waiting 15 seconds for backend to initialize...' -ForegroundColor Yellow; Start-Sleep -Seconds 15; Write-Host ''; Write-Host 'Starting React frontend...' -ForegroundColor Yellow; Write-Host ''; npm start"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot\mobile'; Write-Host 'MOBILE APP TERMINAL' -ForegroundColor Magenta; Write-Host '===================' -ForegroundColor Magenta; Write-Host ''; Write-Host 'Waiting 15 seconds for backend to initialize...' -ForegroundColor Yellow; Start-Sleep -Seconds 15; Write-Host ''; Write-Host 'Starting Expo development server...' -ForegroundColor Yellow; Write-Host ''; npx expo start"
 
 # ============================================================================
 # Display Summary
@@ -85,8 +85,11 @@ Write-Host "  Terminal 2: " -NoNewline; Write-Host "Backend API" -ForegroundColo
 Write-Host "              - API Server: http://localhost:3000" -ForegroundColor Gray
 Write-Host "              - Swagger Docs: http://localhost:3000/api" -ForegroundColor Gray
 Write-Host ""
-Write-Host "  Terminal 3: " -NoNewline; Write-Host "Frontend Web App" -ForegroundColor Magenta
-Write-Host "              - Web App: http://localhost:3001" -ForegroundColor Gray
+Write-Host "  Terminal 3: " -NoNewline; Write-Host "Mobile App (Expo)" -ForegroundColor Magenta
+Write-Host "              - Expo DevTools: http://localhost:19002" -ForegroundColor Gray
+Write-Host "              - Scan QR code with Expo Go app to run on device" -ForegroundColor Gray
+Write-Host "              - Press 'i' for iOS simulator" -ForegroundColor Gray
+Write-Host "              - Press 'a' for Android emulator" -ForegroundColor Gray
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Cyan
 Write-Host ""
@@ -105,10 +108,11 @@ Write-Host ""
 Write-Host "System Startup Timeline:" -ForegroundColor Cyan
 Write-Host "   - Databases: ~30 seconds" -ForegroundColor Gray
 Write-Host "   - Backend: ~45 seconds (after databases)" -ForegroundColor Gray
-Write-Host "   - Frontend: ~60 seconds (after backend)" -ForegroundColor Gray
-Write-Host "   - Total: ~2-3 minutes for full system" -ForegroundColor Gray
+Write-Host "   - Mobile App: ~30 seconds (after backend)" -ForegroundColor Gray
+Write-Host "   - Total: ~2 minutes for full system" -ForegroundColor Gray
 Write-Host ""
-Write-Host "Tip: Watch each terminal for 'ready' or 'compiled successfully' messages" -ForegroundColor Yellow
+Write-Host "Tip: Watch each terminal for 'ready' messages" -ForegroundColor Yellow
+Write-Host "Tip: Use Expo Go app on your phone or run iOS/Android simulator" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "To stop everything:" -ForegroundColor Red
 Write-Host "   1. Press Ctrl+C in each terminal" -ForegroundColor Gray

@@ -53,9 +53,10 @@ async function bootstrap() {
   });
   
   const port = process.env.PORT || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0'); // Listen on all network interfaces
   
   console.log(`🚀 Backend server is running on: http://localhost:${port}`);
+  console.log(`📱 Mobile devices can connect to: http://192.168.0.246:${port}`);
   console.log(`📚 API Documentation available at: http://localhost:${port}/api/docs`);
 }
 
