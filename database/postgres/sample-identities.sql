@@ -325,8 +325,7 @@ INSERT INTO user_accounts (
     email,
     password_hash,
     password_salt,
-    is_active,
-    is_verified
+    is_active
 )
 -- Link to player identities
 SELECT 
@@ -334,10 +333,9 @@ SELECT
     id,
     pseudonym_id,
     email,
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7fBb0FXw0i', -- 'password123' hashed
+    '$2b$12$zN5zTkdktQNsKE98TwTaiOofXt5HPA4iGxo1xzgix6saB9F4NdSya', -- 'password123' hashed with bcrypt
     'random_salt_' || pseudonym_id,
-    is_active,
-    is_verified
+    is_active
 FROM player_identities
 WHERE deleted_at IS NULL;
 
@@ -349,18 +347,16 @@ INSERT INTO user_accounts (
     email,
     password_hash,
     password_salt,
-    is_active,
-    is_verified
+    is_active
 )
 SELECT 
     'coach',
     id,
     pseudonym_id,
     email,
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7fBb0FXw0i',
+    '$2b$12$zN5zTkdktQNsKE98TwTaiOofXt5HPA4iGxo1xzgix6saB9F4NdSya', -- 'password123' hashed with bcrypt
     'random_salt_' || pseudonym_id,
-    is_active,
-    is_verified
+    is_active
 FROM coach_identities
 WHERE deleted_at IS NULL;
 
@@ -372,18 +368,16 @@ INSERT INTO user_accounts (
     email,
     password_hash,
     password_salt,
-    is_active,
-    is_verified
+    is_active
 )
 SELECT 
     'admin',
     id,
     pseudonym_id,
     email,
-    '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5NU7fBb0FXw0i',
+    '$2b$12$zN5zTkdktQNsKE98TwTaiOofXt5HPA4iGxo1xzgix6saB9F4NdSya', -- 'password123' hashed with bcrypt
     'random_salt_' || pseudonym_id,
-    is_active,
-    is_verified
+    is_active
 FROM admin_identities
 WHERE deleted_at IS NULL;
 

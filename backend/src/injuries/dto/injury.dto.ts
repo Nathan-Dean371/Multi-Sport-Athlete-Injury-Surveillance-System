@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsInt, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export enum InjurySeverity {
   Minor = 'Minor',
@@ -184,3 +185,154 @@ export class InjuryDetailDto {
     recordedAt: string;
   }>;
 }
+
+export class QueryInjuriesDto {
+  @ApiPropertyOptional({ 
+    example: 1, 
+    description: 'Page number (1-indexed)', 
+    default: 1,
+    minimum: 1
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @IsOptional()
+  page?: number = 1;
+
+  @ApiPropertyOptional({ 
+    example: 20, 
+    description: 'Number of items per page', 
+    default: 20,
+    minimum: 1,
+    maximum: 100
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  @IsOptional()
+  limit?: number = 20;
+
+  @ApiPropertyOptional({ 
+    example: 'Active', 
+    description: 'Filter by injury status',
+    enum: InjuryStatus
+  })
+  @IsEnum(InjuryStatus)
+  @IsOptional()
+  status?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'Moderate', 
+    description: 'Filter by severity',
+    enum: InjurySeverity
+  })
+  @IsEnum(InjurySeverity)
+  @IsOptional()
+  severity?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'PLAYER-001', 
+    description: 'Filter by player ID (pseudonym)'
+  })
+  @IsString()
+  @IsOptional()
+  playerId?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'Hamstring', 
+    description: 'Filter by body part'
+  })
+  @IsString()
+  @IsOptional()
+  bodyPart?: string;
+
+  @ApiPropertyOptional({ 
+    example: '2024-01-01T00:00:00.000Z', 
+    description: 'Filter injuries after this date (ISO 8601)'
+  })
+  @IsDateString()
+  @IsOptional()
+  fromDate?: string;
+
+  @ApiPropertyOptional({ 
+    example: '2024-12-31T23:59:59.999Z', 
+    description: 'Filter injuries before this date (ISO 8601)'
+  })
+  @IsDateString()
+  @IsOptional()
+  toDate?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'injuryDate', 
+    description: 'Sort by field',
+    enum: ['injuryDate', 'createdAt', 'severity', 'status']
+  })
+  @IsEnum(['injuryDate', 'createdAt', 'severity', 'status'])
+  @IsOptional()
+  sortBy?: string = 'createdAt';
+
+  @ApiPropertyOptional({ 
+    example: 'DESC', 
+    description: 'Sort order',
+    enum: ['ASC', 'DESC']
+  })
+  @IsEnum(['ASC', 'DESC'])
+  @IsOptional()
+  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+}
+
+export class PaginatedInjuriesDto {
+  @ApiProperty({ 
+    description: 'Array of injuries',
+    type: [InjuryDetailDto]
+  })
+  data: InjuryDetailDto[];
+
+  @ApiProperty({ 
+    description: 'Pagination metadata',
+    example: {
+      total: 45,
+      page: 1,
+      limit: 20,
+      totalPages: 3,
+      hasNext: true,
+      hasPrevious: false
+    }
+  })
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+  };
+}
+
+export class ResolveInjuryDto {
+  @ApiProperty({ 
+    example: '2024-02-15T00:00:00.000Z', 
+    description: 'Date when the player returned to play (ISO 8601)'
+  })
+  @IsDateString()
+  @IsNotEmpty()
+  returnToPlayDate: string;
+
+  @ApiPropertyOptional({ 
+    example: 'Player completed full training session without issues', 
+    description: 'Notes about the resolution'
+  })
+  @IsString()
+  @IsOptional()
+  resolutionNotes?: string;
+
+  @ApiPropertyOptional({ 
+    example: 'Full clearance from medical staff', 
+    description: 'Final medical clearance notes'
+  })
+  @IsString()
+  @IsOptional()
+  medicalClearance?: string;
+}
+
