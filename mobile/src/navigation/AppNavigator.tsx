@@ -2,15 +2,12 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
+import HomeScreen from '../screens/HomeScreen';
 import { ActivityIndicator, View } from 'react-native';
 
-// Placeholder for authenticated app (we'll build this next)
+// Main authenticated app
 function MainApp() {
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <ActivityIndicator size="large" />
-    </View>
-  );
+  return <HomeScreen />;
 }
 
 export default function AppNavigator() {
