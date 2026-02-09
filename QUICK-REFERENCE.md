@@ -37,6 +37,7 @@ Password: password123
 | Swagger Docs | http://localhost:3000/api |
 | Neo4j Browser | http://localhost:7474 |
 | pgAdmin | http://localhost:5050 |
+| **Mobile App** | **Expo Go (scan QR)** |
 
 ---
 
@@ -98,6 +99,36 @@ docker ps
 docker-compose logs
 ```
 
+### Mobile App Not Connecting
+```powershell
+# Check backend is running
+curl http://localhost:3000
+
+# Ensure phone and computer on same WiFi
+# Check firewall allows port 3000
+# Restart Expo: cd mobile; npx expo start -c
+```
+
+---
+
+## MOBILE APP QUICK START
+
+### Run Mobile App
+```bash
+cd mobile
+npm start
+# Scan QR code with Expo Go app
+```
+
+### Test Credentials (Mobile)
+```
+Email: liam.murphy@email.com
+Password: password123
+Role: Player
+```
+
+**Full Mobile Setup Guide**: [docs/setup/mobile-app-setup.md](docs/setup/mobile-app-setup.md)
+
 ---
 
 ## DEMO FLOW
@@ -107,7 +138,8 @@ docker-compose logs
 3. [OK] Open Neo4j Browser -> Run graph query
 4. [OK] Open Swagger -> Test /auth/login
 5. [OK] Open Frontend -> Login -> Show dashboard
-6. [OK] Demonstrate privacy (Neo4j PSY-IDs only)
+6. [OK] **NEW: Open Mobile App -> Scan QR -> Login**
+7. [OK] Demonstrate privacy (Neo4j PSY-IDs only)
 
 ---
 
