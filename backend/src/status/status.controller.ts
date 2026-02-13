@@ -86,4 +86,23 @@ export class StatusController {
     const coachPseudoId = req.user.pseudoId;
     return this.statusService.getLatestTeamStatuses(coachPseudoId);
   }
+
+  @Get('players/:playerId/history')
+  @UseGuards(JwtAuthGuard, PlayerOwnershipGuard)
+  @ApiOperation({ 
+    summary: 'Get player status history',
+    description: 'Returns status update history for a player. Players can view their own history, coaches and admins can view any player.'
+  })
+  @ApiParam({ 
+    name: 'playerId', 
+    description: 'Player pseudonym ID',
+    example: 'PSY-PLAYER-A1B2C3D4'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Status history retrieved successfully'
+  })
+  async getPlayerStatusHistory(@Param('playerId') playerId: string) {
+    return this.statusService.getPlayerStatusHistory(playerId);
+  }
 }

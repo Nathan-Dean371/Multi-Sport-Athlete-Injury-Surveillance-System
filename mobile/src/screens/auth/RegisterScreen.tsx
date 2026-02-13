@@ -1,24 +1,28 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, TouchableOpacity } from 'react-native';
 import { TextInput, Button, Text, HelperText, SegmentedButtons } from 'react-native-paper';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useAuth } from '../../contexts/AuthContext';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { RegisterRequest } from '../../types/auth.types';
+import { format } from 'date-fns';
 
 const schema = yup.object().shape({
   email: yup.string().email('Invalid email').required('Email is required'),
   password: yup.string().min(6, 'Password must be at least 6 characters').required('Password is required'),
   firstName: yup.string().required('First name is required'),
   lastName: yup.string().required('Last name is required'),
-  role: yup.string().oneOf(['player', 'coach']).required('Role is required'),
+  dateOfBirth: yup.date().required('Date of birth is required'),
+  identityType: yup.string().oneOf(['player', 'coach']).required('Identity type is required'),
 });
 
 export default function RegisterScreen({ navigation }: any) {
   const { signUp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<RegisterRequest>({
     resolver: yupResolver(schema),
@@ -27,11 +31,12 @@ export default function RegisterScreen({ navigation }: any) {
       password: '',
       firstName: '',
       lastName: '',
-      role: 'player',
+      dateOfBirth: new Date(),
+      identityType: 'player',
     },
   });
 
-  const role = watch('role');
+  const identityType = watch('identityType');
 
   const onSubmit = async (data: RegisterRequest) => {
     try {
@@ -60,8 +65,8 @@ export default function RegisterScreen({ navigation }: any) {
             I am a:
           </Text>
           <SegmentedButtons
-            value={role}
-            onValueChange={(value) => setValue('role', value as 'player' | 'coach')}
+            value={identityType}
+            onValueChange={(value) => setValue('identityType', value as 'player' | 'coach')}
             buttons={[
               { value: 'player', label: 'Player' },
               { value: 'coach', label: 'Coach' },
@@ -105,6 +110,43 @@ export default function RegisterScreen({ navigation }: any) {
           />
           <HelperText type="error" visible={!!errors.lastName}>
             {errors.lastName?.message}
+          </HelperText>
+
+          <Controller
+            control={control}
+            name="dateOfBirth"
+            render={({ field: { onChange, value } }) => (
+              <View>
+                <TouchableOpacity onPress={() => setShowDatePicker(true)}>
+                  <TextInput
+                    label="Date of Birth"
+                    mode="outlined"
+                    value={value ? format(new Date(value), 'yyyy-MM-dd') : ''}
+                    editable={false}
+                    error={!!errors.dateOfBirth}
+                    style={styles.input}
+                    right={<TextInput.Icon icon="calendar" />}
+                  />
+                </TouchableOpacity>
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={value ? new Date(value) : new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={(event, selectedDate) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (selectedDate) {
+                        onChange(selectedDate);
+                      }
+                    }}
+                    maximumDate={new Date()}
+                  />
+                )}
+              </View>
+            )}
+          />
+          <HelperText type="error" visible={!!errors.dateOfBirth}>
+            {errors.dateOfBirth?.message}
           </HelperText>
 
           <Controller

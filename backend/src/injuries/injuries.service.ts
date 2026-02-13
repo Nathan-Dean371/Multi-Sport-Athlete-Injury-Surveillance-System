@@ -1,5 +1,5 @@
 import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
-import { Driver, Session } from 'neo4j-driver';
+import { Driver, Session, int } from 'neo4j-driver';
 import { CreateInjuryDto, UpdateInjuryDto, InjuryDetailDto, QueryInjuriesDto, PaginatedInjuriesDto, ResolveInjuryDto } from './dto/injury.dto';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class InjuriesService {
     try {
       // First verify the player exists
       const playerCheck = await session.run(
-        `MATCH (p:Player {playerId: $playerId}) RETURN p`,
+        `MATCH (p:Player {pseudonymId: $playerId}) RETURN p`,
         { playerId: createInjuryDto.playerId }
       );
 
@@ -27,7 +27,7 @@ export class InjuriesService {
 
       // Create the injury node and relationship to player
       const query = `
-        MATCH (p:Player {playerId: $playerId})
+        MATCH (p:Player {pseudonymId: $playerId})
         
         CREATE (i:Injury {
           injuryId: $injuryId,
@@ -47,12 +47,12 @@ export class InjuriesService {
           updatedAt: datetime()
         })
         
-        CREATE (p)-[:HAS_INJURY {
+        CREATE (p)-[:SUSTAINED {
           diagnosedDate: datetime(),
           reportedBy: $reportedBy
         }]->(i)
         
-        RETURN i, p.playerId AS playerId
+        RETURN i, p.playerId AS playerId, p.pseudonymId AS pseudonymId
       `;
 
       const result = await session.run(query, {
@@ -90,7 +90,8 @@ export class InjuriesService {
         createdAt: injury.createdAt.toString(),
         updatedAt: injury.updatedAt.toString(),
         player: {
-          playerId: createInjuryDto.playerId,
+          playerId: record.get('playerId'),
+          pseudonymId: record.get('pseudonymId'),
           diagnosedDate: new Date().toISOString(),
           reportedBy,
         },
@@ -111,7 +112,7 @@ export class InjuriesService {
     try {
       const query = `
         MATCH (i:Injury {injuryId: $injuryId})
-        OPTIONAL MATCH (p:Player)-[r:HAS_INJURY]->(i)
+        OPTIONAL MATCH (p:Player)-[r:SUSTAINED]->(i)
         OPTIONAL MATCH (i)-[:HAS_STATUS_UPDATE]->(s:StatusUpdate)
         
         WITH i, p, r, s
@@ -119,6 +120,7 @@ export class InjuriesService {
         
         RETURN i,
                p.playerId AS playerId,
+               p.pseudonymId AS pseudonymId,
                r.diagnosedDate AS diagnosedDate,
                r.reportedBy AS reportedBy,
                collect(DISTINCT {
@@ -158,6 +160,7 @@ export class InjuriesService {
         updatedAt: injury.updatedAt.toString(),
         player: record.get('playerId') ? {
           playerId: record.get('playerId'),
+          pseudonymId: record.get('pseudonymId'),
           diagnosedDate: record.get('diagnosedDate')?.toString(),
           reportedBy: record.get('reportedBy'),
         } : undefined,
@@ -280,18 +283,18 @@ export class InjuriesService {
     const session: Session = this.neo4jDriver.session();
 
     try {
-      const page = queryDto.page || 1;
-      const limit = queryDto.limit || 20;
+      const page = Math.floor(queryDto.page || 1);
+      const limit = Math.floor(queryDto.limit || 20);
       const skip = (page - 1) * limit;
 
       // Build WHERE clause based on filters and role-based access
       const whereClauses: string[] = [];
-      const params: any = { skip, limit };
+      const params: any = { skip: int(skip), limit: int(limit) };
 
       // Role-based filtering
       if (userRole === 'player') {
         // Players can only see their own injuries
-        whereClauses.push('p.playerId = $userPseudonym');
+        whereClauses.push('p.pseudonymId = $userPseudonym');
         params.userPseudonym = userPseudonym;
       } else if (userRole === 'coach') {
         // Coaches can see injuries for players on their teams
@@ -316,7 +319,7 @@ export class InjuriesService {
 
       // Player ID filter (only for coaches and admins)
       if (queryDto.playerId && (userRole === 'coach' || userRole === 'admin')) {
-        whereClauses.push('p.playerId = $playerId');
+        whereClauses.push('p.pseudonymId = $playerId');
         params.playerId = queryDto.playerId;
       }
 
@@ -346,7 +349,7 @@ export class InjuriesService {
 
       // Count total matching records
       const countQuery = `
-        MATCH (p:Player)-[:HAS_INJURY]->(i:Injury)
+        MATCH (p:Player)-[:SUSTAINED]->(i:Injury)
         ${whereClause}
         RETURN count(i) AS total
       `;
@@ -356,7 +359,7 @@ export class InjuriesService {
 
       // Fetch paginated results
       const dataQuery = `
-        MATCH (p:Player)-[r:HAS_INJURY]->(i:Injury)
+        MATCH (p:Player)-[r:SUSTAINED]->(i:Injury)
         ${whereClause}
         WITH i, p, r
         ORDER BY ${sortField} ${sortOrder}
@@ -369,6 +372,7 @@ export class InjuriesService {
         
         RETURN i,
                p.playerId AS playerId,
+               p.pseudonymId AS pseudonymId,
                r.diagnosedDate AS diagnosedDate,
                r.reportedBy AS reportedBy,
                collect(DISTINCT {
@@ -404,6 +408,7 @@ export class InjuriesService {
           updatedAt: injury.updatedAt.toString(),
           player: {
             playerId: record.get('playerId'),
+            pseudonymId: record.get('pseudonymId'),
             diagnosedDate: record.get('diagnosedDate')?.toString(),
             reportedBy: record.get('reportedBy'),
           },
@@ -431,6 +436,7 @@ export class InjuriesService {
         },
       };
     } catch (error) {
+      console.error('❌ Error in findAll service:', error.message);
       if (error instanceof ForbiddenException || error instanceof NotFoundException) {
         throw error;
       }

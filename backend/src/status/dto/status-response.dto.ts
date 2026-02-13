@@ -37,17 +37,16 @@ export class TeamStatusDto {
   @ApiProperty({ type: [PlayerStatusDto] })
   players: PlayerStatusDto[];
 
-  @ApiProperty({ example: 15 })
-  totalPlayers: number;
-
-  @ApiProperty({ example: 10 })
-  greenCount: number;
-
-  @ApiProperty({ example: 3 })
-  orangeCount: number;
-
-  @ApiProperty({ example: 2 })
-  redCount: number;
+  @ApiProperty({ 
+    description: 'Status counts for the team',
+    example: { green: 10, orange: 3, red: 2, noStatus: 0 }
+  })
+  statusCounts: {
+    green: number;
+    orange: number;
+    red: number;
+    noStatus: number;
+  };
 }
 
 export class LatestStatusResponseDto {
@@ -55,5 +54,5 @@ export class LatestStatusResponseDto {
   teams: TeamStatusDto[];
 
   @ApiProperty({ example: '2026-01-14T10:30:00Z' })
-  retrievedAt: string;
+  lastUpdated: string;
 }

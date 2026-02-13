@@ -44,7 +44,7 @@ export class PlayersService {
     try {
       const result = await session.run(
         `
-        MATCH (p:Player {playerId: $playerId})
+        MATCH (p:Player {pseudonymId: $playerId})
         OPTIONAL MATCH (p)-[:PLAYS_FOR]->(t:Team)
         RETURN p, t.teamId as teamId, t.name as teamName
         `,
@@ -78,8 +78,8 @@ export class PlayersService {
     try {
       const result = await session.run(
         `
-        MATCH (p:Player {playerId: $playerId})
-        OPTIONAL MATCH (p)-[r:HAS_INJURY]->(i:Injury)
+        MATCH (p:Player {pseudonymId: $playerId})
+        OPTIONAL MATCH (p)-[r:SUSTAINED]->(i:Injury)
         RETURN p, 
                collect({
                  injury: i,

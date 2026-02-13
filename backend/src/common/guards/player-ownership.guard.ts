@@ -17,8 +17,8 @@ export class PlayerOwnershipGuard implements CanActivate {
     const playerId = request.params.playerId;
 
     // Players can only update their own status
-    if (user.role === 'player') {
-      if (user.playerId !== playerId) {
+    if (user.identityType === 'player') {
+      if (user.pseudonymId !== playerId) {
         throw new ForbiddenException('You can only update your own status');
       }
     }

@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum, IsDateString, IsInt, Min, Max, IsIn } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -157,12 +157,14 @@ export class InjuryDetailDto {
     description: 'Player information',
     example: {
       playerId: 'PLAYER-001',
+      pseudonymId: 'PSY-PLAYER-A1B2C3D4',
       diagnosedDate: '2024-01-10T10:30:00.000Z',
       reportedBy: 'COACH-001'
     }
   })
   player?: {
     playerId: string;
+    pseudonymId: string;
     diagnosedDate: string;
     reportedBy: string;
   };
@@ -197,7 +199,7 @@ export class QueryInjuriesDto {
   @IsInt()
   @Min(1)
   @IsOptional()
-  page?: number = 1;
+  page?: number;
 
   @ApiPropertyOptional({ 
     example: 20, 
@@ -211,7 +213,7 @@ export class QueryInjuriesDto {
   @Min(1)
   @Max(100)
   @IsOptional()
-  limit?: number = 20;
+  limit?: number;
 
   @ApiPropertyOptional({ 
     example: 'Active', 
@@ -268,18 +270,18 @@ export class QueryInjuriesDto {
     description: 'Sort by field',
     enum: ['injuryDate', 'createdAt', 'severity', 'status']
   })
-  @IsEnum(['injuryDate', 'createdAt', 'severity', 'status'])
+  @IsIn(['injuryDate', 'createdAt', 'severity', 'status'])
   @IsOptional()
-  sortBy?: string = 'createdAt';
+  sortBy?: string;
 
   @ApiPropertyOptional({ 
     example: 'DESC', 
     description: 'Sort order',
     enum: ['ASC', 'DESC']
   })
-  @IsEnum(['ASC', 'DESC'])
+  @IsIn(['ASC', 'DESC'])
   @IsOptional()
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  sortOrder?: 'ASC' | 'DESC';
 }
 
 export class PaginatedInjuriesDto {

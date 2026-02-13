@@ -8,8 +8,8 @@ export interface RegisterRequest {
   password: string;
   firstName: string;
   lastName: string;
-  role: 'player' | 'coach';
-  // Add other fields as needed
+  dateOfBirth: Date | string;
+  identityType: 'player' | 'coach' | 'admin';
 }
 
 export interface AuthResponse {
@@ -20,9 +20,6 @@ export interface AuthResponse {
 export interface User {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: 'player' | 'coach' | 'admin';
-  playerId?: string; // For players
-  coachId?: string; // For coaches
+  identityType: 'player' | 'coach' | 'admin';
+  pseudonymId: string;
 }

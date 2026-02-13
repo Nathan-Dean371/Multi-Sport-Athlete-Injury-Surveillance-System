@@ -9,11 +9,11 @@ import { Pool } from 'pg';
       provide: 'POSTGRES_POOL',
       useFactory: async (configService: ConfigService): Promise<Pool> => {
         const pool = new Pool({
-          host: configService.get<string>('POSTGRES_HOST') || 'localhost',
-          port: configService.get<number>('POSTGRES_PORT') || 5432,
-          database: configService.get<string>('POSTGRES_DB') || 'identity_service',
-          user: configService.get<string>('POSTGRES_USER') || 'postgres',
-          password: configService.get<string>('POSTGRES_PASSWORD') || 'password',
+          host: configService.get<string>('postgres.host') || 'localhost',
+          port: configService.get<number>('postgres.port') || 5432,
+          database: configService.get<string>('postgres.database') || 'identity_service',
+          user: configService.get<string>('postgres.user') || 'postgres',
+          password: configService.get<string>('postgres.password') || 'password',
           max: 20,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 2000,

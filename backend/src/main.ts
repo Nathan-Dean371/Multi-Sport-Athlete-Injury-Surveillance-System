@@ -11,6 +11,11 @@ async function bootstrap() {
   // Enable validation
   app.useGlobalPipes(new ValidationPipe({
     transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    whitelist: false,
+    forbidNonWhitelisted: false,
   }));
   
   // Enable CORS for development
@@ -56,7 +61,7 @@ async function bootstrap() {
   await app.listen(port, '0.0.0.0'); // Listen on all network interfaces
   
   console.log(`🚀 Backend server is running on: http://localhost:${port}`);
-  console.log(`📱 Mobile devices can connect to: http://192.168.0.246:${port}`);
+  console.log(`📱 Mobile devices can connect to: http://192.168.0.109:${port}`);
   console.log(`📚 API Documentation available at: http://localhost:${port}/api/docs`);
 }
 

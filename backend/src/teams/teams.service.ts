@@ -21,7 +21,7 @@ export class TeamsService {
         MATCH (t:Team {id: $teamId})<-[:PLAYS_FOR]-(p:Player)
         OPTIONAL MATCH (p)-[:HAS_STATUS]->(s:StatusUpdate)
         WHERE s.date = date()
-        OPTIONAL MATCH (p)-[:HAS_INJURY]->(i:Injury {isResolved: false})
+        OPTIONAL MATCH (p)-[:SUSTAINED]->(i:Injury {isResolved: false})
         WITH t, p, s, count(i) as activeInjuries
         ORDER BY p.lastName, p.firstName
         RETURN t.id as teamId,

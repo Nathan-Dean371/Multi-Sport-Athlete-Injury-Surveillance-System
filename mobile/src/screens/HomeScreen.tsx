@@ -1,17 +1,67 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, Avatar, Divider, useTheme } from 'react-native-paper';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
+import { Text, Card, Button, Avatar, Divider, useTheme, IconButton } from 'react-native-paper';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import InjuryCard from '../components/injury/InjuryCard';
+import StatusSelector from '../components/status/StatusSelector';
+import { PlayerStatus } from '../types/status.types';
+import { InjuryDetailDto } from '../types/injury.types';
+import injuryService from '../services/injury.service';
+import statusService from '../services/status.service';
 
 export default function HomeScreen() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
+  const navigation = useNavigation();
   const theme = useTheme();
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recentInjuries, setRecentInjuries] = useState<InjuryDetailDto[]>([]);
+  const [showQuickStatus, setShowQuickStatus] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState<PlayerStatus | null>(null);
+  const [submittingStatus, setSubmittingStatus] = useState(false);
 
-  const handleLogout = async () => {
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
     try {
-      await signOut();
+      setLoading(true);
+      // Fetch recent injuries
+      const response = await injuryService.getAllInjuries({
+        playerId: user?.identityType === 'player' ? user.pseudonymId : undefined,
+        pageSize: 3,
+      });
+      setRecentInjuries(response.data);
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDashboardData();
+    setRefreshing(false);
+  };
+
+  const handleQuickStatusSubmit = async () => {
+    if (!selectedStatus || !user?.pseudonymId) return;
+    
+    try {
+      setSubmittingStatus(true);
+      await statusService.updatePlayerStatus(user.pseudonymId, {
+        status: selectedStatus,
+      });
+      setShowQuickStatus(false);
+      setSelectedStatus(null);
+    } catch (error) {
+      console.error('Error updating status:', error);
+    } finally {
+      setSubmittingStatus(false);
     }
   };
 
@@ -32,8 +82,19 @@ export default function HomeScreen() {
     return identityType.charAt(0).toUpperCase() + identityType.slice(1);
   };
 
+  if (loading) {
+    return <LoadingSpinner message="Loading dashboard..." />;
+  }
+
+  const isPlayer = user?.identityType === 'player';
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <Avatar.Text 
           size={80} 
@@ -71,16 +132,83 @@ export default function HomeScreen() {
               {user?.pseudonymId || 'N/A'}
             </Text>
           </View>
-
-          <View style={styles.infoRow}>
-            <Text variant="labelLarge" style={styles.label}>Status:</Text>
-            <Text variant="bodyLarge" style={[styles.value, { color: theme.colors.primary }]}>
-              Active
-            </Text>
-          </View>
         </Card.Content>
       </Card>
 
+      {/* Quick Status Update (Players Only) */}
+      {isPlayer && (
+        <Card style={styles.card}>
+          <Card.Content>
+            <View style={styles.cardHeader}>
+              <Text variant="titleLarge" style={styles.cardTitle}>
+                Quick Status Update
+              </Text>
+              <IconButton
+                icon={showQuickStatus ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                onPress={() => setShowQuickStatus(!showQuickStatus)}
+              />
+            </View>
+            
+            {showQuickStatus && (
+              <>
+                <Divider style={styles.divider} />
+                <StatusSelector
+                  selectedStatus={selectedStatus}
+                  onSelect={setSelectedStatus}
+                />
+                <Button
+                  mode="contained"
+                  onPress={handleQuickStatusSubmit}
+                  disabled={!selectedStatus || submittingStatus}
+                  loading={submittingStatus}
+                  style={styles.submitStatusButton}
+                >
+                  Submit Status
+                </Button>
+              </>
+            )}
+          </Card.Content>
+        </Card>
+      )}
+
+      {/* Recent Injuries */}
+      <Card style={styles.card}>
+        <Card.Content>
+          <View style={styles.cardHeader}>
+            <Text variant="titleLarge" style={styles.cardTitle}>
+              Recent Injuries
+            </Text>
+            <Button 
+              mode="text" 
+              onPress={() => navigation.navigate('Injuries' as never)}
+              compact
+            >
+              View All
+            </Button>
+          </View>
+          <Divider style={styles.divider} />
+          
+          {recentInjuries.length === 0 ? (
+            <Text variant="bodyMedium" style={styles.emptyText}>
+              No injuries recorded
+            </Text>
+          ) : (
+            recentInjuries.map((injury) => (
+              <InjuryCard
+                key={injury.injuryId}
+                injury={injury}
+                onPress={() => navigation.navigate('Injuries' as never, {
+                  screen: 'InjuryDetail',
+                  params: { injuryId: injury.injuryId },
+                } as never)}
+              />
+            ))
+          )}
+        </Card.Content>
+      </Card>
+
+      {/* Quick Actions */}
       <Card style={styles.card}>
         <Card.Content>
           <Text variant="titleLarge" style={styles.cardTitle}>
@@ -88,27 +216,40 @@ export default function HomeScreen() {
           </Text>
           <Divider style={styles.divider} />
           
-          <Text variant="bodyMedium" style={styles.comingSoon}>
-            Dashboard features coming soon...
-          </Text>
-          
-          <View style={styles.featureList}>
-            <Text variant="bodyMedium">• View injury reports</Text>
-            <Text variant="bodyMedium">• Team analytics</Text>
-            <Text variant="bodyMedium">• Player profiles</Text>
-            <Text variant="bodyMedium">• Training schedules</Text>
+          <View style={styles.actionButtons}>
+            {isPlayer && (
+              <Button
+                mode="contained-tonal"
+                icon="heart-pulse"
+                onPress={() => navigation.navigate('Status' as never)}
+                style={styles.actionButton}
+              >
+                Update Status
+              </Button>
+            )}
+            
+            <Button
+              mode="contained-tonal"
+              icon="medical-bag"
+              onPress={() => navigation.navigate('Injuries' as never)}
+              style={styles.actionButton}
+            >
+              View Injuries
+            </Button>
+            
+            {!isPlayer && (
+              <Button
+                mode="contained-tonal"
+                icon="account-group"
+                onPress={() => navigation.navigate('Team' as never)}
+                style={styles.actionButton}
+              >
+                Team Dashboard
+              </Button>
+            )}
           </View>
         </Card.Content>
       </Card>
-
-      <Button 
-        mode="contained" 
-        onPress={handleLogout}
-        style={styles.logoutButton}
-        icon="logout"
-      >
-        Logout
-      </Button>
 
       <View style={styles.footer}>
         <Text variant="bodySmall" style={styles.footerText}>
@@ -160,6 +301,26 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: '600',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  submitStatusButton: {
+    marginTop: 16,
+  },
+  emptyText: {
+    fontStyle: 'italic',
+    opacity: 0.6,
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  actionButtons: {
+    gap: 12,
+  },
+  actionButton: {
+    marginBottom: 8,
   },
   comingSoon: {
     fontStyle: 'italic',

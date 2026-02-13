@@ -2,12 +2,12 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
-import HomeScreen from '../screens/HomeScreen';
+import TabNavigator from './TabNavigator';
 import { ActivityIndicator, View } from 'react-native';
 
 // Main authenticated app
 function MainApp() {
-  return <HomeScreen />;
+  return <TabNavigator />;
 }
 
 export default function AppNavigator() {

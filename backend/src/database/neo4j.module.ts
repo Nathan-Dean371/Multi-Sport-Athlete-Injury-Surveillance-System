@@ -8,9 +8,9 @@ import neo4j, { Driver } from 'neo4j-driver';
     {
       provide: 'NEO4J_DRIVER',
       useFactory: async (configService: ConfigService): Promise<Driver> => {
-        const uri = configService.get<string>('NEO4J_URI') || 'bolt://localhost:7687';
-        const username = configService.get<string>('NEO4J_USER') || 'neo4j';
-        const password = configService.get<string>('NEO4J_PASSWORD') || 'password';
+        const uri = configService.get<string>('neo4j.uri') || 'bolt://localhost:7687';
+        const username = configService.get<string>('neo4j.user') || 'neo4j';
+        const password = configService.get<string>('neo4j.password') || 'password';
 
         const driver = neo4j.driver(
           uri,

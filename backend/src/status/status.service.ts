@@ -19,7 +19,7 @@ export class StatusService {
     try {
       // First verify the player exists
       const playerCheck = await session.run(
-        `MATCH (p:Player {playerId: $playerId}) RETURN p`,
+        `MATCH (p:Player {pseudonymId: $playerId}) RETURN p`,
         { playerId }
       );
 
@@ -29,7 +29,7 @@ export class StatusService {
 
       // Create status update node and link to player
       const query = `
-        MATCH (p:Player {playerId: $playerId})
+        MATCH (p:Player {pseudonymId: $playerId})
         CREATE (s:StatusUpdate {
           id: randomUUID(),
           status: $status,
@@ -90,7 +90,7 @@ export class StatusService {
         MATCH (t)<-[:PLAYS_FOR]-(p:Player)
         OPTIONAL MATCH (p)-[:HAS_STATUS]->(s:StatusUpdate)
         WHERE s.date = date()
-        OPTIONAL MATCH (p)-[:HAS_INJURY]->(i:Injury {isResolved: false})
+        OPTIONAL MATCH (p)-[:SUSTAINED]->(i:Injury {isResolved: false})
         WITH t, p, s, count(i) as activeInjuries
         ORDER BY t.name, p.lastName
         RETURN t.id as teamId, 
@@ -125,25 +125,81 @@ export class StatusService {
         const greenCount = players.filter((p) => p.currentStatus === PlayerStatus.GREEN).length;
         const orangeCount = players.filter((p) => p.currentStatus === PlayerStatus.ORANGE).length;
         const redCount = players.filter((p) => p.currentStatus === PlayerStatus.RED).length;
+        const noStatusCount = players.filter((p) => p.currentStatus === PlayerStatus.UNKNOWN).length;
 
         return {
           teamId: record.get('teamId'),
           teamName: record.get('teamName'),
           sport: record.get('sport'),
           players,
-          totalPlayers: players.length,
-          greenCount,
-          orangeCount,
-          redCount,
+          statusCounts: {
+            green: greenCount,
+            orange: orangeCount,
+            red: redCount,
+            noStatus: noStatusCount,
+          },
         };
       });
 
       return {
         teams,
-        retrievedAt: new Date().toISOString(),
+        lastUpdated: new Date().toISOString(),
       };
     } catch (error) {
       throw new BadRequestException(`Failed to retrieve team statuses: ${error.message}`);
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Get status update history for a specific player
+   */
+  async getPlayerStatusHistory(playerId: string): Promise<any> {
+    const session: Session = this.neo4jDriver.session();
+
+    try {
+      // First verify the player exists
+      const playerCheck = await session.run(
+        `MATCH (p:Player {pseudonymId: $playerId}) RETURN p`,
+        { playerId }
+      );
+
+      if (playerCheck.records.length === 0) {
+        throw new NotFoundException(`Player ${playerId} not found`);
+      }
+
+      // Get all status updates for the player, ordered by date
+      const query = `
+        MATCH (p:Player {pseudonymId: $playerId})-[:HAS_STATUS]->(s:StatusUpdate)
+        RETURN s.id as id,
+               s.status as status,
+               s.date as date,
+               s.timestamp as timestamp,
+               s.notes as notes
+        ORDER BY s.date DESC, s.timestamp DESC
+      `;
+
+      const result = await session.run(query, { playerId });
+
+      const statusHistory = result.records.map((record) => ({
+        id: record.get('id'),
+        status: record.get('status'),
+        date: record.get('date').toString(),
+        timestamp: record.get('timestamp').toString(),
+        notes: record.get('notes'),
+      }));
+
+      return {
+        playerId,
+        statusHistory,
+        total: statusHistory.length,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to retrieve status history: ${error.message}`);
     } finally {
       await session.close();
     }

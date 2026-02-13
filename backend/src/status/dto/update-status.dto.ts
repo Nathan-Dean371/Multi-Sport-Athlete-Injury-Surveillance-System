@@ -4,7 +4,8 @@ import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 export enum PlayerStatus {
   GREEN = 'GREEN',   // Fully fit, ready to train/compete
   ORANGE = 'ORANGE', // Managing minor issue, can train with modifications
-  RED = 'RED'        // Injured, cannot train
+  RED = 'RED',       // Injured, cannot train
+  UNKNOWN = 'UNKNOWN'  // No status update today
 }
 
 export class UpdateStatusDto {

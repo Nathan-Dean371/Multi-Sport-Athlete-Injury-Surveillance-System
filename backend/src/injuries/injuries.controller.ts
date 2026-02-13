@@ -14,10 +14,10 @@ export class InjuriesController {
   constructor(private readonly injuriesService: InjuriesService) {}
 
   @Post()
-  @Roles('coach', 'admin')
+  @Roles('player', 'coach', 'admin')
   @ApiOperation({ 
     summary: 'Create new injury report', 
-    description: 'Report a new injury for a player. Only coaches and admins can create injury reports.' 
+    description: 'Report a new injury for a player. Players can report their own injuries, coaches and admins can report for any player.' 
   })
   @ApiResponse({ 
     status: 201, 
@@ -72,10 +72,13 @@ export class InjuriesController {
     @Request() req,
   ): Promise<PaginatedInjuriesDto> {
     try {
+      console.log('📋 Query DTO:', queryDto);
+      console.log('👤 User:', { role: req.user.identityType, pseudonym: req.user.pseudonym });
       const userRole = req.user.identityType;
       const userPseudonym = req.user.pseudonym;
       return await this.injuriesService.findAll(queryDto, userRole, userPseudonym);
     } catch (error) {
+      console.error('❌ Error in findAll controller:', error.message, error.stack);
       throw error;
     }
   }
@@ -116,7 +119,7 @@ export class InjuriesController {
       const injury = await this.injuriesService.findOne(id);
       
       // Role-based access control: players can only see their own injuries
-      if (req.user.identityType === 'player' && injury.player?.playerId !== req.user.pseudonym) {
+      if (req.user.identityType === 'player' && injury.player?.pseudonymId !== req.user.pseudonym) {
         throw new Error('You can only access your own injury records');
       }
       
