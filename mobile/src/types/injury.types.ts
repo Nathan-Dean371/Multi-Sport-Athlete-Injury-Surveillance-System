@@ -123,15 +123,23 @@ export interface InjuryDetailDto {
   diagnosis?: string;
   treatmentPlan?: string;
   notes?: string;
-  isResolved: boolean;
+  createdAt: string;
+  updatedAt: string;
   player?: {
     playerId: string;
-    name: string;
-    position: string;
+    pseudonymId: string;
+    firstName?: string;
+    lastName?: string;
+    diagnosedDate: string;
+    reportedBy: string;
   };
-  reportedBy?: string;
-  reportedDate?: string;
-  lastUpdated?: string;
+  statusUpdates?: Array<{
+    updateId: string;
+    status: string;
+    notes?: string;
+    recordedBy: string;
+    recordedAt: string;
+  }>;
 }
 
 export interface PaginatedInjuriesDto {

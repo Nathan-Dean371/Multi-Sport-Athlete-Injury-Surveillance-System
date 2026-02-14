@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Chip, useTheme, Divider, ProgressBar, Badge, List, Button, Menu } from 'react-native-paper';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '@react-navigation/native';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import teamService from '../../services/team.service';
 import { TeamRosterDto, RosterPlayerDto, TeamDetailsDto } from '../../types/team.types';
@@ -10,6 +11,7 @@ import { PlayerStatus } from '../../types/status.types';
 export default function TeamDashboardScreen() {
   const { user } = useAuth();
   const theme = useTheme();
+  const navigation = useNavigation<any>();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [teams, setTeams] = useState<TeamDetailsDto[]>([]);
@@ -311,7 +313,20 @@ export default function TeamDashboardScreen() {
 
       {/* Players List */}
       <View style={styles.playersSection}>
-        <Text style={styles.sectionTitle}>Team Roster</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Team Roster</Text>
+          <Button
+            mode="outlined"
+            icon="account-group"
+            onPress={() => navigation.navigate('TeamRoster', { 
+              teamId: selectedTeam.teamId, 
+              teamName: selectedTeam.name 
+            })}
+            compact
+          >
+            View All
+          </Button>
+        </View>
         
         {/* Priority: Red Status Players */}
         {groups.red.length > 0 && (
@@ -444,6 +459,12 @@ const styles = StyleSheet.create({
   playersSection: {
     padding: 16,
     paddingTop: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   statusGroup: {
     marginBottom: 24,

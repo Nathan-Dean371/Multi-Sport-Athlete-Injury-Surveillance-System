@@ -158,6 +158,8 @@ export class InjuryDetailDto {
     example: {
       playerId: 'PLAYER-001',
       pseudonymId: 'PSY-PLAYER-A1B2C3D4',
+      firstName: 'Liam',
+      lastName: 'Murphy',
       diagnosedDate: '2024-01-10T10:30:00.000Z',
       reportedBy: 'COACH-001'
     }
@@ -165,6 +167,8 @@ export class InjuryDetailDto {
   player?: {
     playerId: string;
     pseudonymId: string;
+    firstName?: string;
+    lastName?: string;
     diagnosedDate: string;
     reportedBy: string;
   };

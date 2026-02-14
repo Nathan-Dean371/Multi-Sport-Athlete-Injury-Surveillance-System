@@ -1,5 +1,6 @@
 import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
 import { Driver, Session } from 'neo4j-driver';
+import { Pool } from 'pg';
 import { TeamRosterDto, RosterPlayerDto } from './dto/team-roster.dto';
 import { TeamDetailsDto, CoachInfoDto } from './dto/team-details.dto';
 import { PlayerStatus } from '../status/dto/update-status.dto';
@@ -8,6 +9,7 @@ import { PlayerStatus } from '../status/dto/update-status.dto';
 export class TeamsService {
   constructor(
     @Inject('NEO4J_DRIVER') private readonly neo4jDriver: Driver,
+    @Inject('POSTGRES_POOL') private readonly pool: Pool,
   ) {}
 
   /**
@@ -17,6 +19,7 @@ export class TeamsService {
     const session: Session = this.neo4jDriver.session();
 
     try {
+      // First, get team data and player info from Neo4j
       const query = `
         MATCH (t:Team {teamId: $teamId})<-[:PLAYS_FOR]-(p:Player)
         OPTIONAL MATCH (t)-[:PLAYS]->(sp:Sport)
@@ -24,16 +27,13 @@ export class TeamsService {
         WHERE s.date = date()
         OPTIONAL MATCH (p)-[:SUSTAINED]->(i:Injury {isResolved: false})
         WITH t, sp, p, s, count(i) as activeInjuries
-        ORDER BY p.lastName, p.firstName
         RETURN t.teamId as teamId,
                t.name as teamName,
                sp.name as sport,
                collect({
                  playerId: p.playerId,
-                 firstName: p.firstName,
-                 lastName: p.lastName,
+                 pseudonymId: p.pseudonymId,
                  position: p.position,
-                 jerseyNumber: p.jerseyNumber,
                  currentStatus: s.status,
                  statusNotes: s.notes,
                  lastStatusUpdate: toString(s.date),
@@ -52,18 +52,40 @@ export class TeamsService {
       const record = result.records[0];
       const playersData = record.get('players');
 
-      // Transform players data
-      const players: RosterPlayerDto[] = playersData.map((p: any) => ({
-        playerId: p.playerId,
-        firstName: p.firstName,
-        lastName: p.lastName,
-        position: p.position,
-        jerseyNumber: p.jerseyNumber,
-        currentStatus: p.currentStatus as PlayerStatus,
-        statusNotes: p.statusNotes,
-        lastStatusUpdate: p.lastStatusUpdate,
-        activeInjuryCount: p.activeInjuryCount.toNumber ? p.activeInjuryCount.toNumber() : p.activeInjuryCount,
-      }));
+      // Extract pseudonym IDs to query PostgreSQL
+      const pseudonymIds = playersData.map((p: any) => p.pseudonymId);
+
+      // Fetch real names from PostgreSQL identity database
+      const identityMap = await this.getPlayerIdentities(pseudonymIds);
+      console.log(`Fetched ${identityMap.size} player identities from PostgreSQL for ${pseudonymIds.length} pseudonym IDs`);
+
+      // Transform players data with real names
+      const players: RosterPlayerDto[] = playersData.map((p: any) => {
+        const identity = identityMap.get(p.pseudonymId);
+        return {
+          playerId: p.playerId,
+          firstName: identity?.firstName || 'Unknown',
+          lastName: identity?.lastName || 'Player',
+          position: p.position,
+          jerseyNumber: '', // Will be assigned after sorting
+          currentStatus: p.currentStatus as PlayerStatus,
+          statusNotes: p.statusNotes,
+          lastStatusUpdate: p.lastStatusUpdate,
+          activeInjuryCount: p.activeInjuryCount.toNumber ? p.activeInjuryCount.toNumber() : p.activeInjuryCount,
+        };
+      });
+
+      // Sort players by last name, then first name
+      players.sort((a, b) => {
+        const lastNameCompare = a.lastName.localeCompare(b.lastName);
+        if (lastNameCompare !== 0) return lastNameCompare;
+        return a.firstName.localeCompare(b.firstName);
+      });
+
+      // Assign jersey numbers based on sorted order
+      players.forEach((player, index) => {
+        player.jerseyNumber = String(index + 1);
+      });
 
       return {
         teamId: record.get('teamId'),
@@ -81,6 +103,40 @@ export class TeamsService {
       throw new BadRequestException(`Failed to retrieve team roster: ${error.message}`);
     } finally {
       await session.close();
+    }
+  }
+
+  /**
+   * Get player identities (real names) from PostgreSQL by pseudonym IDs
+   */
+  private async getPlayerIdentities(pseudonymIds: string[]): Promise<Map<string, {firstName: string, lastName: string}>> {
+    if (pseudonymIds.length === 0) {
+      return new Map();
+    }
+
+    try {
+      const query = `
+        SELECT pseudonym_id, first_name, last_name
+        FROM player_identities
+        WHERE pseudonym_id = ANY($1)
+        AND deleted_at IS NULL
+      `;
+
+      const result = await this.pool.query(query, [pseudonymIds]);
+
+      const identityMap = new Map();
+      result.rows.forEach(row => {
+        identityMap.set(row.pseudonym_id, {
+          firstName: row.first_name,
+          lastName: row.last_name,
+        });
+      });
+
+      return identityMap;
+    } catch (error) {
+      console.error('Error fetching player identities:', error);
+      // Return empty map on error to avoid breaking the roster view
+      return new Map();
     }
   }
 

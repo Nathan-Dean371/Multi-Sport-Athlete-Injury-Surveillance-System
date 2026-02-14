@@ -115,7 +115,9 @@ export default function InjuryDetailScreen({ route, navigation }: any) {
                 Player:
               </Text>
               <Text variant="bodyMedium" style={styles.infoValue}>
-                {injury.player.name} ({injury.player.position})
+                {injury.player.firstName && injury.player.lastName 
+                  ? `${injury.player.firstName} ${injury.player.lastName}` 
+                  : injury.player.pseudonymId}
               </Text>
             </View>
           )}

@@ -1,11 +1,13 @@
 import { Injectable, Inject, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Driver, Session, int } from 'neo4j-driver';
+import { Pool } from 'pg';
 import { CreateInjuryDto, UpdateInjuryDto, InjuryDetailDto, QueryInjuriesDto, PaginatedInjuriesDto, ResolveInjuryDto } from './dto/injury.dto';
 
 @Injectable()
 export class InjuriesService {
   constructor(
     @Inject('NEO4J_DRIVER') private readonly neo4jDriver: Driver,
+    @Inject('POSTGRES_POOL') private readonly pool: Pool,
   ) {}
 
   async createInjury(createInjuryDto: CreateInjuryDto, reportedBy: string): Promise<InjuryDetailDto> {
@@ -74,6 +76,20 @@ export class InjuriesService {
       const record = result.records[0];
       const injury = record.get('i').properties;
 
+      const pseudonymId = record.get('pseudonymId');
+      let firstName: string | undefined;
+      let lastName: string | undefined;
+
+      // Fetch real name from PostgreSQL
+      if (pseudonymId) {
+        const identityMap = await this.getPlayerIdentities([pseudonymId]);
+        const identity = identityMap.get(pseudonymId);
+        if (identity) {
+          firstName = identity.firstName;
+          lastName = identity.lastName;
+        }
+      }
+
       return {
         injuryId: injury.injuryId,
         injuryType: injury.injuryType,
@@ -91,7 +107,9 @@ export class InjuriesService {
         updatedAt: injury.updatedAt.toString(),
         player: {
           playerId: record.get('playerId'),
-          pseudonymId: record.get('pseudonymId'),
+          pseudonymId: pseudonymId,
+          firstName: firstName,
+          lastName: lastName,
           diagnosedDate: new Date().toISOString(),
           reportedBy,
         },
@@ -143,6 +161,20 @@ export class InjuriesService {
       const statusUpdates = record.get('statusUpdates')
         .filter(update => update.updateId !== null);
 
+      const pseudonymId = record.get('pseudonymId');
+      let firstName: string | undefined;
+      let lastName: string | undefined;
+
+      // Fetch real name from PostgreSQL if we have a pseudonymId
+      if (pseudonymId) {
+        const identityMap = await this.getPlayerIdentities([pseudonymId]);
+        const identity = identityMap.get(pseudonymId);
+        if (identity) {
+          firstName = identity.firstName;
+          lastName = identity.lastName;
+        }
+      }
+
       return {
         injuryId: injury.injuryId,
         injuryType: injury.injuryType,
@@ -160,7 +192,9 @@ export class InjuriesService {
         updatedAt: injury.updatedAt.toString(),
         player: record.get('playerId') ? {
           playerId: record.get('playerId'),
-          pseudonymId: record.get('pseudonymId'),
+          pseudonymId: pseudonymId,
+          firstName: firstName,
+          lastName: lastName,
           diagnosedDate: record.get('diagnosedDate')?.toString(),
           reportedBy: record.get('reportedBy'),
         } : undefined,
@@ -287,22 +321,24 @@ export class InjuriesService {
       const limit = Math.floor(queryDto.limit || 20);
       const skip = (page - 1) * limit;
 
-      // Build WHERE clause based on filters and role-based access
+      // Build MATCH clause based on role
+      let matchClause = '';
       const whereClauses: string[] = [];
       const params: any = { skip: int(skip), limit: int(limit) };
 
       // Role-based filtering
       if (userRole === 'player') {
         // Players can only see their own injuries
+        matchClause = 'MATCH (p:Player)-[r:SUSTAINED]->(i:Injury)';
         whereClauses.push('p.pseudonymId = $userPseudonym');
         params.userPseudonym = userPseudonym;
       } else if (userRole === 'coach') {
-        // Coaches can see injuries for players on their teams
-        // For MVP, coaches can see all injuries (will be refined with team relationships)
-        whereClauses.push('1=1');
+        // Coaches can only see injuries for players on teams they manage
+        matchClause = 'MATCH (c:Coach {pseudonymId: $userPseudonym})-[:MANAGES]->(t:Team)<-[:PLAYS_FOR]-(p:Player)-[r:SUSTAINED]->(i:Injury)';
+        params.userPseudonym = userPseudonym;
       } else if (userRole === 'admin') {
         // Admins can see all injuries
-        whereClauses.push('1=1');
+        matchClause = 'MATCH (p:Player)-[r:SUSTAINED]->(i:Injury)';
       }
 
       // Status filter
@@ -349,7 +385,7 @@ export class InjuriesService {
 
       // Count total matching records
       const countQuery = `
-        MATCH (p:Player)-[:SUSTAINED]->(i:Injury)
+        ${matchClause}
         ${whereClause}
         RETURN count(i) AS total
       `;
@@ -359,7 +395,7 @@ export class InjuriesService {
 
       // Fetch paginated results
       const dataQuery = `
-        MATCH (p:Player)-[r:SUSTAINED]->(i:Injury)
+        ${matchClause}
         ${whereClause}
         WITH i, p, r
         ORDER BY ${sortField} ${sortOrder}
@@ -386,10 +422,22 @@ export class InjuriesService {
 
       const dataResult = await session.run(dataQuery, params);
 
+      // Extract all pseudonym IDs for batch fetching
+      const pseudonymIds = dataResult.records
+        .map(record => record.get('pseudonymId'))
+        .filter(id => id !== null);
+
+      // Fetch all player identities in one query
+      const identityMap = await this.getPlayerIdentities(pseudonymIds);
+      console.log(`Fetched ${identityMap.size} player identities from PostgreSQL for ${pseudonymIds.length} injuries`);
+
       const injuries = dataResult.records.map(record => {
         const injury = record.get('i').properties;
         const statusUpdates = record.get('statusUpdates')
           .filter(update => update.updateId !== null);
+
+        const pseudonymId = record.get('pseudonymId');
+        const identity = pseudonymId ? identityMap.get(pseudonymId) : undefined;
 
         return {
           injuryId: injury.injuryId,
@@ -408,7 +456,9 @@ export class InjuriesService {
           updatedAt: injury.updatedAt.toString(),
           player: {
             playerId: record.get('playerId'),
-            pseudonymId: record.get('pseudonymId'),
+            pseudonymId: pseudonymId,
+            firstName: identity?.firstName,
+            lastName: identity?.lastName,
             diagnosedDate: record.get('diagnosedDate')?.toString(),
             reportedBy: record.get('reportedBy'),
           },
@@ -513,6 +563,40 @@ export class InjuriesService {
       throw new BadRequestException(`Failed to resolve injury: ${error.message}`);
     } finally {
       await session.close();
+    }
+  }
+
+  /**
+   * Get player identities (real names) from PostgreSQL by pseudonym IDs
+   */
+  private async getPlayerIdentities(pseudonymIds: string[]): Promise<Map<string, {firstName: string, lastName: string}>> {
+    if (pseudonymIds.length === 0) {
+      return new Map();
+    }
+
+    try {
+      const query = `
+        SELECT pseudonym_id, first_name, last_name
+        FROM player_identities
+        WHERE pseudonym_id = ANY($1)
+        AND deleted_at IS NULL
+      `;
+
+      const result = await this.pool.query(query, [pseudonymIds]);
+
+      const identityMap = new Map();
+      result.rows.forEach(row => {
+        identityMap.set(row.pseudonym_id, {
+          firstName: row.first_name,
+          lastName: row.last_name,
+        });
+      });
+
+      return identityMap;
+    } catch (error) {
+      console.error('Error fetching player identities:', error);
+      // Return empty map on error to avoid breaking the injury view
+      return new Map();
     }
   }
 }

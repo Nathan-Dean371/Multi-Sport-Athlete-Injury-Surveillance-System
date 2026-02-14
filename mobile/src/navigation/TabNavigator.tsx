@@ -11,6 +11,7 @@ import InjuryDetailScreen from '../screens/injuries/InjuryDetailScreen';
 import ReportInjuryScreen from '../screens/injuries/ReportInjuryScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import TeamDashboardScreen from '../screens/team/TeamDashboardScreen';
+import TeamRosterScreen from '../screens/team/TeamRosterScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -86,6 +87,11 @@ function TeamStack() {
         name="TeamDashboard" 
         component={TeamDashboardScreen} 
         options={{ title: 'Team Dashboard' }}
+      />
+      <Stack.Screen 
+        name="TeamRoster" 
+        component={TeamRosterScreen} 
+        options={{ title: 'Full Team Roster' }}
       />
     </Stack.Navigator>
   );
