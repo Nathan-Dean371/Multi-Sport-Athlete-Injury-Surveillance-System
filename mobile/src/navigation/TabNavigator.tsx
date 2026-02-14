@@ -9,6 +9,7 @@ import StatusHistoryScreen from '../screens/status/StatusHistoryScreen';
 import InjuryListScreen from '../screens/injuries/InjuryListScreen';
 import InjuryDetailScreen from '../screens/injuries/InjuryDetailScreen';
 import ReportInjuryScreen from '../screens/injuries/ReportInjuryScreen';
+import EditInjuryScreen from '../screens/injuries/EditInjuryScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import TeamDashboardScreen from '../screens/team/TeamDashboardScreen';
 import TeamRosterScreen from '../screens/team/TeamRosterScreen';
@@ -63,6 +64,11 @@ function InjuryStack() {
         name="ReportInjury" 
         component={ReportInjuryScreen} 
         options={{ title: 'Report Injury' }}
+      />
+      <Stack.Screen 
+        name="EditInjury" 
+        component={EditInjuryScreen} 
+        options={{ title: 'Update Injury' }}
       />
     </Stack.Navigator>
   );

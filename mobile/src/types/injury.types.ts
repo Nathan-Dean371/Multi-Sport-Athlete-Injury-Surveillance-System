@@ -78,6 +78,7 @@ export interface UpdateInjuryDto {
   side?: Side;
   severity?: Severity;
   status?: InjuryStatus;
+  statusNote?: string;
   mechanism?: string;
   diagnosis?: string;
   treatmentPlan?: string;
