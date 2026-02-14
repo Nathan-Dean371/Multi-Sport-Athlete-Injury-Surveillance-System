@@ -21,13 +21,13 @@ export class CoachTeamAccessGuard implements CanActivate {
     const teamId = request.params.teamId;
 
     // Admins have access to all teams
-    if (user.role === 'admin') {
+    if (user.identityType === 'admin') {
       return true;
     }
 
     // Coaches must manage the team to access it
-    if (user.role === 'coach') {
-      const hasAccess = await this.verifyCoachAccess(user.pseudoId, teamId);
+    if (user.identityType === 'coach') {
+      const hasAccess = await this.verifyCoachAccess(user.pseudonymId, teamId);
       if (!hasAccess) {
         throw new ForbiddenException('You do not have access to this team');
       }
@@ -45,7 +45,7 @@ export class CoachTeamAccessGuard implements CanActivate {
     const session = this.neo4jDriver.session();
     try {
       const result = await session.run(
-        `MATCH (c:Coach {pseudoId: $coachPseudoId})-[:COACHES]->(t:Team {id: $teamId})
+        `MATCH (c:Coach {pseudonymId: $coachPseudoId})-[:MANAGES]->(t:Team {teamId: $teamId})
          RETURN count(t) > 0 as hasAccess`,
         { coachPseudoId, teamId }
       );

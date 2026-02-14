@@ -10,6 +10,7 @@ import InjuryListScreen from '../screens/injuries/InjuryListScreen';
 import InjuryDetailScreen from '../screens/injuries/InjuryDetailScreen';
 import ReportInjuryScreen from '../screens/injuries/ReportInjuryScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
+import TeamDashboardScreen from '../screens/team/TeamDashboardScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -78,9 +79,22 @@ function ProfileStack() {
   );
 }
 
+function TeamStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen 
+        name="TeamDashboard" 
+        component={TeamDashboardScreen} 
+        options={{ title: 'Team Dashboard' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function TabNavigator() {
   const { user } = useAuth();
   const isPlayer = user?.identityType === 'player';
+  const isCoach = user?.identityType === 'coach';
 
   return (
     <Tab.Navigator
@@ -121,6 +135,18 @@ export default function TabNavigator() {
           ),
         }}
       />
+      
+      {isCoach && (
+        <Tab.Screen
+          name="Team"
+          component={TeamStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="account-group" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
       
       <Tab.Screen
         name="Profile"

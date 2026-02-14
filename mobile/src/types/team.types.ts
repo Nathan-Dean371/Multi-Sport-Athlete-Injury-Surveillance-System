@@ -26,20 +26,26 @@ export interface TeamRosterDto {
   sport: string;
   players: RosterPlayerDto[];
   totalPlayers: number;
+  playersReportedToday: number;
+  retrievedAt: string;
 }
 
 export interface CoachDto {
   coachId: string;
-  name: string;
-  email?: string;
+  pseudonymId: string;
+  specialization?: string;
 }
 
 export interface TeamDetailsDto {
   teamId: string;
   name: string;
   sport: string;
-  season?: string;
-  isActive: boolean;
+  ageGroup?: string;
+  gender?: string;
+  organizationId: string;
+  organizationName: string;
   coaches: CoachDto[];
   playerCount: number;
+  seasonStart?: string;
+  seasonEnd?: string;
 }

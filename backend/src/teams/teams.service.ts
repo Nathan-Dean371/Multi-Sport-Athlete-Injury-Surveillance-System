@@ -18,15 +18,16 @@ export class TeamsService {
 
     try {
       const query = `
-        MATCH (t:Team {id: $teamId})<-[:PLAYS_FOR]-(p:Player)
+        MATCH (t:Team {teamId: $teamId})<-[:PLAYS_FOR]-(p:Player)
+        OPTIONAL MATCH (t)-[:PLAYS]->(sp:Sport)
         OPTIONAL MATCH (p)-[:HAS_STATUS]->(s:StatusUpdate)
         WHERE s.date = date()
         OPTIONAL MATCH (p)-[:SUSTAINED]->(i:Injury {isResolved: false})
-        WITH t, p, s, count(i) as activeInjuries
+        WITH t, sp, p, s, count(i) as activeInjuries
         ORDER BY p.lastName, p.firstName
-        RETURN t.id as teamId,
+        RETURN t.teamId as teamId,
                t.name as teamName,
-               t.sport as sport,
+               sp.name as sport,
                collect({
                  playerId: p.playerId,
                  firstName: p.firstName,
@@ -90,24 +91,23 @@ export class TeamsService {
     const session: Session = this.neo4jDriver.session();
 
     try {
-      const query = `
-        MATCH (t:Team {id: $teamId})-[:BELONGS_TO]->(o:Organization)
-        OPTIONAL MATCH (t)<-[:COACHES]-(c:Coach)
+      const query = `\n        MATCH (t:Team {teamId: $teamId})-[:BELONGS_TO]->(o:Organization)
+        OPTIONAL MATCH (t)-[:PLAYS]->(sp:Sport)
+        OPTIONAL MATCH (t)<-[:MANAGES]-(c:Coach)
         OPTIONAL MATCH (t)<-[:PLAYS_FOR]-(p:Player)
-        RETURN t.id as teamId,
+        RETURN t.teamId as teamId,
                t.name as name,
-               t.sport as sport,
+               sp.name as sport,
                t.ageGroup as ageGroup,
                t.gender as gender,
-               o.id as organizationId,
+               o.orgId as organizationId,
                o.name as organizationName,
                t.seasonStart as seasonStart,
                t.seasonEnd as seasonEnd,
                collect(DISTINCT {
                  coachId: c.coachId,
-                 firstName: c.firstName,
-                 lastName: c.lastName,
-                 role: c.role
+                 pseudonymId: c.pseudonymId,
+                 specialization: c.specialization
                }) as coaches,
                count(DISTINCT p) as playerCount
       `;
@@ -126,9 +126,8 @@ export class TeamsService {
         .filter((c: any) => c.coachId !== null)
         .map((c: any) => ({
           coachId: c.coachId,
-          firstName: c.firstName,
-          lastName: c.lastName,
-          role: c.role,
+          pseudonymId: c.pseudonymId,
+          specialization: c.specialization,
         }));
 
       return {
@@ -162,7 +161,7 @@ export class TeamsService {
 
     try {
       const query = `
-        MATCH (c:Coach {pseudoId: $coachPseudoId})-[:COACHES]->(t:Team {id: $teamId})
+        MATCH (c:Coach {pseudonymId: $coachPseudoId})-[:MANAGES]->(t:Team {teamId: $teamId})
         RETURN count(t) > 0 as hasAccess
       `;
 
@@ -176,6 +175,53 @@ export class TeamsService {
     } catch (error) {
       console.error('Error verifying coach access:', error);
       return false;
+    } finally {
+      await session.close();
+    }
+  }
+
+  /**
+   * Get all teams coached by a specific coach
+   */
+  async getCoachTeams(coachPseudoId: string): Promise<TeamDetailsDto[]> {
+    const session: Session = this.neo4jDriver.session();
+
+    try {
+      const query = `
+        MATCH (c:Coach {pseudonymId: $coachPseudoId})-[:MANAGES]->(t:Team)-[:BELONGS_TO]->(o:Organization)
+        OPTIONAL MATCH (t)-[:PLAYS]->(sp:Sport)
+        OPTIONAL MATCH (t)<-[:PLAYS_FOR]-(p:Player)
+        WITH t, sp, o, count(DISTINCT p) as playerCount
+        ORDER BY t.name
+        RETURN t.teamId as teamId,
+               t.name as name,
+               sp.name as sport,
+               t.ageGroup as ageGroup,
+               t.gender as gender,
+               o.orgId as organizationId,
+               o.name as organizationName,
+               playerCount as playerCount,
+               t.seasonStart as seasonStart,
+               t.seasonEnd as seasonEnd
+      `;
+
+      const result = await session.run(query, { coachPseudoId });
+
+      return result.records.map((record) => ({
+        teamId: record.get('teamId'),
+        name: record.get('name'),
+        sport: record.get('sport'),
+        ageGroup: record.get('ageGroup'),
+        gender: record.get('gender'),
+        organizationId: record.get('organizationId'),
+        organizationName: record.get('organizationName'),
+        coaches: [], // Not needed for this list view
+        playerCount: record.get('playerCount').toNumber(),
+        seasonStart: record.get('seasonStart'),
+        seasonEnd: record.get('seasonEnd'),
+      }));
+    } catch (error) {
+      throw new BadRequestException(`Failed to retrieve coach teams: ${error.message}`);
     } finally {
       await session.close();
     }

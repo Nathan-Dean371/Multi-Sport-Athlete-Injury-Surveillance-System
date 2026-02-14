@@ -4,14 +4,11 @@ export class CoachInfoDto {
   @ApiProperty({ example: 'COACH-001' })
   coachId: string;
 
-  @ApiProperty({ example: 'Sarah' })
-  firstName: string;
+  @ApiProperty({ example: 'PSY-COACH-8F2A9D1B' })
+  pseudonymId: string;
 
-  @ApiProperty({ example: "O'Connor" })
-  lastName: string;
-
-  @ApiPropertyOptional({ example: 'Head Coach' })
-  role?: string;
+  @ApiPropertyOptional({ example: 'Physiotherapy' })
+  specialization?: string;
 }
 
 export class TeamDetailsDto {

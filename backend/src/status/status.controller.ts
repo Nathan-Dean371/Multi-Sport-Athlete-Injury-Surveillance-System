@@ -83,7 +83,7 @@ export class StatusController {
     description: 'Forbidden - requires coach or admin role' 
   })
   async getLatestStatuses(@Request() req) {
-    const coachPseudoId = req.user.pseudoId;
+    const coachPseudoId = req.user.pseudonymId;
     return this.statusService.getLatestTeamStatuses(coachPseudoId);
   }
 

@@ -2,7 +2,8 @@ import {
   Controller, 
   Get, 
   Param, 
-  UseGuards 
+  UseGuards,
+  Request 
 } from '@nestjs/common';
 import { 
   ApiTags, 
@@ -16,12 +17,38 @@ import { TeamRosterDto } from './dto/team-roster.dto';
 import { TeamDetailsDto } from './dto/team-details.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CoachTeamAccessGuard } from '../common/guards/coach-team-access.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 @ApiTags('teams')
 @ApiBearerAuth('JWT-auth')
 @Controller('teams')
 export class TeamsController {
   constructor(private readonly teamsService: TeamsService) {}
+
+  @Get('coach/my-teams')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('coach')
+  @ApiOperation({ 
+    summary: 'Get teams coached by current user',
+    description: 'Returns all teams that the authenticated coach manages. Only accessible by coaches.'
+  })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Coach teams retrieved successfully',
+    type: [TeamDetailsDto]
+  })
+  @ApiResponse({ 
+    status: 401, 
+    description: 'Unauthorized - JWT token required' 
+  })
+  @ApiResponse({ 
+    status: 403, 
+    description: 'Forbidden - Only coaches can access this endpoint' 
+  })
+  async getCoachTeams(@Request() req): Promise<TeamDetailsDto[]> {
+    return this.teamsService.getCoachTeams(req.user.pseudonymId);
+  }
 
   @Get(':teamId/players')
   @UseGuards(JwtAuthGuard, CoachTeamAccessGuard)

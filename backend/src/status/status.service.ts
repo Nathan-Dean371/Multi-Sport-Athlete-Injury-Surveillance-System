@@ -86,16 +86,17 @@ export class StatusService {
     try {
       // Query to get all teams coached by this coach, with player statuses
       const query = `
-        MATCH (c:Coach {pseudoId: $coachPseudoId})-[:COACHES]->(t:Team)
+        MATCH (c:Coach {pseudonymId: $coachPseudoId})-[:MANAGES]->(t:Team)
+        OPTIONAL MATCH (t)-[:PLAYS]->(sp:Sport)
         MATCH (t)<-[:PLAYS_FOR]-(p:Player)
         OPTIONAL MATCH (p)-[:HAS_STATUS]->(s:StatusUpdate)
         WHERE s.date = date()
         OPTIONAL MATCH (p)-[:SUSTAINED]->(i:Injury {isResolved: false})
-        WITH t, p, s, count(i) as activeInjuries
+        WITH t, sp, p, s, count(i) as activeInjuries
         ORDER BY t.name, p.lastName
-        RETURN t.id as teamId, 
+        RETURN t.teamId as teamId, 
                t.name as teamName, 
-               t.sport as sport,
+               sp.name as sport,
                collect({
                  playerId: p.playerId,
                  firstName: p.firstName,
