@@ -140,6 +140,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={!!errors.playerId}
+                  textColor="#000000"
                   style={styles.input}
                 />
               )}
@@ -170,6 +171,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
                   mode={value === type ? 'contained' : 'outlined'}
                   onPress={() => onChange(type)}
                   style={styles.chip}
+                  textColor={value === type ? undefined : '#000000'}
                   compact
                 >
                   {type}
@@ -202,6 +204,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
                   mode={value === part ? 'contained' : 'outlined'}
                   onPress={() => onChange(part)}
                   style={styles.chip}
+                  textColor={value === part ? undefined : '#000000'}
                   compact
                 >
                   {part}
@@ -228,6 +231,8 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               buttons={sides.map((side) => ({
                 value: side,
                 label: side,
+                uncheckedColor: '#000000',
+                labelStyle: value === side ? undefined : { color: '#000000' },
               }))}
               style={styles.segmentedButtons}
             />
@@ -246,6 +251,8 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               buttons={severities.map((severity) => ({
                 value: severity,
                 label: severity,
+                uncheckedColor: '#000000',
+                labelStyle: value === severity ? undefined : { color: '#000000' },
               }))}
               style={styles.segmentedButtons}
             />
@@ -258,6 +265,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           mode="outlined"
           onPress={() => setShowInjuryDatePicker(true)}
           icon="calendar"
+          textColor="#000000"
           style={styles.dateButton}
         >
           {injuryDate ? format(new Date(injuryDate), 'MMM dd, yyyy') : 'Select Date'}
@@ -283,6 +291,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           mode="outlined"
           onPress={() => setShowReturnDatePicker(true)}
           icon="calendar"
+          textColor="#000000"
           style={styles.dateButton}
         >
           {expectedReturnDate ? format(new Date(expectedReturnDate), 'MMM dd, yyyy') : 'Select Date (Optional)'}
@@ -314,6 +323,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="How did the injury occur?"
+              textColor="#000000"
               style={styles.input}
             />
           )}
@@ -333,6 +343,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               multiline
               numberOfLines={3}
               placeholder="Medical diagnosis..."
+              textColor="#000000"
               style={styles.input}
             />
           )}
@@ -352,6 +363,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               multiline
               numberOfLines={3}
               placeholder="Planned treatment and rehabilitation..."
+              textColor="#000000"
               style={styles.input}
             />
           )}
@@ -371,6 +383,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               multiline
               numberOfLines={3}
               placeholder="Any additional information..."
+              textColor="#000000"
               style={styles.input}
             />
           )}
@@ -414,6 +427,7 @@ const styles = StyleSheet.create({
   title: {
     fontWeight: 'bold',
     marginBottom: 24,
+    color: '#000',
   },
   playerCard: {
     marginBottom: 20,

@@ -61,6 +61,18 @@ Each ADR follows this structure:
   - Status: Accepted
   - Summary: Implement stateless JWT authentication with refresh token rotation for mobile and web clients
 
+### Implementation Strategy
+
+- **[ADR-0004.1: MVP Endpoints Implementation Strategy](./adr-0004.1-mvp-endpoints-implementation.md)**
+  - Status: Accepted
+  - Summary: Phased implementation of backend endpoints prioritized by critical path (auth, players, injuries, coaches)
+
+### Quality Assurance
+
+- **[ADR-0008: Testing Strategy Before Cloud Deployment](./adr-0008-testing-before-deployment.md)**
+  - Status: In Progress
+  - Summary: Implement comprehensive test suite (unit, integration, E2E) before deploying to Azure or Railway
+
 ### Frontend
 
 - **[ADR-0007: React Web Dashboard Technology](./adr-0007-react-web-dashboard.md)**
@@ -74,9 +86,9 @@ Each ADR follows this structure:
 The following decisions may need ADRs as development progresses:
 
 ### Planned
-- **ADR-0008**: Firebase Cloud Messaging for Notifications
-- **ADR-0009**: Testing Strategy (Unit, Integration, E2E)
-- **ADR-0010**: Deployment Strategy (Docker, CI/CD)
+- **ADR-0009**: Firebase Cloud Messaging for Notifications
+- **ADR-0010**: Deployment Strategy (Docker, CI/CD, Azure vs Railway)
+- **ADR-0011**: Containerization and Infrastructure as Code
 
 ### Potential
 - State management strategy (React Query, Redux, Context)
