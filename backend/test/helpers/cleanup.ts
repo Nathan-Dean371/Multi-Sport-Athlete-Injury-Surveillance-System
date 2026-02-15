@@ -31,6 +31,10 @@ export async function cleanPostgresTestDb(pool: Pool): Promise<void> {
 /**
  * Clean Neo4j test database
  * Removes all nodes and relationships
+ *
+ * ✅ SAFE TO USE - Connected to dedicated test container!
+ * .env.test points to bolt://localhost:7688 (injury-surveillance-neo4j-test)
+ * This will NOT affect your development data.
  */
 export async function cleanNeo4jTestDb(driver: Driver): Promise<void> {
   const session = driver.session();

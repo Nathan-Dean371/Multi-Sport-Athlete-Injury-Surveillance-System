@@ -1,13 +1,13 @@
-import { Injectable, UnauthorizedException, Inject } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { Pool } from 'pg';
-import * as bcrypt from 'bcryptjs';
-import { LoginDto, RegisterDto, AuthResponseDto } from './dto/auth.dto';
+import { Injectable, UnauthorizedException, Inject } from "@nestjs/common";
+import { JwtService } from "@nestjs/jwt";
+import { Pool } from "pg";
+import * as bcrypt from "bcryptjs";
+import { LoginDto, RegisterDto, AuthResponseDto } from "./dto/auth.dto";
 
 @Injectable()
 export class AuthService {
   constructor(
-    @Inject('POSTGRES_POOL') private readonly pool: Pool,
+    @Inject("POSTGRES_POOL") private readonly pool: Pool,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -23,18 +23,18 @@ export class AuthService {
     );
 
     if (result.rows.length === 0) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     const user = result.rows[0];
 
     // Check if account is active and not locked
     if (!user.is_active) {
-      throw new UnauthorizedException('Account is inactive');
+      throw new UnauthorizedException("Account is inactive");
     }
 
     if (user.is_locked) {
-      throw new UnauthorizedException('Account is locked');
+      throw new UnauthorizedException("Account is locked");
     }
 
     // Verify password
@@ -48,7 +48,7 @@ export class AuthService {
          WHERE id = $1`,
         [user.id],
       );
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException("Invalid credentials");
     }
 
     // Update last login and reset failed attempts
@@ -82,21 +82,22 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const { email, password, firstName, lastName, dateOfBirth, identityType } = registerDto;
+    const { email, password, firstName, lastName, dateOfBirth, identityType } =
+      registerDto;
 
     // Check if user already exists
     const existingUser = await this.pool.query(
-      'SELECT id FROM user_accounts WHERE email = $1',
+      "SELECT id FROM user_accounts WHERE email = $1",
       [email],
     );
 
     if (existingUser.rows.length > 0) {
-      throw new UnauthorizedException('Email already exists');
+      throw new UnauthorizedException("Email already exists");
     }
 
     // Hash password (bcrypt includes salt in the hash)
     const passwordHash = await bcrypt.hash(password, 10);
-    const passwordSalt = 'bcrypt'; // bcrypt embeds salt in hash
+    const passwordSalt = "bcrypt"; // bcrypt embeds salt in hash
 
     // Generate pseudonym ID
     const pseudonymId = `PSY-${identityType.toUpperCase()}-${this.generateRandomId()}`;
@@ -104,45 +105,64 @@ export class AuthService {
     // Start transaction
     const client = await this.pool.connect();
     try {
-      await client.query('BEGIN');
+      await client.query("BEGIN");
 
       // Insert into appropriate identity table
       let identityTable: string;
       let identityResult;
 
       switch (identityType) {
-        case 'player':
-          identityTable = 'player_identities';
+        case "player":
+          identityTable = "player_identities";
           identityResult = await client.query(
             `INSERT INTO player_identities 
              (pseudonym_id, neo4j_player_id, first_name, last_name, date_of_birth, email, is_active, gdpr_consent_given, gdpr_consent_date)
              VALUES ($1, $2, $3, $4, $5, $6, true, true, CURRENT_TIMESTAMP)
              RETURNING id`,
-            [pseudonymId, `PLAYER-${this.generateRandomId()}`, firstName, lastName, dateOfBirth, email],
+            [
+              pseudonymId,
+              `PLAYER-${this.generateRandomId()}`,
+              firstName,
+              lastName,
+              dateOfBirth,
+              email,
+            ],
           );
           break;
-        case 'coach':
-          identityTable = 'coach_identities';
+        case "coach":
+          identityTable = "coach_identities";
           identityResult = await client.query(
             `INSERT INTO coach_identities 
              (pseudonym_id, neo4j_coach_id, first_name, last_name, email, is_active)
              VALUES ($1, $2, $3, $4, $5, true)
              RETURNING id`,
-            [pseudonymId, `COACH-${this.generateRandomId()}`, firstName, lastName, email],
+            [
+              pseudonymId,
+              `COACH-${this.generateRandomId()}`,
+              firstName,
+              lastName,
+              email,
+            ],
           );
           break;
-        case 'admin':
-          identityTable = 'admin_identities';
+        case "admin":
+          identityTable = "admin_identities";
           identityResult = await client.query(
             `INSERT INTO admin_identities 
-             (pseudonym_id, first_name, last_name, email, is_active)
-             VALUES ($1, $2, $3, $4, true)
+             (pseudonym_id, neo4j_admin_id, first_name, last_name, email, is_active)
+             VALUES ($1, $2, $3, $4, $5, true)
              RETURNING id`,
-            [pseudonymId, firstName, lastName, email],
+            [
+              pseudonymId,
+              `ADMIN-${this.generateRandomId()}`,
+              firstName,
+              lastName,
+              email,
+            ],
           );
           break;
         default:
-          throw new Error('Invalid identity type');
+          throw new Error("Invalid identity type");
       }
 
       // Insert into user_accounts
@@ -151,10 +171,17 @@ export class AuthService {
          (email, password_hash, password_salt, identity_type, pseudonym_id, identity_id, is_active)
          VALUES ($1, $2, $3, $4, $5, $6, true)
          RETURNING id`,
-        [email, passwordHash, passwordSalt, identityType, pseudonymId, identityResult.rows[0].id],
+        [
+          email,
+          passwordHash,
+          passwordSalt,
+          identityType,
+          pseudonymId,
+          identityResult.rows[0].id,
+        ],
       );
 
-      await client.query('COMMIT');
+      await client.query("COMMIT");
 
       // Generate JWT token
       const payload = {
@@ -176,7 +203,7 @@ export class AuthService {
         },
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      await client.query("ROLLBACK");
       throw error;
     } finally {
       client.release();
@@ -190,7 +217,7 @@ export class AuthService {
        WHERE id = $1`,
       [userId],
     );
-    
+
     if (result.rows.length === 0) {
       return null;
     }

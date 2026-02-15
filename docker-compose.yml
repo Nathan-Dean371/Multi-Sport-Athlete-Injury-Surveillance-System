@@ -1,4 +1,3 @@
-
 # ============================================================================
 # Multi-Sport Athlete Injury Surveillance System
 # Docker Compose for Intel/AMD64 Platforms
@@ -6,7 +5,7 @@
 
 services:
   # --------------------------------------------------------------------------
-  # Neo4j Graph Database
+  # Neo4j Graph Database (Development)
   # --------------------------------------------------------------------------
   neo4j:
     image: neo4j:5.25-community
@@ -18,16 +17,42 @@ services:
     environment:
       - NEO4J_AUTH=neo4j/injury-surveillance-dev-password
       - NEO4J_PLUGINS=["apoc"]
-      
+
       # Memory settings
       - NEO4J_server_memory_heap_initial__size=256m
       - NEO4J_server_memory_heap_max__size=1G
       - NEO4J_server_memory_pagecache_size=256m
-      
+
     volumes:
       - neo4j-data:/data
       - neo4j-logs:/logs
-    
+
+    networks:
+      - injury-surveillance-network
+
+  # --------------------------------------------------------------------------
+  # Neo4j Graph Database (Testing)
+  # --------------------------------------------------------------------------
+  neo4j-test:
+    image: neo4j:5.25-community
+    container_name: injury-surveillance-neo4j-test
+    restart: unless-stopped
+    ports:
+      - "7475:7474" # Browser UI
+      - "7688:7687" # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/injury-surveillance-test-password
+      - NEO4J_PLUGINS=["apoc"]
+
+      # Memory settings (lighter for testing)
+      - NEO4J_server_memory_heap_initial__size=256m
+      - NEO4J_server_memory_heap_max__size=512m
+      - NEO4J_server_memory_pagecache_size=128m
+
+    volumes:
+      - neo4j-test-data:/data
+      - neo4j-test-logs:/logs
+
     networks:
       - injury-surveillance-network
 
@@ -45,10 +70,10 @@ services:
       - POSTGRES_USER=identity_admin
       - POSTGRES_PASSWORD=identity-service-dev-password
       - PGDATA=/var/lib/postgresql/data/pgdata
-    
+
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    
+
     networks:
       - injury-surveillance-network
 
@@ -65,13 +90,13 @@ services:
       - PGADMIN_DEFAULT_EMAIL=admin@example.com
       - PGADMIN_DEFAULT_PASSWORD=pgadmin-dev-password
       - PGADMIN_CONFIG_SERVER_MODE=False
-    
+
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-    
+
     networks:
       - injury-surveillance-network
-    
+
     depends_on:
       - postgres
 
@@ -80,6 +105,10 @@ volumes:
     name: injury-surveillance-neo4j-data
   neo4j-logs:
     name: injury-surveillance-neo4j-logs
+  neo4j-test-data:
+    name: injury-surveillance-neo4j-test-data
+  neo4j-test-logs:
+    name: injury-surveillance-neo4j-test-logs
   postgres-data:
     name: injury-surveillance-postgres-data
   pgadmin-data:
