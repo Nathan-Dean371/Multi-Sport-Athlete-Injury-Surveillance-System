@@ -10,6 +10,7 @@ describe("TeamsService", () => {
   let mockNeo4jDriver: jest.Mocked<Driver>;
   let mockSession: jest.Mocked<Session>;
   let mockPool: jest.Mocked<Pool>;
+  let mockPoolQuery: jest.Mock;
 
   const mockRosterRecord = {
     get: (key: string) => {
@@ -92,6 +93,7 @@ describe("TeamsService", () => {
       connect: jest.fn(),
       end: jest.fn(),
     } as any;
+    mockPoolQuery = mockPool.query as unknown as jest.Mock;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -120,7 +122,7 @@ describe("TeamsService", () => {
         records: [mockRosterRecord],
       } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PSY-001", first_name: "John", last_name: "Doe" },
           { pseudonym_id: "PSY-002", first_name: "Jane", last_name: "Smith" },
@@ -143,7 +145,7 @@ describe("TeamsService", () => {
         records: [mockRosterRecord],
       } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PSY-001", first_name: "John", last_name: "Doe" },
           { pseudonym_id: "PSY-002", first_name: "Jane", last_name: "Smith" },
@@ -195,7 +197,7 @@ describe("TeamsService", () => {
         records: [multiPlayerRecord],
       } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PSY-1", first_name: "Charlie", last_name: "Brown" },
           { pseudonym_id: "PSY-2", first_name: "Alice", last_name: "Smith" },
@@ -218,7 +220,7 @@ describe("TeamsService", () => {
         records: [mockRosterRecord],
       } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PSY-001", first_name: "John", last_name: "Doe" },
           { pseudonym_id: "PSY-002", first_name: "Jane", last_name: "Smith" },
@@ -237,7 +239,7 @@ describe("TeamsService", () => {
       } as any);
 
       // PostgreSQL returns only one identity
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PSY-001", first_name: "John", last_name: "Doe" },
         ],
@@ -266,7 +268,7 @@ describe("TeamsService", () => {
         records: [mockRosterRecord],
       } as any);
 
-      mockPool.query.mockRejectedValue(new Error("Database connection failed"));
+      mockPoolQuery.mockRejectedValue(new Error("Database connection failed"));
 
       const result = await service.getTeamRoster("TEAM-001");
 

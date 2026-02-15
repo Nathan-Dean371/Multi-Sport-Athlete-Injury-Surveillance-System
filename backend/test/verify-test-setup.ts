@@ -18,11 +18,11 @@ async function verifySetup() {
 
   // PostgreSQL connection
   const postgresConfig = {
-    host: process.env.POSTGRES_HOST,
+    host: process.env.POSTGRES_HOST || "localhost",
     port: parseInt(process.env.POSTGRES_PORT || "5432"),
-    database: process.env.POSTGRES_DB,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB || "identity_service_test",
+    user: process.env.POSTGRES_USER || "identity_admin",
+    password: process.env.POSTGRES_PASSWORD || "",
   };
 
   console.log("📊 PostgreSQL Configuration:");
@@ -48,20 +48,21 @@ async function verifySetup() {
       ORDER BY table_name
     `);
     console.log(`   Tables: ${tablesResult.rows.length} found`);
-    tablesResult.rows.forEach((row) => {
+    tablesResult.rows.forEach((row: { table_name: string }) => {
       console.log(`     - ${row.table_name}`);
     });
 
     client.release();
   } catch (error) {
-    console.error("❌ PostgreSQL Connection Failed:", error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("❌ PostgreSQL Connection Failed:", message);
   }
 
   // Neo4j connection
   const neo4jConfig = {
-    uri: process.env.NEO4J_URI,
-    username: process.env.NEO4J_USERNAME,
-    password: process.env.NEO4J_PASSWORD,
+    uri: process.env.NEO4J_URI || "bolt://localhost:7687",
+    username: process.env.NEO4J_USERNAME || "neo4j",
+    password: process.env.NEO4J_PASSWORD || "",
   };
 
   console.log("\n📊 Neo4j Configuration:");
@@ -90,7 +91,8 @@ async function verifySetup() {
 
     await session.close();
   } catch (error) {
-    console.error("❌ Neo4j Connection Failed:", error.message);
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("❌ Neo4j Connection Failed:", message);
   }
 
   // Cleanup

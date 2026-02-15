@@ -1,6 +1,6 @@
 import { Pool } from "pg";
 import { Driver } from "neo4j-driver";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 /**
  * Seed test data for integration tests

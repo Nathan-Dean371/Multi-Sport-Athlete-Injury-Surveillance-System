@@ -13,13 +13,13 @@ export function createTestDatabaseConnections() {
     port: parseInt(process.env.POSTGRES_PORT || "5432"),
     database: process.env.POSTGRES_DB || "identity_service_test",
     user: process.env.POSTGRES_USER || "identity_admin",
-    password: process.env.POSTGRES_PASSWORD,
+    password: process.env.POSTGRES_PASSWORD || "",
   };
 
   const neo4jConfig = {
     uri: process.env.NEO4J_URI || "bolt://localhost:7687",
     username: process.env.NEO4J_USERNAME || "neo4j",
-    password: process.env.NEO4J_PASSWORD,
+    password: process.env.NEO4J_PASSWORD || "",
   };
 
   const postgresPool = new Pool(postgresConfig);

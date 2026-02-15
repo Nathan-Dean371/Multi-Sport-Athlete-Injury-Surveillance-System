@@ -11,14 +11,9 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "bundler",
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "typeRoots": ["./backend/node_modules/@types"]
   },
-  "include": [
-    "tests/**/*",
-    "scripts/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
-  ]
+  "include": ["tests/**/*", "scripts/**/*"],
+  "exclude": ["node_modules", "dist", "backend", "mobile"]
 }
