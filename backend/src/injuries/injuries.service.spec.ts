@@ -16,6 +16,7 @@ describe("InjuriesService", () => {
   let mockNeo4jDriver: jest.Mocked<Driver>;
   let mockSession: jest.Mocked<Session>;
   let mockPool: jest.Mocked<Pool>;
+  let mockPoolQuery: jest.Mock;
 
   const mockPlayerQuery = (exists: boolean) => ({
     records: exists
@@ -80,6 +81,7 @@ describe("InjuriesService", () => {
       connect: jest.fn(),
       end: jest.fn(),
     } as any;
+    mockPoolQuery = mockPool.query as unknown as jest.Mock;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -127,7 +129,7 @@ describe("InjuriesService", () => {
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any);
 
       // Mock PostgreSQL query for player identity
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -180,7 +182,7 @@ describe("InjuriesService", () => {
         // Mock findOne
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -204,7 +206,7 @@ describe("InjuriesService", () => {
         records: [mockInjuryRecord],
       } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -262,7 +264,7 @@ describe("InjuriesService", () => {
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any)
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -292,7 +294,7 @@ describe("InjuriesService", () => {
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any)
         .mockResolvedValueOnce({ records: [mockInjuryRecord] } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -338,7 +340,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord, mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -368,7 +370,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -395,7 +397,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -423,7 +425,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -451,7 +453,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
@@ -484,7 +486,7 @@ describe("InjuriesService", () => {
           records: [mockInjuryRecord],
         } as any);
 
-      mockPool.query.mockResolvedValue({
+      mockPoolQuery.mockResolvedValue({
         rows: [
           { pseudonym_id: "PLAYER-001", first_name: "John", last_name: "Doe" },
         ],
