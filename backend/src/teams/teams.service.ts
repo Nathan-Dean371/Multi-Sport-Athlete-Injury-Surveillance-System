@@ -64,6 +64,7 @@ export class TeamsService {
         const identity = identityMap.get(p.pseudonymId);
         return {
           playerId: p.playerId,
+          pseudonymId: p.pseudonymId,
           firstName: identity?.firstName || 'Unknown',
           lastName: identity?.lastName || 'Player',
           position: p.position,

@@ -14,6 +14,9 @@ export default function InjuryDetailScreen({ route, navigation }: any) {
   const [injury, setInjury] = useState<InjuryDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
 
+  console.log('🔍 InjuryDetailScreen - injuryId:', injuryId);
+  console.log('🔍 InjuryDetailScreen - route.params:', route.params);
+
   useEffect(() => {
     fetchInjuryDetails();
   }, [injuryId]);
@@ -21,7 +24,9 @@ export default function InjuryDetailScreen({ route, navigation }: any) {
   const fetchInjuryDetails = async () => {
     try {
       setLoading(true);
+      console.log('📡 Fetching injury details for ID:', injuryId);
       const data = await injuryService.getInjuryById(injuryId);
+      console.log('✅ Injury data received:', data);
       setInjury(data);
     } catch (error) {
       console.error('Error fetching injury details:', error);
@@ -300,7 +305,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bodyPart: {
-    opacity: 0.7,
+    color: '#E0E0E0',
   },
   severityBadge: {
     paddingHorizontal: 16,
@@ -324,7 +329,8 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     width: 140,
-    opacity: 0.7,
+    color: '#B0B0B0',
+    fontWeight: '500',
   },
   infoValue: {
     flex: 1,
@@ -334,7 +340,8 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     marginBottom: 4,
-    opacity: 0.7,
+    color: '#B0B0B0',
+    fontWeight: '500',
   },
   detailText: {
     lineHeight: 20,

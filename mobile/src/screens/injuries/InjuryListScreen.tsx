@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Searchbar, Chip, FAB, useTheme } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
 import InjuryCard from '../../components/injury/InjuryCard';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -18,9 +19,12 @@ export default function InjuryListScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<InjuryStatus | 'ALL'>('ALL');
 
-  useEffect(() => {
-    fetchInjuries();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      console.log('📍 InjuryListScreen focused - fetching injuries');
+      fetchInjuries();
+    }, [user])
+  );
 
   useEffect(() => {
     filterInjuries();
@@ -32,6 +36,8 @@ export default function InjuryListScreen({ navigation }: any) {
       const response = await injuryService.getAllInjuries({
         playerId: user?.identityType === 'player' ? user.pseudonymId : undefined,
       });
+      console.log('📋 Fetched injuries:', response.data.length, 'injuries');
+      console.log('📋 First injury:', response.data[0]);
       setInjuries(response.data);
     } catch (error) {
       console.error('Error fetching injuries:', error);
@@ -69,11 +75,22 @@ export default function InjuryListScreen({ navigation }: any) {
   };
 
   const handleInjuryPress = (injury: InjuryDetailDto) => {
+    console.log('🎯 Navigating to injury detail:', {
+      injuryId: injury.injuryId,
+      injuryType: injury.injuryType,
+      fullInjury: injury
+    });
     navigation.navigate('InjuryDetail', { injuryId: injury.injuryId });
   };
 
   const handleReportInjury = () => {
-    navigation.navigate('ReportInjury');
+    // For coaches, navigate to the new report type selection screen
+    if (user?.identityType === 'coach' || user?.identityType === 'admin') {
+      navigation.navigate('SelectReportType');
+    } else {
+      // Players can directly report their own injuries
+      navigation.navigate('ReportInjury');
+    }
   };
 
   const filters: Array<{ label: string; value: InjuryStatus | 'ALL' }> = [
@@ -193,7 +210,7 @@ const styles = StyleSheet.create({
   },
   resultCount: {
     marginBottom: 12,
-    opacity: 0.7,
+    color: '#424242',
   },
   fab: {
     position: 'absolute',

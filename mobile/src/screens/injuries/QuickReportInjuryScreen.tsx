@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, SegmentedButtons, Snackbar, useTheme, Card } from 'react-native-paper';
+import { Text, TextInput, Button, SegmentedButtons, Snackbar, useTheme, Card, Chip } from 'react-native-paper';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
@@ -10,69 +10,69 @@ import { CreateInjuryDto, InjuryType, BodyPart, Side, Severity } from '../../typ
 import injuryService from '../../services/injury.service';
 import { format } from 'date-fns';
 
+// Form data type for internal use (with Date objects)
+interface QuickReportFormData {
+  playerId: string;
+  injuryType: InjuryType;
+  bodyPart: BodyPart;
+  side: Side;
+  severity: Severity;
+  injuryDate: Date;
+  notes?: string;
+}
+
 const schema = yup.object().shape({
   playerId: yup.string().required('Player ID is required'),
-  injuryType: yup.string().required('Injury type is required'),
-  bodyPart: yup.string().required('Body part is required'),
-  side: yup.string().required('Side is required'),
-  severity: yup.string().required('Severity is required'),
+  injuryType: yup.mixed<InjuryType>().oneOf(Object.values(InjuryType)).required('Injury type is required'),
+  bodyPart: yup.mixed<BodyPart>().oneOf(Object.values(BodyPart)).required('Body part is required'),
+  side: yup.mixed<Side>().oneOf(Object.values(Side)).required('Side is required'),
+  severity: yup.mixed<Severity>().oneOf(Object.values(Severity)).required('Severity is required'),
   injuryDate: yup.date().required('Injury date is required'),
-  mechanism: yup.string(),
-  diagnosis: yup.string(),
-  treatmentPlan: yup.string(),
-  expectedReturnDate: yup.date(),
   notes: yup.string(),
 });
 
-export default function ReportInjuryScreen({ navigation, route }: any) {
-  const { playerId: routePlayerId, playerName: routePlayerName } = route?.params || {};
+interface QuickReportInjuryScreenProps {
+  navigation: any;
+  route: any;
+}
+
+export default function QuickReportInjuryScreen({ navigation, route }: QuickReportInjuryScreenProps) {
+  const { playerId, playerName } = route.params;
   const { user } = useAuth();
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [showInjuryDatePicker, setShowInjuryDatePicker] = useState(false);
-  const [showReturnDatePicker, setShowReturnDatePicker] = useState(false);
 
-  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<CreateInjuryDto>({
+  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<QuickReportFormData>({
     resolver: yupResolver(schema),
     defaultValues: {
-      playerId: routePlayerId || user?.pseudonymId || '',
+      playerId: playerId,
       injuryType: undefined,
       bodyPart: undefined,
       side: Side.LEFT,
       severity: Severity.MODERATE,
       injuryDate: new Date(),
-      mechanism: '',
-      diagnosis: '',
-      treatmentPlan: '',
-      expectedReturnDate: undefined,
       notes: '',
     },
   });
 
   const injuryDate = watch('injuryDate');
-  const expectedReturnDate = watch('expectedReturnDate');
 
-  const onSubmit = async (data: CreateInjuryDto) => {
+  const onSubmit = async (data: QuickReportFormData) => {
     try {
       setLoading(true);
       
       const formattedData: CreateInjuryDto = {
         ...data,
         injuryDate: format(new Date(data.injuryDate), 'yyyy-MM-dd'),
-        expectedReturnDate: data.expectedReturnDate 
-          ? format(new Date(data.expectedReturnDate), 'yyyy-MM-dd')
-          : undefined,
-        mechanism: data.mechanism || undefined,
-        diagnosis: data.diagnosis || undefined,
-        treatmentPlan: data.treatmentPlan || undefined,
         notes: data.notes || undefined,
       };
 
       await injuryService.createInjury(formattedData);
       
-      setSnackbarMessage('Injury reported successfully!');
+      setSnackbarMessage('Quick injury report submitted successfully!');
       setSnackbarVisible(true);
       
       // Navigate back to injury list after a short delay
@@ -105,52 +105,31 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Header */}
+        <View style={styles.header}>
+          <Chip icon="lightning-bolt" mode="flat" style={styles.quickBadge} textStyle={{ color: '#fff' }}>
+            Quick Report
+          </Chip>
+        </View>
+
         <Text variant="headlineSmall" style={styles.title}>
-          Report New Injury
+          Pitch-Side Injury Report
         </Text>
 
-        {/* Player Info Card - Show when player was selected */}
-        {routePlayerName && (
-          <Card style={styles.playerCard} mode="elevated">
-            <Card.Content>
-              <Text variant="labelMedium" style={styles.playerLabel}>
-                Reporting for:
-              </Text>
-              <Text variant="titleLarge" style={styles.playerName}>
-                {routePlayerName}
-              </Text>
-              <Text variant="bodySmall" style={styles.playerId}>
-                ID: {routePlayerId}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Player ID - Only visible for coaches/admins who didn't select from list */}
-        {user?.identityType !== 'player' && !routePlayerName && (
-          <>
-            <Controller
-              control={control}
-              name="playerId"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  label="Player ID *"
-                  mode="outlined"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={!!errors.playerId}
-                  style={styles.input}
-                />
-              )}
-            />
-            {errors.playerId && (
-              <Text variant="bodySmall" style={styles.errorText}>
-                {errors.playerId.message}
-              </Text>
-            )}
-          </>
-        )}
+        {/* Player Info Card */}
+        <Card style={styles.playerCard} mode="elevated">
+          <Card.Content>
+            <Text variant="labelMedium" style={styles.playerLabel}>
+              Reporting for:
+            </Text>
+            <Text variant="titleLarge" style={styles.playerName}>
+              {playerName}
+            </Text>
+            <Text variant="bodySmall" style={styles.playerId}>
+              ID: {playerId}
+            </Text>
+          </Card.Content>
+        </Card>
 
         {/* Injury Type */}
         <Text variant="titleSmall" style={styles.label}>Injury Type *</Text>
@@ -170,6 +149,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
                   mode={value === type ? 'contained' : 'outlined'}
                   onPress={() => onChange(type)}
                   style={styles.chip}
+                  textColor={value === type ? undefined : '#000000'}
                   compact
                 >
                   {type}
@@ -202,6 +182,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
                   mode={value === part ? 'contained' : 'outlined'}
                   onPress={() => onChange(part)}
                   style={styles.chip}
+                  textColor={value === part ? undefined : '#000000'}
                   compact
                 >
                   {part}
@@ -228,6 +209,8 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               buttons={sides.map((side) => ({
                 value: side,
                 label: side,
+                uncheckedColor: '#000000',
+                labelStyle: value === side ? undefined : { color: '#000000' },
               }))}
               style={styles.segmentedButtons}
             />
@@ -246,6 +229,8 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
               buttons={severities.map((severity) => ({
                 value: severity,
                 label: severity,
+                uncheckedColor: '#000000',
+                labelStyle: value === severity ? undefined : { color: '#000000' },
               }))}
               style={styles.segmentedButtons}
             />
@@ -258,6 +243,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           mode="outlined"
           onPress={() => setShowInjuryDatePicker(true)}
           icon="calendar"
+          textColor="#000000"
           style={styles.dateButton}
         >
           {injuryDate ? format(new Date(injuryDate), 'MMM dd, yyyy') : 'Select Date'}
@@ -277,104 +263,31 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           />
         )}
 
-        {/* Expected Return Date */}
-        <Text variant="titleSmall" style={styles.label}>Expected Return Date</Text>
-        <Button
-          mode="outlined"
-          onPress={() => setShowReturnDatePicker(true)}
-          icon="calendar"
-          style={styles.dateButton}
-        >
-          {expectedReturnDate ? format(new Date(expectedReturnDate), 'MMM dd, yyyy') : 'Select Date (Optional)'}
-        </Button>
-        {showReturnDatePicker && (
-          <DateTimePicker
-            value={expectedReturnDate ? new Date(expectedReturnDate) : new Date()}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowReturnDatePicker(false);
-              if (selectedDate) {
-                setValue('expectedReturnDate', selectedDate);
-              }
-            }}
-            minimumDate={new Date()}
-          />
-        )}
-
-        {/* Mechanism */}
-        <Controller
-          control={control}
-          name="mechanism"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Mechanism of Injury"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              placeholder="How did the injury occur?"
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Diagnosis */}
-        <Controller
-          control={control}
-          name="diagnosis"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Diagnosis"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={3}
-              placeholder="Medical diagnosis..."
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Treatment Plan */}
-        <Controller
-          control={control}
-          name="treatmentPlan"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Treatment Plan"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={3}
-              placeholder="Planned treatment and rehabilitation..."
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Notes */}
+        {/* Quick Notes */}
         <Controller
           control={control}
           name="notes"
           render={({ field: { onChange, onBlur, value } }) => (
             <TextInput
-              label="Additional Notes"
+              label="Quick Notes (Optional)"
               mode="outlined"
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               multiline
               numberOfLines={3}
-              placeholder="Any additional information..."
+              placeholder="Add any immediate observations..."
+              textColor="#000000"
               style={styles.input}
             />
           )}
         />
+
+        <View style={styles.infoBox}>
+          <Text variant="bodySmall" style={styles.infoText}>
+            💡 This is a quick report. You can add detailed medical information later by editing the injury record.
+          </Text>
+        </View>
 
         <Button
           mode="contained"
@@ -383,8 +296,9 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           disabled={loading}
           style={styles.submitButton}
           contentStyle={styles.submitButtonContent}
+          icon="lightning-bolt"
         >
-          Report Injury
+          Submit Quick Report
         </Button>
       </ScrollView>
 
@@ -411,12 +325,20 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
+  header: {
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  quickBadge: {
+    backgroundColor: '#4CAF50',
+  },
   title: {
     fontWeight: 'bold',
-    marginBottom: 24,
+    marginBottom: 20,
+    color: '#000',
   },
   playerCard: {
-    marginBottom: 20,
+    marginBottom: 24,
     backgroundColor: '#E1BEE7',
   },
   playerLabel: {
@@ -441,6 +363,7 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#fff',
     marginBottom: 4,
+    marginTop: 8,
   },
   chipScrollView: {
     maxHeight: 50,
@@ -462,6 +385,16 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#B00020',
     marginBottom: 8,
+  },
+  infoBox: {
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  infoText: {
+    color: '#1976D2',
   },
   submitButton: {
     marginTop: 24,

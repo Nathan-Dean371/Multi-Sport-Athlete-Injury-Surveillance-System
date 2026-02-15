@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
   message: {
     marginBottom: 16,
     textAlign: 'center',
-    opacity: 0.7,
+    color: '#424242',
   },
   error: {
     marginBottom: 24,

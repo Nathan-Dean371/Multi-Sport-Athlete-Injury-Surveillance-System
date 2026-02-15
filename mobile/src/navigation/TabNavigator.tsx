@@ -10,9 +10,13 @@ import InjuryListScreen from '../screens/injuries/InjuryListScreen';
 import InjuryDetailScreen from '../screens/injuries/InjuryDetailScreen';
 import ReportInjuryScreen from '../screens/injuries/ReportInjuryScreen';
 import EditInjuryScreen from '../screens/injuries/EditInjuryScreen';
+import SelectReportTypeScreen from '../screens/injuries/SelectReportTypeScreen';
+import SelectPlayerScreen from '../screens/injuries/SelectPlayerScreen';
+import QuickReportInjuryScreen from '../screens/injuries/QuickReportInjuryScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import TeamDashboardScreen from '../screens/team/TeamDashboardScreen';
 import TeamRosterScreen from '../screens/team/TeamRosterScreen';
+import PlayerDetailScreen from '../screens/team/PlayerDetailScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -61,14 +65,34 @@ function InjuryStack() {
         options={{ title: 'Injury Details' }}
       />
       <Stack.Screen 
+        name="SelectReportType" 
+        component={SelectReportTypeScreen} 
+        options={{ title: 'Report Injury' }}
+      />
+      <Stack.Screen 
+        name="SelectPlayer" 
+        component={SelectPlayerScreen} 
+        options={{ title: 'Select Player' }}
+      />
+      <Stack.Screen 
+        name="QuickReportInjury" 
+        component={QuickReportInjuryScreen} 
+        options={{ title: 'Quick Report' }}
+      />
+      <Stack.Screen 
         name="ReportInjury" 
         component={ReportInjuryScreen} 
-        options={{ title: 'Report Injury' }}
+        options={{ title: 'Detailed Report' }}
       />
       <Stack.Screen 
         name="EditInjury" 
         component={EditInjuryScreen} 
         options={{ title: 'Update Injury' }}
+      />
+      <Stack.Screen 
+        name="PlayerDetail" 
+        component={PlayerDetailScreen} 
+        options={{ title: 'Player Details' }}
       />
     </Stack.Navigator>
   );
@@ -98,6 +122,16 @@ function TeamStack() {
         name="TeamRoster" 
         component={TeamRosterScreen} 
         options={{ title: 'Full Team Roster' }}
+      />
+      <Stack.Screen 
+        name="PlayerDetail" 
+        component={PlayerDetailScreen} 
+        options={{ title: 'Player Details' }}
+      />
+      <Stack.Screen 
+        name="InjuryDetail" 
+        component={InjuryDetailScreen} 
+        options={{ title: 'Injury Details' }}
       />
     </Stack.Navigator>
   );

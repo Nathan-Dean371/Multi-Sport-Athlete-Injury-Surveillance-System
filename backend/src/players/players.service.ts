@@ -46,7 +46,10 @@ export class PlayersService {
         `
         MATCH (p:Player {pseudonymId: $playerId})
         OPTIONAL MATCH (p)-[:PLAYS_FOR]->(t:Team)
-        RETURN p, t.teamId as teamId, t.name as teamName
+        RETURN p, 
+               t.teamId as teamId, 
+               t.name as teamName,
+               t.sport as sport
         `,
         { playerId }
       );
@@ -57,16 +60,25 @@ export class PlayersService {
 
       const record = result.records[0];
       const player = record.get('p').properties;
+      const teamId = record.get('teamId');
+      const teamName = record.get('teamName');
+      const sport = record.get('sport');
 
       return {
         playerId: player.playerId,
         name: player.name,
         position: player.position,
+        jerseyNumber: player.jerseyNumber,
         dateOfBirth: player.dateOfBirth,
         ageGroup: player.ageGroup,
         isActive: player.isActive,
-        teamId: record.get('teamId'),
-        teamName: record.get('teamName'),
+        teamId,
+        teamName,
+        team: teamId ? {
+          teamId,
+          teamName,
+          sport,
+        } : undefined,
       };
     } finally {
       await session.close();
@@ -109,14 +121,14 @@ export class PlayersService {
             side: injury.side,
             severity: injury.severity,
             status: injury.status,
-            injuryDate: injury.injuryDate,
-            expectedReturnDate: injury.expectedReturnDate,
-            actualReturnDate: injury.actualReturnDate,
+            injuryDate: injury.injuryDate ? injury.injuryDate.toString() : undefined,
+            expectedReturnDate: injury.expectedReturnDate ? injury.expectedReturnDate.toString() : undefined,
+            actualReturnDate: injury.actualReturnDate ? injury.actualReturnDate.toString() : undefined,
             mechanism: injury.mechanism,
             diagnosis: injury.diagnosis,
             treatmentPlan: injury.treatmentPlan,
             notes: injury.notes,
-            diagnosedDate: item.diagnosedDate,
+            diagnosedDate: item.diagnosedDate ? item.diagnosedDate.toString() : undefined,
             reportedBy: item.reportedBy,
           };
         });

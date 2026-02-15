@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bodyPart: {
-    opacity: 0.7,
+    color: '#E0E0E0',
   },
   severityBadge: {
     paddingHorizontal: 12,
@@ -137,14 +137,15 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 120,
-    opacity: 0.7,
+    color: '#E0E0E0',
+    fontWeight: '500',
   },
   value: {
     flex: 1,
   },
   diagnosis: {
     marginTop: 8,
-    opacity: 0.7,
+    color: '#E0E0E0',
     fontStyle: 'italic',
   },
 });

@@ -10,6 +10,9 @@ export class PlayerDto {
   @ApiPropertyOptional({ example: 'Forward', description: 'Player position' })
   position?: string;
   
+  @ApiPropertyOptional({ example: '10', description: 'Jersey number' })
+  jerseyNumber?: string;
+  
   @ApiPropertyOptional({ example: '1995-06-15', description: 'Date of birth' })
   dateOfBirth?: string;
   
@@ -24,6 +27,16 @@ export class PlayerDto {
   
   @ApiPropertyOptional({ example: 'Red Devils', description: 'Team name' })
   teamName?: string;
+  
+  @ApiPropertyOptional({ 
+    description: 'Team information',
+    example: { teamId: 'TEAM-001', teamName: 'Red Devils', sport: 'Soccer' }
+  })
+  team?: {
+    teamId: string;
+    teamName: string;
+    sport: string;
+  };
 }
 
 export class PlayerListDto {

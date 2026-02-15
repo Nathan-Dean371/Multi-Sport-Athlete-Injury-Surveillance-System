@@ -14,11 +14,14 @@ export interface Player {
 
 export interface PlayerDto {
   playerId: string;
-  name: string;
-  position: string;
-  jerseyNumber: string;
+  name?: string;
+  position?: string;
+  jerseyNumber?: string;
   ageGroup?: string;
+  dateOfBirth?: string;
   isActive: boolean;
+  teamId?: string;
+  teamName?: string;
   team?: {
     teamId: string;
     teamName: string;

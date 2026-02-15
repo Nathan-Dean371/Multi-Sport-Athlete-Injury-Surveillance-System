@@ -93,6 +93,6 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   statusDescription: {
-    opacity: 0.9,
+    color: '#212121',
   },
 });

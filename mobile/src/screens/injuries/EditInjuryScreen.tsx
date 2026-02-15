@@ -388,12 +388,14 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 120,
-    opacity: 0.7,
+    color: '#B0B0B0',
+    fontWeight: '500',
   },
   inputLabel: {
     marginBottom: 8,
     marginTop: 8,
-    opacity: 0.7,
+    color: '#B0B0B0',
+    fontWeight: '500',
   },
   input: {
     marginBottom: 12,
@@ -401,7 +403,7 @@ const styles = StyleSheet.create({
   hint: {
     marginTop: -8,
     marginBottom: 12,
-    opacity: 0.6,
+    color: '#757575',
   },
   segmentedButtons: {
     marginBottom: 12,

@@ -10,6 +10,7 @@ export interface Team {
 
 export interface RosterPlayerDto {
   playerId: string;
+  pseudonymId: string;
   firstName: string;
   lastName: string;
   position: string;

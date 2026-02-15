@@ -13,9 +13,10 @@ interface TeamRosterScreenProps {
       teamName: string;
     };
   };
+  navigation: any;
 }
 
-export default function TeamRosterScreen({ route }: TeamRosterScreenProps) {
+export default function TeamRosterScreen({ route, navigation }: TeamRosterScreenProps) {
   const { teamId, teamName } = route.params;
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
@@ -108,7 +109,14 @@ export default function TeamRosterScreen({ route }: TeamRosterScreenProps) {
     const hasReportedToday = !!player.currentStatus;
     
     return (
-      <Card key={player.playerId} style={styles.playerCard}>
+      <Card 
+        key={player.playerId} 
+        style={styles.playerCard}
+        onPress={() => navigation.navigate('PlayerDetail', {
+          playerId: player.pseudonymId,
+          playerName: `${player.firstName} ${player.lastName}`,
+        })}
+      >
         <Card.Content>
           <View style={styles.playerHeader}>
             <View style={styles.playerInfo}>

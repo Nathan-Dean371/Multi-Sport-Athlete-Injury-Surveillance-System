@@ -5,6 +5,9 @@ export class RosterPlayerDto {
   @ApiProperty({ example: 'PLAYER-001', description: 'Player unique identifier' })
   playerId: string;
 
+  @ApiProperty({ example: 'PSY-PLAYER-A1B2C3D4', description: 'Player pseudonym identifier for privacy' })
+  pseudonymId: string;
+
   @ApiProperty({ example: 'John' })
   firstName: string;
 

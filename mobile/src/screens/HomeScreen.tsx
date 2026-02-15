@@ -274,10 +274,11 @@ const styles = StyleSheet.create({
   welcomeText: {
     marginTop: 16,
     fontWeight: 'bold',
+    color: '#000',
   },
   emailText: {
     marginTop: 4,
-    opacity: 0.7,
+    color: '#424242',
   },
   card: {
     margin: 16,
@@ -286,6 +287,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontWeight: 'bold',
     marginBottom: 8,
+    color: '#FFFFFF',
   },
   divider: {
     marginBottom: 16,
@@ -297,7 +299,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
   },
   label: {
-    opacity: 0.7,
+    color: '#B0B0B0',
   },
   value: {
     fontWeight: '600',
@@ -312,7 +314,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontStyle: 'italic',
-    opacity: 0.6,
+    color: '#757575',
     textAlign: 'center',
     paddingVertical: 16,
   },
@@ -324,7 +326,7 @@ const styles = StyleSheet.create({
   },
   comingSoon: {
     fontStyle: 'italic',
-    opacity: 0.6,
+    color: '#757575',
     marginBottom: 12,
   },
   featureList: {
@@ -340,6 +342,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   footerText: {
-    opacity: 0.5,
+    color: '#9E9E9E',
   },
 });

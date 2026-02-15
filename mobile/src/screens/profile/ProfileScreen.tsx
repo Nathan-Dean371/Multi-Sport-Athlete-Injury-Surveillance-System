@@ -220,7 +220,8 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 100,
-    opacity: 0.7,
+    color: '#B0B0B0',
+    fontWeight: '500',
   },
   value: {
     flex: 1,
@@ -235,7 +236,7 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   footerText: {
-    opacity: 0.5,
+    color: '#9E9E9E',
     marginBottom: 4,
   },
 });

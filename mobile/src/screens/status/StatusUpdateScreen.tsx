@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    opacity: 0.7,
+    color: '#424242',
   },
   section: {
     marginBottom: 24,
