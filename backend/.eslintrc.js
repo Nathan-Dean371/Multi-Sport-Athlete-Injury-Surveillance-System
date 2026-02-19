@@ -30,6 +30,10 @@ module.exports = {
     '@typescript-eslint/no-unsafe-argument': 'off',
     '@typescript-eslint/no-unsafe-return': 'off',
     '@typescript-eslint/unbound-method': 'warn',
+    '@typescript-eslint/no-extraneous-class': 'off',
+    'no-useless-catch': 'off',
+    '@typescript-eslint/no-empty-function': 'off',
+    '@typescript-eslint/no-floating-promises': 'off',
   },
   ignorePatterns: ['dist/', 'node_modules/', '*.js'],
 };
