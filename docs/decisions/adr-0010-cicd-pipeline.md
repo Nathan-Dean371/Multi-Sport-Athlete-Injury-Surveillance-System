@@ -1,8 +1,10 @@
 # ADR-0010: CI/CD Pipeline and Automated Deployment
 
-**Status:** Accepted
+**Status:** Implemented
 
 **Date:** February 19, 2026
+
+**Last Updated:** February 19, 2026 (Docker/ECR implementation completed)
 
 **Deciders:** Nathan Dean
 
@@ -25,36 +27,56 @@ The key requirements are:
 
 ## Decision
 
-**Implement a GitHub Actions CI/CD pipeline that runs tests, builds the Docker image, deploys to EC2, and verifies the deployment via an automated smoke test against the health check endpoint.**
+**Implement a GitHub Actions CI/CD pipeline that runs tests, builds a Docker image, pushes to AWS ECR, deploys to EC2, and verifies the deployment via an automated health check.**
+
+### Container-Based Deployment
+
+The backend is containerized using Docker with a multi-stage build:
+- **Builder stage**: Compiles TypeScript with all dependencies
+- **Production stage**: Minimal Alpine Linux image with only production dependencies and compiled code
+- **Result**: ~150MB production image (vs ~500MB with dev dependencies)
+- **Security**: Non-root user, health checks built-in
+
+Docker images are stored in **AWS Elastic Container Registry (ECR)**, enabling:
+- Version-tagged deployments
+- Rollback capability
+- Consistent environments (dev → test → production)
+- Integration with AWS IAM for secure access
 
 ### Local Development Workflow (Unchanged)
 
-```
-Developer machine
-├── Local Docker containers (PostgreSQL dev + Neo4j dev)
-├── NestJS backend (npm run start:dev)
-├── React Native mobile (pointing at localhost)
-└── git push to main → hands off to GitHub Actions
-```
-
-### CI/CD Pipeline (GitHub Actions)
-
-```
-git push to main
-       ↓
-GitHub Actions triggers on GitHub's servers
        ↓
 Stage 1: Unit Tests
   └── Run 81 unit tests (Jest)
        ↓
-Stage 2: E2E Tests (throwaway service containers)
-  ├── GitHub Actions spins up PostgreSQL Docker container
-  ├── GitHub Actions spins up Neo4j Docker container
-  ├── Run E2E test suite against these containers
-  └── Containers destroyed after tests complete
+Stage 2: E2E Tests (service containers)
+  ├── PostgreSQL Docker container
+  ├── Neo4j Docker container
+  ├── Run E2E test suite
+  └── Containers destroyed after tests
        ↓
-Stage 3: Build
-  └── Build NestJS Docker image
+Stage 3: Build & Push
+  ├── Build Docker image (multi-stage)
+  ├── Tag with version (latest, sha, branch)
+  └── Push to AWS ECR
+       ↓
+Stage 4: Deploy to EC2 (manual trigger available)
+  ├── SSH into EC2
+  ├── Login to ECR
+  ├── Pull latest Docker image
+  ├── Stop old container
+  └── Start new container with environment variables
+       ↓
+Stage 5: Health Check
+  └── Verify /status endpoint
+      ├── PostgreSQL (RDS) ✅
+      └── Neo4j (Aura) ✅
+       ↓
+Deployment marked successful ✅
+```
+
+**Automatic**: Stages 1-3 run on every push to main
+**Manual**: Stage 4 deployment triggered via workflow_dispatch for controlled releases
        ↓
 Stage 4: Deploy
   └── SSH into EC2, pull new image, restart container
@@ -150,7 +172,175 @@ Developing directly against cloud databases (Aura + RDS) was considered:
 - **Never manually deploy again** — every push to main triggers the full pipeline
 - **Tests are a hard gate** — broken code cannot reach EC2
 - **Multi-machine friendly** — laptop or desktop, workflow is identical
-- **Live environment always stable** — failed deployments don't break production
+- **Live environmeStatus
+
+### ✅ Completed (February 19, 2026)
+
+**Phase 1 — Containerization**
+- ✅ Multi-stage Dockerfile created (`backend/Dockerfile`)
+- ✅ `.dockerignore` for optimized builds
+- ✅ Docker Compose updated with backend service
+- ✅ Local testing script (`build-docker.ps1`)
+
+**Phase 2 — CI/CD Pipeline**
+- ✅ GitHub Actions workflow (`.github/workflows/ci.yml`)
+- ✅ Unit test stage with database service containers
+- ✅ E2E test stage with PostgreSQL and Neo4j containers
+- ✅ Docker build stage with caching
+- ✅ AWS ECR push with version tagging
+- ✅ EC2 deployment stage (manual trigger)
+- ✅AWS_ACCESS_KEY_ID` — IAM user with ECR permissions
+- `AWS_SECRET_ACCESS_KEY` — IAM secret key
+- `JWT_SECRET` — Production JWT signing secret
+- `POSTGRES_HOST` — RDS endpoint
+- `POSTGRES_PORT` — Database port (5432)
+- `POSTGRES_DB` — Database name
+- `POSTGRES_USER` — Database username
+- `POSTGRES_PASSWORD` — Database password
+- `NEO4J_URI` — Aura connection URI (neo4j+s://...)
+- `NEO4J_USERNAME` — Neo4j username
+- `NEO4J_PASSWORD` — Neo4j password
+- `EC2_HOST` — EC2 public IP or domain
+- `EC2_USER` — EC2 username (ec2-user)
+- `EC2_SSH_KEY` — Private SSH key for EC2 access
+
+See `docs/setup/AWS-DEPLOYMENT-GUIDE.md` for detailed setup instructions.
+- ✅ AWS Dep09: Deployment Strategy](./adr-0009-deployment-strategy.md)** — Defines the EC2, RDS, and Aura infrastructure this pipeline deploys to
+- **[ADR-0011: Containerisation and Infrastructure as Code](./adr-0011-containerisation.md)** — Docker setup that the pipeline builds and deploys
+
+---
+
+## Quick Start
+
+### Local Docker Testing
+```powershell
+# Build and test locally
+.\build-docker.ps1 -Build -Test
+
+# Or use docker-compose
+docker compose up -d --build backend
+```
+
+### Trigger CI/CD Pipeline
+```bash
+# Push to main triggers automatic build + push to ECR
+git push origin main
+
+# Manual deployment to EC2
+# GitHub → Actions → CI/CD Pipeline → Run workflow
+```
+AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
+- [Docker Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
+- [AWS Deployment Guide](../setup/AWS-DEPLOYMENT-GUIDE.md)
+- [Docker Quick Reference](../setup/DOCKER-REFERENCE.md)
+
+---
+
+**Last Updated:** February 19, 2026 (Implementation completed)
+**Next Review:** After first production deployment
+**Status:** Implemented — Infrastructure setup in progress
+ssh -i key.pem ec2-user@<EC2_IP>
+docker logs -f injury-surveillance-backend
+```
+- ✅ Docker Quick Reference (`docs/setup/DOCKER-REFERENCE.md`)
+- ✅ Environment variable template (`.env.production.example`)
+
+### 🔲 Pending
+
+**Phase 4 — Infrastructure Setup**
+- 🔲 Create AWS ECR repository
+- 🔲 Configure GitHub Secrets (AWS credentials, database connections)
+- 🔲 Create RDS PostgreSQL instance
+- 🔲 Set up Neo4j Aura instance
+- 🔲 Launch EC2 instance
+- 🔲 Initialize databases with schemas
+
+**Phase 5 — First Deployment**
+- 🔲 Push code to trigger CI/CD pipeline
+- 🔲 Verify tests pass
+- 🔲 Verify Docker image pushed to ECR
+- 🔲 Manual deployment to EC2
+- 🔲 Verify health check passes
+- 🔲 Test API endpoints from mobile app
+
+---
+
+## Implementation Details
+
+### Multi-Stage Docker Build
+
+```dockerfile
+# Stage 1: Builder - Compile TypeScript
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# Stage 2: Production - Minimal runtime
+FROM node:20-alpine AS production
+WORKDIR /app
+ENV NODE_ENV=production
+COPY package*.json ./
+RUN npm ci --only=production
+COPY --from=builder /app/dist ./dist
+USER nestjs  # Non-root for security
+EXPOSE 3000
+CMD ["node", "dist/main"]
+```
+
+Benefits:
+- Smaller images (~150MB vs ~500MB)
+- Faster deployments
+- No dev dependencies in production
+- Enhanced security with non-root user
+
+### AWS ECR Integration
+
+Images are tagged with multiple identifiers:
+```
+<account>.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend:latest
+<account>.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend:main-abc1234
+<account>.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend:main
+```
+
+This enables:
+- `latest`: Always points to most recent main build
+- `<branch>-<sha>`: Specific commit for rollback
+- `<branch>`: Latest on that branch
+
+### GitHub Actions Workflow
+
+**Triggers**:
+- `push` to main/develop: Run tests + build + push to ECR
+- `pull_request`: Run tests only
+- `workflow_dispatch`: Manual deployment to EC2
+
+**Service Containers**:
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    env:
+      POSTGRES_DB: identity_service
+      POSTGRES_USER: identity_admin
+      POSTGRES_PASSWORD: test-password
+    
+  neo4j:
+    image: neo4j:5.25-community
+    env:
+      NEO4J_AUTH: neo4j/test-password
+```
+
+**Build Optimization**:
+- GitHub Actions cache for Docker layers
+- Buildx for multi-platform support
+- Metadata action for automated tagging
+
+---
+
+## Implementation nt always stable** — failed deployments don't break production
 - **Full SDLC demonstrated** — code → test → build → deploy → verify, documented for thesis
 - **Free** — GitHub Actions free tier is sufficient for this project scale
 

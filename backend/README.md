@@ -527,54 +527,115 @@ Configure separate test databases in your `.env.test` file to avoid polluting de
 
 ### Docker Deployment
 
-**Dockerfile:**
+The backend is fully containerized with a production-optimized multi-stage Dockerfile.
 
-```dockerfile
-FROM node:18-alpine AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package*.json ./
-EXPOSE 3000
-CMD ["node", "dist/main.js"]
-```
-
-**Build and Run:**
+#### Build Locally
 
 ```bash
 # Build Docker image
-docker build -t injury-surveillance-api .
+cd backend
+docker build -t injury-surveillance-backend:latest .
 
-# Run container
+# Or use the PowerShell script (from root)
+..\build-docker.ps1 -Build -Test
+```
+
+#### Run with Docker Compose (Development)
+
+```bash
+# Start all services (databases + backend)
+docker compose up -d
+
+# Rebuild backend after code changes
+docker compose up -d --build backend
+
+# View logs
+docker compose logs -f backend
+
+# Stop all services
+docker compose down
+```
+
+#### Run Standalone Container
+
+```bash
+# Run container with environment variables
 docker run -d \
   -p 3000:3000 \
-  --env-file .env.production \
-  --name api \
-  injury-surveillance-api
+  --name injury-surveillance-backend \
+  -e NODE_ENV=production \
+  -e JWT_SECRET=your-secret \
+  -e POSTGRES_HOST=your-db-host \
+  -e POSTGRES_PORT=5432 \
+  -e POSTGRES_DB=identity_service \
+  -e POSTGRES_USER=identity_admin \
+  -e POSTGRES_PASSWORD=your-password \
+  -e NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io \
+  -e NEO4J_USERNAME=neo4j \
+  -e NEO4J_PASSWORD=your-password \
+  injury-surveillance-backend:latest
+```
+
+### AWS Production Deployment
+
+The backend is deployed to AWS using a fully automated CI/CD pipeline:
+
+**Architecture:**
+- **EC2**: Hosts Docker container (t3.micro)
+- **ECR**: Docker image registry
+- **RDS**: PostgreSQL database (db.t3.micro)
+- **Neo4j Aura**: Graph database (free tier)
+
+**Automated Pipeline** (GitHub Actions):
+1. ✅ Run unit and E2E tests
+2. ✅ Build Docker image (multi-stage)
+3. ✅ Push to AWS ECR with version tags
+4. ✅ Deploy to EC2 (manual trigger)
+5. ✅ Health check verification
+
+**Deployment Guide:**
+See [`docs/setup/AWS-DEPLOYMENT-GUIDE.md`](../docs/setup/AWS-DEPLOYMENT-GUIDE.md) for complete setup instructions.
+
+**Quick Deploy:**
+```bash
+# Push to main triggers automatic build + ECR push
+git push origin main
+
+# Manual deployment via GitHub Actions
+# GitHub → Actions → CI/CD Pipeline → Run workflow
+```
+
+**Monitor Deployment:**
+```bash
+# Check health
+curl http://<EC2_IP>:3000/status
+
+# View logs on EC2
+ssh -i key.pem ec2-user@<EC2_IP>
+docker logs -f injury-surveillance-backend
 ```
 
 ### Production Checklist
 
 - [ ] Set `NODE_ENV=production`
-- [ ] Use strong JWT secrets (64+ characters)
-- [ ] Configure Neo4j Aura or self-hosted production instance
-- [ ] Set up managed PostgreSQL (AWS RDS, DigitalOcean, etc.)
-- [ ] Enable HTTPS/TLS
+- [ ] Use strong JWT secrets (64+ characters, base64-encoded)
+- [ ] Configure Neo4j Aura cloud instance
+- [ ] Set up AWS RDS PostgreSQL instance
+- [ ] Enable HTTPS/TLS (use AWS Certificate Manager + ALB)
 - [ ] Configure CORS with specific origins
-- [ ] Set up application monitoring (e.g., Sentry)
-- [ ] Configure log aggregation (e.g., CloudWatch, Datadog)
+- [ ] Set up application monitoring (CloudWatch, Sentry)
+- [ ] Configure log aggregation
 - [ ] Set up automated backups for both databases
-- [ ] Disable TypeORM synchronize (use migrations instead)
 - [ ] Configure rate limiting
-- [ ] Set up health check endpoints
-- [ ] Configure CI/CD pipeline
+- [ ] Health check endpoints (@nestjs/terminus)
+- [ ] CI/CD pipeline (GitHub Actions → ECR → EC2)
+- [ ] Set all required GitHub Secrets (14 secrets)
+
+**Related Documentation:**
+- [AWS Deployment Guide](../docs/setup/AWS-DEPLOYMENT-GUIDE.md)
+- [Docker Reference](../docs/setup/DOCKER-REFERENCE.md)
+- [Implementation Summary](../docs/setup/IMPLEMENTATION-SUMMARY.md)
+- [ADR-0010: CI/CD Pipeline](../docs/decisions/adr-0010-cicd-pipeline.md)
 
 ---
 

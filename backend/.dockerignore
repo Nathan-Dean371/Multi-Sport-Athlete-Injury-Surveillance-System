@@ -1,0 +1,67 @@
+# ============================================================================
+# Docker ignore file for NestJS Backend
+# ============================================================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Testing
+coverage/
+.nyc_output/
+e2e-tests/
+E2E Tests/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Environment files (should be passed via docker-compose or runtime)
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Test utilities
+test-auth.js
+generate-hash.js
