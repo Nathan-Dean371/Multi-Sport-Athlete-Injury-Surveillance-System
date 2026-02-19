@@ -65,11 +65,20 @@ jobs:
       - name: Install dependencies
         working-directory: ./backend
         run: npm ci
-      
+
+      - name: Set up test database schema
+        run: |
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          psql -h localhost -U identity_admin -d postgres -c "DROP DATABASE IF EXISTS identity_service_test;"
+          psql -h localhost -U identity_admin -d postgres -f ./database/postgres/init-test-db.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/identity-service-schema.sql
+        env:
+          PGPASSWORD: test-password
+
       - name: Run linter
         working-directory: ./backend
         run: npm run lint
-      
+
       - name: Run unit tests
         working-directory: ./backend
         run: npm run test:cov
@@ -83,7 +92,7 @@ jobs:
           NEO4J_USERNAME: neo4j
           NEO4J_PASSWORD: test-password
           JWT_SECRET: test-jwt-secret
-      
+
       - name: Run E2E tests
         working-directory: ./backend
         run: npm run test:e2e
@@ -97,7 +106,7 @@ jobs:
           NEO4J_USERNAME: neo4j
           NEO4J_PASSWORD: test-password
           JWT_SECRET: test-jwt-secret
-      
+
       - name: Upload coverage reports
         uses: codecov/codecov-action@v4
         if: always()
