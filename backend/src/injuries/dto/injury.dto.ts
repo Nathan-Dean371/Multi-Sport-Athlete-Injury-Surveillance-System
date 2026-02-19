@@ -183,13 +183,13 @@ export class InjuryDetailDto {
       recordedAt: '2024-01-12T15:45:00.000Z'
     }]
   })
-  statusUpdates?: Array<{
+  statusUpdates?: {
     updateId: string;
     status: string;
     notes?: string;
     recordedBy: string;
     recordedAt: string;
-  }>;
+  }[];
 }
 
 export class QueryInjuriesDto {
