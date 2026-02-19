@@ -40,56 +40,41 @@ try {
 Write-Host ""
 Write-Host "Project Root: $ProjectRoot" -ForegroundColor Cyan
 Write-Host ""
+# start-demo.ps1
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host "  Multi-Sport Injury Surveillance System" -ForegroundColor Cyan
+Write-Host "  Demo Startup" -ForegroundColor Cyan
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "Opening terminals..." -ForegroundColor Yellow
 
-# ============================================================================
-# Terminal 1: Docker Databases
-# ============================================================================
-Write-Host "Opening Terminal 1: Databases (Docker)..." -ForegroundColor Cyan
+# Terminal 1 - Docker Databases (new window, runs attached so logs are visible)
+Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-docker.ps1"
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot'; Write-Host 'DATABASE TERMINAL' -ForegroundColor Cyan; Write-Host '==================' -ForegroundColor Cyan; Write-Host ''; Write-Host 'Starting Docker containers...' -ForegroundColor Yellow; Write-Host ''; docker-compose up"
+Write-Host "  [1] Database terminal opened" -ForegroundColor Green
 
+# Give Docker a moment to begin starting before opening the next windows
 Start-Sleep -Seconds 2
 
-# ============================================================================
-# Terminal 2: Backend API
-# ============================================================================
-Write-Host "Opening Terminal 2: Backend API..." -ForegroundColor Cyan
+# Terminal 2 - Backend API
+Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-backend.ps1"
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot\backend'; Write-Host 'BACKEND API TERMINAL' -ForegroundColor Green; Write-Host '====================' -ForegroundColor Green; Write-Host ''; Write-Host 'Waiting 10 seconds for databases to initialize...' -ForegroundColor Yellow; Start-Sleep -Seconds 10; Write-Host ''; Write-Host 'Starting NestJS backend in development mode...' -ForegroundColor Yellow; Write-Host ''; npm run start:dev"
+Write-Host "  [2] Backend terminal opened" -ForegroundColor Green
 
-Start-Sleep -Seconds 2
+# Terminal 3 - Mobile App
+Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-mobile.ps1"
 
-# ============================================================================
-# Terminal 3: Mobile App (Expo)
-# ============================================================================
-Write-Host "Opening Terminal 3: Mobile App (Expo)..." -ForegroundColor Cyan
+Write-Host "  [3] Mobile terminal opened" -ForegroundColor Green
 
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "Set-Location '$ProjectRoot\mobile'; Write-Host 'MOBILE APP TERMINAL' -ForegroundColor Magenta; Write-Host '===================' -ForegroundColor Magenta; Write-Host ''; Write-Host 'Waiting 15 seconds for backend to initialize...' -ForegroundColor Yellow; Start-Sleep -Seconds 15; Write-Host ''; Write-Host 'Starting Expo development server...' -ForegroundColor Yellow; Write-Host ''; npx expo start"
-
-# ============================================================================
-# Display Summary
-# ============================================================================
 Write-Host ""
-Write-Host "[OK] All terminals launched!" -ForegroundColor Green
+Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host "  All terminals launched!" -ForegroundColor Green
 Write-Host ""
-Write-Host "================================================================" -ForegroundColor Cyan
-Write-Host "  DEMO SYSTEM STATUS" -ForegroundColor Cyan
-Write-Host "================================================================" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "  Terminal 1: " -NoNewline; Write-Host "Databases (Docker)" -ForegroundColor Yellow
-Write-Host "              - Neo4j Browser: http://localhost:7474" -ForegroundColor Gray
-Write-Host "              - PostgreSQL: localhost:5432" -ForegroundColor Gray
-Write-Host "              - pgAdmin: http://localhost:5050" -ForegroundColor Gray
-Write-Host ""
-Write-Host "  Terminal 2: " -NoNewline; Write-Host "Backend API" -ForegroundColor Green
-Write-Host "              - API Server: http://localhost:3000" -ForegroundColor Gray
-Write-Host "              - Swagger Docs: http://localhost:3000/api" -ForegroundColor Gray
-Write-Host ""
-Write-Host "  Terminal 3: " -NoNewline; Write-Host "Mobile App (Expo)" -ForegroundColor Magenta
-Write-Host "              - Expo DevTools: http://localhost:19002" -ForegroundColor Gray
-Write-Host "              - Scan QR code with Expo Go app to run on device" -ForegroundColor Gray
-Write-Host "              - Press 'i' for iOS simulator" -ForegroundColor Gray
-Write-Host "              - Press 'a' for Android emulator" -ForegroundColor Gray
+Write-Host "  Wait ~60 seconds for full startup, then:" -ForegroundColor Yellow
+Write-Host "  - Swagger:    http://localhost:3000/api" -ForegroundColor White
+Write-Host "  - pgAdmin:    http://localhost:5050" -ForegroundColor White
+Write-Host "  - Neo4j:      http://localhost:7474" -ForegroundColor White
+Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "================================================================" -ForegroundColor Cyan
 Write-Host ""

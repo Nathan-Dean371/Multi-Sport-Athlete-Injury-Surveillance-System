@@ -1,6 +1,6 @@
 # ADR-0007: React Web Dashboard Technology
 
-**Status:** Proposed
+**Status:** Accepted
 
 **Date:** January 2025
 
@@ -415,6 +415,7 @@ export const TeamsPage = () => {
 - **ADR-0004**: NestJS backend (provides REST API)
 - **ADR-0005**: React Native mobile (shared React knowledge)
 - **ADR-0006**: JWT authentication (dashboard uses same auth)
+- **ADR-0009**: Deployment Strategy
 
 ---
 

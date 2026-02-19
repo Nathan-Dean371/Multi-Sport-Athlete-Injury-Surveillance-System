@@ -9,7 +9,7 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true,
-    "noEmit": true
+    "noEmit": true,
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
