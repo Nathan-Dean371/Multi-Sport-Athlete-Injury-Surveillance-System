@@ -14,6 +14,7 @@ import { Pool } from 'pg';
           database: configService.get<string>('postgres.database') || 'identity_service',
           user: configService.get<string>('postgres.user') || 'postgres',
           password: configService.get<string>('postgres.password') || 'password',
+          ssl: { rejectUnauthorized: false },
           max: 20,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 2000,
