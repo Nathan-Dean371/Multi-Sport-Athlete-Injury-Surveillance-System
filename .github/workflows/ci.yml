@@ -28,7 +28,7 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: identity_service
+          POSTGRES_DB: identity_service_test
           POSTGRES_USER: identity_admin
           POSTGRES_PASSWORD: test-password
         ports:
@@ -85,7 +85,7 @@ jobs:
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          POSTGRES_DB: identity_service
+          POSTGRES_DB: identity_service_test
           POSTGRES_USER: identity_admin
           POSTGRES_PASSWORD: test-password
           NEO4J_URI: bolt://localhost:7687
@@ -99,7 +99,7 @@ jobs:
         env:
           POSTGRES_HOST: localhost
           POSTGRES_PORT: 5432
-          POSTGRES_DB: identity_service
+          POSTGRES_DB: identity_service_test
           POSTGRES_USER: identity_admin
           POSTGRES_PASSWORD: test-password
           NEO4J_URI: bolt://localhost:7687
