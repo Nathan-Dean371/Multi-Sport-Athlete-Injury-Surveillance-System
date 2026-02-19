@@ -1,0 +1,36 @@
+{
+  "preset": "ts-jest",
+  "testEnvironment": "node",
+  "rootDir": "..",
+  "roots": [
+    "<rootDir>/e2e-tests"
+  ],
+  "testMatch": [
+    "**/*.e2e-spec.ts"
+  ],
+  "transform": {
+    "^.+\\.(t|j)s$": "ts-jest"
+  },
+  "moduleNameMapper": {
+    "^src/(.*)$": "<rootDir>/src/$1"
+  },
+  "moduleFileExtensions": [
+    "ts",
+    "js",
+    "json",
+    "node"
+  ],
+  "collectCoverageFrom": [
+    "src/**/*.ts",
+    "!src/**/*.spec.ts",
+    "!src/**/*.module.ts",
+    "!src/main.ts",
+    "!src/**/*.d.ts"
+  ],
+  "coverageDirectory": "./coverage/e2e",
+  "setupFilesAfterEach": [
+    "<rootDir>/e2e-tests/setup.ts"
+  ],
+  "verbose": true,
+  "testTimeout": 30000
+}
