@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 're
 import { Text, TextInput, Button, Snackbar, useTheme } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../contexts/AuthContext';
+import colors from '../../constants/colors';
 import StatusSelector from '../../components/status/StatusSelector';
 import { PlayerStatus, UpdateStatusDto } from '../../types/status.types';
 import statusService from '../../services/status.service';
@@ -143,7 +144,7 @@ export default function StatusUpdateScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   scrollView: {
     flex: 1,
@@ -162,7 +163,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   subtitle: {
-    color: '#424242',
+    color: colors.textSecondary,
   },
   section: {
     marginBottom: 24,
@@ -172,7 +173,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   notesInput: {
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   submitButton: {
     marginTop: 8,

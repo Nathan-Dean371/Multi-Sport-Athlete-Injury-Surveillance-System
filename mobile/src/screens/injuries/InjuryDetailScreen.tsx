@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Divider, Button, useTheme } from 'react-native-paper';
 import { format } from 'date-fns';
+import colors from '../../constants/colors';
 import { useAuth } from '../../contexts/AuthContext';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import { InjuryDetailDto, Severity } from '../../types/injury.types';
@@ -305,7 +306,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   bodyPart: {
-    color: '#E0E0E0',
+    color: colors.textSecondary,
   },
   severityBadge: {
     paddingHorizontal: 16,
@@ -329,7 +330,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     width: 140,
-    color: '#B0B0B0',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   infoValue: {
@@ -340,7 +341,7 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     marginBottom: 4,
-    color: '#B0B0B0',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   detailText: {

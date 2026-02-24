@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Chip, useTheme, Divider, ProgressBar, Badge, List, Button, Menu } from 'react-native-paper';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
+import colors from '../../constants/colors';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import teamService from '../../services/team.service';
 import { TeamRosterDto, RosterPlayerDto, TeamDetailsDto } from '../../types/team.types';
@@ -79,9 +80,9 @@ export default function TeamDashboardScreen() {
     
     switch (status) {
       case PlayerStatus.GREEN:
-        return '#4CAF50';
+        return colors.success;
       case PlayerStatus.ORANGE:
-        return '#FF9800';
+        return colors.warning;
       case PlayerStatus.RED:
         return '#F44336';
       default:
@@ -296,13 +297,13 @@ export default function TeamDashboardScreen() {
               <Text style={styles.overviewLabel}>Red</Text>
             </View>
             <View style={styles.overviewItem}>
-              <View style={[styles.overviewBadge, { backgroundColor: '#FF9800' }]}>
+              <View style={[styles.overviewBadge, { backgroundColor: colors.warning }]}> 
                 <Text style={styles.overviewCount}>{groups.orange.length}</Text>
               </View>
               <Text style={styles.overviewLabel}>Orange</Text>
             </View>
             <View style={styles.overviewItem}>
-              <View style={[styles.overviewBadge, { backgroundColor: '#4CAF50' }]}>
+              <View style={[styles.overviewBadge, { backgroundColor: colors.success }]}> 
                 <Text style={styles.overviewCount}>{groups.green.length}</Text>
               </View>
               <Text style={styles.overviewLabel}>Green</Text>
@@ -367,14 +368,14 @@ export default function TeamDashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.surface,
   },
   teamSelectorContainer: {
     padding: 16,
     paddingBottom: 8,
   },
   teamSelectorButton: {
-    borderColor: '#6200EE',
+    borderColor: colors.primary,
   },
   headerCard: {
     margin: 16,
@@ -403,7 +404,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#6200EE',
+    color: colors.primary,
   },
   statLabel: {
     fontSize: 12,
@@ -449,7 +450,7 @@ const styles = StyleSheet.create({
   overviewCount: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
+    color: colors.white,
   },
   overviewLabel: {
     fontSize: 12,
@@ -473,7 +474,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
-    color: '#333',
+    color: colors.text,
   },
   playerCard: {
     marginBottom: 12,

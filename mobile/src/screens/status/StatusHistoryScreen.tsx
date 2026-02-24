@@ -8,6 +8,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import statusService from '../../services/status.service';
 import { format, parseISO } from 'date-fns';
 import { PlayerStatus } from '../../types/status.types';
+import colors from '../../constants/colors';
 
 interface StatusHistoryItem {
   id: string;
@@ -173,11 +174,11 @@ export default function StatusHistoryScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.surface,
   },
   header: {
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
@@ -195,12 +196,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     fontWeight: '600',
-    color: '#333',
+    color: colors.text,
   },
   statusCard: {
     marginHorizontal: 16,
     marginBottom: 8,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
   },
   statusRow: {
     flexDirection: 'row',
@@ -217,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statusDescription: {
-    color: '#333',
+    color: colors.text,
     fontWeight: '500',
   },
   timestamp: {

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, StyleSheet, ScrollView } from 'react-native';
 import { Text, Card, Button, Divider, List, Avatar, useTheme } from 'react-native-paper';
 import { useAuth } from '../../contexts/AuthContext';
+import colors from '../../constants/colors';
 import Constants from 'expo-constants';
 
 export default function ProfileScreen() {
@@ -92,7 +93,7 @@ export default function ProfileScreen() {
             <Text variant="labelLarge" style={styles.label}>
               Status:
             </Text>
-            <Text variant="bodyMedium" style={[styles.value, { color: theme.colors.primary }]}>
+            <Text variant="bodyMedium" style={[styles.value, { color: colors.primary }]}>
               Active
             </Text>
           </View>
@@ -220,11 +221,12 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 100,
-    color: '#B0B0B0',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   value: {
     flex: 1,
+    color: colors.text,
   },
   logoutButton: {
     margin: 16,

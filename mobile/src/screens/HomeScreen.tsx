@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Button, Avatar, Divider, useTheme, IconButton } from 'react-native-paper';
+import colors from '../constants/colors';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -263,22 +264,22 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.surface,
   },
   header: {
     alignItems: 'center',
     padding: 24,
-    backgroundColor: '#fff',
+    backgroundColor: colors.background,
     marginBottom: 16,
   },
   welcomeText: {
     marginTop: 16,
     fontWeight: 'bold',
-    color: '#000',
+    color: colors.text,
   },
   emailText: {
     marginTop: 4,
-    color: '#424242',
+    color: colors.textSecondary,
   },
   card: {
     margin: 16,
@@ -286,20 +287,21 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#FFFFFF',
-  },
+    label: {
+      color: colors.textSecondary,
+    },
   divider: {
     marginBottom: 16,
   },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    value: {
+      fontWeight: '600',
+      color: colors.text,
+    },
     alignItems: 'center',
     paddingVertical: 8,
   },
   label: {
-    color: '#B0B0B0',
+    color: colors.muted,
   },
   value: {
     fontWeight: '600',
@@ -314,7 +316,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontStyle: 'italic',
-    color: '#757575',
+    color: colors.textSecondary,
     textAlign: 'center',
     paddingVertical: 16,
   },
@@ -326,7 +328,7 @@ const styles = StyleSheet.create({
   },
   comingSoon: {
     fontStyle: 'italic',
-    color: '#757575',
+    color: colors.textSecondary,
     marginBottom: 12,
   },
   featureList: {
@@ -342,6 +344,6 @@ const styles = StyleSheet.create({
     padding: 24,
   },
   footerText: {
-    color: '#9E9E9E',
+    color: colors.muted,
   },
 });

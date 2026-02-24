@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, Card, Searchbar, Chip, useTheme, Badge, Avatar } from 'react-native-paper';
 import Icon from 'react-native-paper/src/components/Icon';
 import { useAuth } from '../../contexts/AuthContext';
+import colors from '../../constants/colors';
 import teamService from '../../services/team.service';
 import { TeamDetailsDto, RosterPlayerDto } from '../../types/team.types';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -91,9 +92,9 @@ export default function SelectPlayerScreen({ navigation, route }: SelectPlayerSc
   const getStatusColor = (status?: string): string => {
     switch (status) {
       case 'GREEN':
-        return '#4CAF50';
+        return colors.success;
       case 'ORANGE':
-        return '#FF9800';
+        return colors.warning;
       case 'RED':
         return '#F44336';
       default:
@@ -288,7 +289,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     marginBottom: 24,
-    color: '#424242',
+    color: colors.textSecondary,
   },
   teamCard: {
     marginBottom: 12,
@@ -381,7 +382,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   jerseyAvatar: {
-    backgroundColor: '#6200EE',
+    backgroundColor: colors.primary,
     marginRight: 12,
   },
   playerDetails: {
@@ -395,13 +396,13 @@ const styles = StyleSheet.create({
   playerName: {
     fontWeight: '600',
     marginRight: 8,
-    color: '#FFFFFF',
+    color: colors.white,
   },
   injuryBadge: {
     marginLeft: 4,
   },
   playerPosition: {
-    color: '#B0B0B0',
+    color: colors.muted,
     marginBottom: 4,
   },
   statusRow: {
@@ -416,7 +417,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 12,
-    color: '#B0B0B0',
+    color: colors.muted,
   },
   emptyState: {
     alignItems: 'center',

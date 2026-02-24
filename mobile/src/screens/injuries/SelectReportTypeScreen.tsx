@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Card, useTheme } from 'react-native-paper';
+import colors from '../../constants/colors';
 import Icon from 'react-native-paper/src/components/Icon';
 
 interface SelectReportTypeScreenProps {
@@ -71,7 +72,7 @@ export default function SelectReportTypeScreen({ navigation }: SelectReportTypeS
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: 20,
@@ -80,12 +81,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     textAlign: 'center',
-    color: '#000000',
+    color: colors.text,
   },
   subtitle: {
     textAlign: 'center',
     marginBottom: 32,
-    color: '#424242',
+    color: colors.textSecondary,
   },
   card: {
     marginBottom: 20,
@@ -93,11 +94,11 @@ const styles = StyleSheet.create({
   },
   quickCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#6200EE',
+    borderLeftColor: colors.primary,
   },
   detailedCard: {
     borderLeftWidth: 4,
-    borderLeftColor: '#03DAC6',
+    borderLeftColor: colors.accent,
   },
   cardContent: {
     padding: 20,
@@ -119,6 +120,6 @@ const styles = StyleSheet.create({
   cardDescription: {
     textAlign: 'center',
     marginBottom: 20,
-    color: '#E0E0E0',
+    color: colors.border,
   },
 });

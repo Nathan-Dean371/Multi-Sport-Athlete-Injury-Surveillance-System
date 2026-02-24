@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Chip, Divider, Button, useTheme, List } from 'react-native-paper';
 import { format } from 'date-fns';
+import colors from '../../constants/colors';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import playerService from '../../services/player.service';
 import { PlayerDto } from '../../types/player.types';
@@ -59,15 +60,15 @@ export default function PlayerDetailScreen({ route, navigation }: PlayerDetailSc
   const getSeverityColor = (severity: Severity): string => {
     switch (severity) {
       case Severity.MINOR:
-        return theme.colors.primary;
+        return colors.primary;
       case Severity.MODERATE:
-        return '#FF9800';
+        return colors.warning;
       case Severity.SEVERE:
         return '#FF5722';
       case Severity.CRITICAL:
         return '#F44336';
       default:
-        return theme.colors.surfaceVariant;
+        return colors.surface;
     }
   };
 
@@ -76,15 +77,15 @@ export default function PlayerDetailScreen({ route, navigation }: PlayerDetailSc
       case InjuryStatus.ACTIVE:
         return '#F44336';
       case InjuryStatus.RECOVERING:
-        return '#FF9800';
+        return colors.warning;
       case InjuryStatus.RECOVERED:
-        return '#4CAF50';
+        return colors.success;
       case InjuryStatus.CHRONIC:
         return '#9C27B0';
       case InjuryStatus.RE_INJURED:
         return '#FF5722';
       default:
-        return theme.colors.surfaceVariant;
+        return colors.surface;
     }
   };
 
@@ -210,7 +211,7 @@ export default function PlayerDetailScreen({ route, navigation }: PlayerDetailSc
             <Chip
               mode="outlined"
               icon={player.isActive ? 'check-circle' : 'close-circle'}
-              textStyle={{ color: player.isActive ? '#4CAF50' : '#9E9E9E' }}
+              textStyle={{ color: player.isActive ? colors.success : colors.muted }}
             >
               {player.isActive ? 'Active' : 'Inactive'}
             </Chip>
@@ -246,7 +247,7 @@ export default function PlayerDetailScreen({ route, navigation }: PlayerDetailSc
             </View>
 
             <View style={styles.summaryItem}>
-              <Text variant="headlineMedium" style={[styles.summaryCount, { color: '#4CAF50' }]}>
+              <Text variant="headlineMedium" style={[styles.summaryCount, { color: colors.success }]}> 
                 {pastInjuries.length}
               </Text>
               <Text variant="bodySmall" style={styles.summaryLabel}>
@@ -404,7 +405,7 @@ export default function PlayerDetailScreen({ route, navigation }: PlayerDetailSc
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: colors.surface,
   },
   content: {
     padding: 16,
@@ -437,17 +438,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   position: {
-    color: '#424242',
+    color: colors.textSecondary,
   },
   jerseyBadge: {
-    backgroundColor: '#E3F2FD',
+    backgroundColor: colors.card,
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 8,
   },
   jerseyNumber: {
     fontWeight: 'bold',
-    color: '#1976D2',
+    color: colors.info,
   },
   divider: {
     marginVertical: 12,
@@ -463,7 +464,7 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     width: 100,
-    color: '#B0B0B0',
+    color: colors.muted,
     fontWeight: '500',
   },
   infoValue: {
@@ -481,7 +482,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   summaryLabel: {
-    color: '#424242',
+    color: colors.textSecondary,
     marginTop: 4,
   },
   listIcon: {
@@ -495,12 +496,12 @@ const styles = StyleSheet.create({
     height: 28,
   },
   severityText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 12,
     fontWeight: 'bold',
   },
   statusText: {
-    color: '#FFFFFF',
+    color: colors.white,
     fontSize: 12,
   },
   noInjuries: {
@@ -508,6 +509,6 @@ const styles = StyleSheet.create({
     paddingVertical: 24,
   },
   noInjuriesText: {
-    color: '#757575',
+    color: colors.textSecondary,
   },
 });

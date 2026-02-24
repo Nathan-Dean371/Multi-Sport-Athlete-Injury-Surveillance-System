@@ -3,6 +3,7 @@ import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { Text, Card, Chip, useTheme, Badge, Searchbar } from 'react-native-paper';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import teamService from '../../services/team.service';
+import colors from '../../constants/colors';
 import { TeamRosterDto, RosterPlayerDto } from '../../types/team.types';
 import { PlayerStatus } from '../../types/status.types';
 
@@ -54,9 +55,9 @@ export default function TeamRosterScreen({ route, navigation }: TeamRosterScreen
     
     switch (status) {
       case PlayerStatus.GREEN:
-        return '#4CAF50';
+        return colors.success;
       case PlayerStatus.ORANGE:
-        return '#FF9800';
+        return colors.warning;
       case PlayerStatus.RED:
         return '#F44336';
       default:

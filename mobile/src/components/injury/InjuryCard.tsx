@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
+import colors from '../../constants/colors';
 import { format } from 'date-fns';
 import StatusBadge from '../common/StatusBadge';
 import { InjuryDetailDto, Severity } from '../../types/injury.types';
@@ -116,7 +117,7 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   bodyPart: {
-    color: '#E0E0E0',
+    color: colors.textSecondary,
   },
   severityBadge: {
     paddingHorizontal: 12,
@@ -137,7 +138,7 @@ const styles = StyleSheet.create({
   },
   label: {
     width: 120,
-    color: '#E0E0E0',
+    color: colors.textSecondary,
     fontWeight: '500',
   },
   value: {
@@ -145,7 +146,7 @@ const styles = StyleSheet.create({
   },
   diagnosis: {
     marginTop: 8,
-    color: '#E0E0E0',
+    color: colors.textSecondary,
     fontStyle: 'italic',
   },
 });
