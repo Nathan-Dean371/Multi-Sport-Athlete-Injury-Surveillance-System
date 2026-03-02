@@ -9,6 +9,9 @@ import { PlayersModule } from './players/players.module';
 import { InjuriesModule } from './injuries/injuries.module';
 import { StatusModule } from './status/status.module';
 import { TeamsModule } from './teams/teams.module';
+import { ParentsModule } from './parents/parents.module';
+import { SessionsModule } from './sessions/sessions.module';
+import { ReportsModule } from './reports/reports.module';
 import configuration from './config/configuration';
 
 @Module({
@@ -25,6 +28,9 @@ import configuration from './config/configuration';
     InjuriesModule,
     StatusModule,
     TeamsModule,
+    ParentsModule,
+    SessionsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
