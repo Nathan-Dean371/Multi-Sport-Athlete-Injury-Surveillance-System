@@ -7,15 +7,15 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch: # Allow manual triggering
 
 env:
   AWS_REGION: eu-west-1 # Changed to Ireland region
   ECR_REPOSITORY: injury-surveillance-backend
-  
+
 jobs:
   # --------------------------------------------------------------------------
   # Job 1: Test Backend
@@ -23,7 +23,7 @@ jobs:
   test-backend:
     name: Test Backend
     runs-on: ubuntu-latest
-    
+
     services:
       postgres:
         image: postgres:16-alpine
@@ -38,7 +38,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      
+
       neo4j:
         image: neo4j:5.25-community
         env:
@@ -50,18 +50,18 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
           cache-dependency-path: backend/package-lock.json
-      
+
       - name: Install dependencies
         working-directory: ./backend
         run: npm ci
@@ -70,8 +70,13 @@ jobs:
         run: |
           sudo apt-get update && sudo apt-get install -y postgresql-client
           psql -h localhost -U identity_admin -d postgres -c "DROP DATABASE IF EXISTS identity_service_test;"
-          psql -h localhost -U identity_admin -d postgres -f ./database/postgres/init-test-db.sql
-          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/identity-service-schema.sql
+          psql -h localhost -U identity_admin -d postgres -f ./database/postgres/006-init-test-db.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/001-identity-service-schema.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/002-create-user-accounts.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/003-sample-identities.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/004-update-passwords.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/005-fix-passwords.sql
+          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/007-add-parent-and-invitations.sql
         env:
           PGPASSWORD: test-password
 
@@ -114,7 +119,7 @@ jobs:
           directory: ./backend/coverage
           flags: backend
           fail_ci_if_error: false
-  
+
   # --------------------------------------------------------------------------
   # Job 2: Build and Push Docker Image
   # --------------------------------------------------------------------------
@@ -124,30 +129,30 @@ jobs:
     needs: test-backend
     # Run on push to main or manual trigger
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-    
+
     outputs:
       image-uri: ${{ steps.image-uri.outputs.uri }}
       ecr-registry: ${{ steps.login-ecr.outputs.registry }}
       image-digest: ${{ steps.build.outputs.digest }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
-      
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      
+
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -156,7 +161,7 @@ jobs:
           tags: |
             type=ref,event=branch
             type=sha,prefix={{branch}}-
-      
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v5
@@ -169,15 +174,15 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64
-      
+
       - name: Image digest
         run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
-      
+
       - name: Set image URI output
         id: image-uri
         run: |
           echo "uri=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:main" >> $GITHUB_OUTPUT
-  
+
   # --------------------------------------------------------------------------
   # Job 3: Deploy to EC2 (Optional - Manual Trigger)
   # --------------------------------------------------------------------------
@@ -186,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build-and-push
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
-    
+
     steps:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -194,7 +199,28 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-      
+
+      - name: Checkout code (for migrations)
+        uses: actions/checkout@v4
+
+      - name: Apply Database Migrations
+        env:
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        run: |
+          apt-get update && apt-get install -y postgresql-client
+
+          # Run all migrations in sequence
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d postgres -f ./database/postgres/001-identity-service-schema.sql
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/002-create-user-accounts.sql
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/003-sample-identities.sql
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/004-update-passwords.sql
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/005-fix-passwords.sql
+          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/007-add-parent-and-invitations.sql
+
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -206,7 +232,7 @@ jobs:
           # Save SSH key
           echo "$EC2_SSH_KEY" > ec2_key.pem
           chmod 600 ec2_key.pem
-          
+
           # SSH into EC2 and deploy
           ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
             # Login to ECR
@@ -240,7 +266,7 @@ jobs:
             # Clean up old images
             docker image prune -f
           EOF
-          
+
           # Clean up SSH key
           rm ec2_key.pem
 
