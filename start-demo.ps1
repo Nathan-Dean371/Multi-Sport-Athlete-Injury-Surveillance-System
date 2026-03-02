@@ -8,6 +8,12 @@
 #   3. Mobile app (React Native/Expo)
 # ============================================================================
 
+[CmdletBinding()]
+param(
+    [ValidateSet('dev', 'prod')]
+    [string]$MobileMode = 'dev'
+)
+
 Write-Host "Starting Multi-Sport Injury Surveillance System Demo..." -ForegroundColor Cyan
 Write-Host ""
 
@@ -25,7 +31,7 @@ if (-not (Test-Path "$ProjectRoot\docker-compose.yml")) {
 # Check if Docker is running
 Write-Host "Checking Docker..." -ForegroundColor Yellow
 try {
-    $dockerCheck = docker ps 2>&1
+    docker ps 2>&1 | Out-Null
     if ($LASTEXITCODE -ne 0) {
         throw "Docker not running"
     }
@@ -44,6 +50,7 @@ Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "  Multi-Sport Injury Surveillance System" -ForegroundColor Cyan
 Write-Host "  Demo Startup" -ForegroundColor Cyan
+Write-Host "  Mobile Mode: $MobileMode" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Opening terminals..." -ForegroundColor Yellow
@@ -53,18 +60,16 @@ Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-dock
 
 Write-Host "  [1] Database terminal opened" -ForegroundColor Green
 
-# Give Docker a moment to begin starting before opening the next windows
-Start-Sleep -Seconds 2
-
 # Terminal 2 - Backend API
 Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-backend.ps1"
 
 Write-Host "  [2] Backend terminal opened" -ForegroundColor Green
 
 # Terminal 3 - Mobile App
-Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-mobile.ps1"
+$mobileLauncherScript = ".\scripts\start-mobile-$MobileMode.ps1"
+Start-Process powershell -ArgumentList "-NoExit", "-File", $mobileLauncherScript
 
-Write-Host "  [3] Mobile terminal opened" -ForegroundColor Green
+Write-Host "  [3] Mobile terminal opened ($MobileMode mode)" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan

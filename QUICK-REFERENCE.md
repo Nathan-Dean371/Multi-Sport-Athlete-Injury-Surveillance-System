@@ -3,12 +3,14 @@
 ## CREDENTIALS
 
 ### Neo4j (http://localhost:7474)
+
 ```
 Username: neo4j
 Password: injury-surveillance-dev-password
 ```
 
 ### Test Login (Frontend)
+
 ```
 Email: liam.murphy@email.com
 Password: password123
@@ -17,11 +19,13 @@ Password: password123
 ---
 
 ## START DEMO
+
 ```powershell
 .\start-demo.ps1
 ```
 
 ## STOP DEMO
+
 ```powershell
 .\stop-demo.ps1
 ```
@@ -30,30 +34,33 @@ Password: password123
 
 ## URLS
 
-| Service | URL |
-|---------|-----|
-| Frontend | http://localhost:3001 |
-| Backend API | http://localhost:3000 |
-| Swagger Docs | http://localhost:3000/api |
-| Neo4j Browser | http://localhost:7474 |
-| pgAdmin | http://localhost:5050 |
-| **Mobile App** | **Expo Go (scan QR)** |
+| Service        | URL                       |
+| -------------- | ------------------------- |
+| Frontend       | http://localhost:3001     |
+| Backend API    | http://localhost:3000     |
+| Swagger Docs   | http://localhost:3000/api |
+| Neo4j Browser  | http://localhost:7474     |
+| pgAdmin        | http://localhost:5050     |
+| **Mobile App** | **Expo Go (scan QR)**     |
 
 ---
 
 ## TOP NEO4J QUERIES
 
 ### Show Full Graph
+
 ```cypher
 MATCH (n) RETURN n LIMIT 100
 ```
 
 ### Show Relationships
+
 ```cypher
 MATCH (n)-[r]->(m) RETURN n, r, m LIMIT 50
 ```
 
 ### Active Injuries
+
 ```cypher
 MATCH (p:Player)-[:SUSTAINED]->(i:Injury {status: 'Active'})
 MATCH (p)-[:PLAYS_FOR]->(t:Team)
@@ -62,6 +69,7 @@ ORDER BY i.injuryDate DESC
 ```
 
 ### Team Stats
+
 ```cypher
 MATCH (t:Team)<-[:PLAYS_FOR]-(p:Player)-[:SUSTAINED]->(i:Injury)
 RETURN t.name AS Team,
@@ -72,6 +80,7 @@ ORDER BY TotalInjuries DESC
 ```
 
 ### Schema Visualization
+
 ```cypher
 CALL db.schema.visualization()
 ```
@@ -81,6 +90,7 @@ CALL db.schema.visualization()
 ## TROUBLESHOOTING
 
 ### Restart Everything
+
 ```powershell
 docker-compose restart
 cd backend; npm run start:dev
@@ -88,18 +98,21 @@ cd frontend; npm start
 ```
 
 ### Reset Databases
+
 ```powershell
 docker-compose down -v
 docker-compose up
 ```
 
 ### Check Docker
+
 ```powershell
 docker ps
 docker-compose logs
 ```
 
 ### Mobile App Not Connecting
+
 ```powershell
 # Check backend is running
 curl http://localhost:3000
@@ -114,13 +127,20 @@ curl http://localhost:3000
 ## MOBILE APP QUICK START
 
 ### Run Mobile App
+
 ```bash
-cd mobile
-npm start
+npm run mobile:dev
 # Scan QR code with Expo Go app
 ```
 
+### Run Mobile App (AWS Backend)
+
+```bash
+npm run mobile:prod
+```
+
 ### Test Credentials (Mobile)
+
 ```
 Email: liam.murphy@email.com
 Password: password123

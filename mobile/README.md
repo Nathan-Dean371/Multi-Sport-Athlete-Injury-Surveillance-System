@@ -5,11 +5,13 @@ React Native app for athlete-facing data collection and surveys.
 ## Setup
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Start the backend server (from the root directory):
+
    ```bash
    npm run dev
    ```
@@ -18,6 +20,21 @@ React Native app for athlete-facing data collection and surveys.
    ```bash
    npm start
    ```
+
+## Launch Modes
+
+From the project root you can launch the mobile app against different backends:
+
+- **Dev mode (local Docker backend):**
+  ```powershell
+  npm run mobile:dev
+  ```
+- **Prod mode (AWS backend):**
+  ```powershell
+  npm run mobile:prod
+  ```
+
+`start-demo.ps1` now uses **dev mode** for the mobile terminal by default.
 
 ## Network Configuration
 
@@ -41,12 +58,12 @@ The app will log the API URL on startup. Check the console output to verify it's
 
 ### Common Issues
 
-- **Network Error on Physical Device**: 
+- **Network Error on Physical Device**:
   - Ensure your phone and computer are on the same WiFi network
   - Check that your firewall allows connections on port 3000
   - Verify the backend is running on `http://YOUR_IP:3000`
 
-- **Cannot reach backend**: 
+- **Cannot reach backend**:
   - Make sure the backend server is running (`npm run dev` in the root directory)
   - Check the backend is accessible at the logged URL
 
@@ -56,4 +73,7 @@ The app will log the API URL on startup. Check the console output to verify it's
 - `npm run android` - Run on Android device/emulator
 - `npm run ios` - Run on iOS simulator (macOS only)
 - `npm run web` - Run in web browser
+
+```
+
 ```

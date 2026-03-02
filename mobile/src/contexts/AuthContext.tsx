@@ -1,7 +1,15 @@
-import React, { createContext, useState, useContext, useEffect, ReactNode } from 'react';
-import authService from '../services/auth.service';
-import { getToken, getUser } from '../utils/storage';
-import { User, LoginRequest, RegisterRequest } from '../types/auth.types';
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  ReactNode,
+} from "react";
+import authService from "../services/auth.service";
+import { getToken, getUser, removeToken, removeUser } from "../utils/storage";
+import { isJwtExpired } from "../utils/jwt";
+import { onUnauthorized } from "../utils/auth-events";
+import { User, LoginRequest, RegisterRequest } from "../types/auth.types";
 
 interface AuthContextData {
   user: User | null;
@@ -14,7 +22,9 @@ interface AuthContextData {
 
 const AuthContext = createContext<AuthContextData>({} as AuthContextData);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,16 +32,34 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     loadStoredUser();
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onUnauthorized(() => {
+      setUser(null);
+    });
+
+    return unsubscribe;
+  }, []);
+
   async function loadStoredUser() {
     try {
       const token = await getToken();
       const storedUser = await getUser();
 
-      if (token && storedUser) {
-        setUser(storedUser);
+      if (!token || !storedUser) {
+        setUser(null);
+        return;
       }
+
+      if (isJwtExpired(token, 30)) {
+        await removeToken();
+        await removeUser();
+        setUser(null);
+        return;
+      }
+
+      setUser(storedUser);
     } catch (error) {
-      console.error('Error loading stored user:', error);
+      console.error("Error loading stored user:", error);
     } finally {
       setLoading(false);
     }
@@ -83,7 +111,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

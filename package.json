@@ -9,7 +9,9 @@
     "test:databases": "jest tests/databases",
     "backend:dev": "cd backend && npm run start:dev",
     "backend:build": "cd backend && npm run build",
-    "backend:start": "cd backend && npm run start:dev"
+    "backend:start": "cd backend && npm run start:dev",
+    "mobile:dev": "powershell -ExecutionPolicy Bypass -File ./scripts/start-mobile-dev.ps1",
+    "mobile:prod": "powershell -ExecutionPolicy Bypass -File ./scripts/start-mobile-prod.ps1"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.11",
