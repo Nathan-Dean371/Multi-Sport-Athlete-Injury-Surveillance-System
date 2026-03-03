@@ -200,27 +200,6 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Checkout code (for migrations)
-        uses: actions/checkout@v4
-
-      - name: Apply Database Migrations
-        env:
-          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
-          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        run: |
-          apt-get update && apt-get install -y postgresql-client
-
-          # Run all migrations in sequence
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d postgres -f ./database/postgres/001-identity-service-schema.sql
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/002-create-user-accounts.sql
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/003-sample-identities.sql
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/004-update-passwords.sql
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/005-fix-passwords.sql
-          psql -h $POSTGRES_HOST -U $POSTGRES_USER -d $POSTGRES_DB -f ./database/postgres/007-add-parent-and-invitations.sql
-
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -228,6 +207,14 @@ jobs:
           EC2_SSH_KEY: ${{ secrets.EC2_SSH_KEY }}
           IMAGE_URI: ${{ needs.build-and-push.outputs.image-uri }}
           ECR_REGISTRY: ${{ needs.build-and-push.outputs.ecr-registry }}
+          POSTGRES_HOST: ${{ secrets.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ secrets.POSTGRES_PORT }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # Save SSH key
           echo "$EC2_SSH_KEY" > ec2_key.pem
@@ -235,8 +222,45 @@ jobs:
 
           # SSH into EC2 and deploy
           ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
+            set -euo pipefail
+
             # Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
+
+            # Prepare tools and fetch migration files on EC2
+            sudo apt-get update
+            sudo apt-get install -y postgresql-client git
+
+            DEPLOY_DIR="/tmp/injury-surveillance-deploy"
+            rm -rf "$DEPLOY_DIR"
+            git -c http.extraHeader="Authorization: Bearer ${GITHUB_TOKEN}" clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+            git fetch --depth 1 origin "$GITHUB_SHA"
+            git checkout "$GITHUB_SHA"
+
+            export PGPASSWORD="$POSTGRES_PASSWORD"
+
+            # Track applied migrations
+            psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "
+              CREATE TABLE IF NOT EXISTS schema_migrations (
+                filename TEXT PRIMARY KEY,
+                executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+              );
+            "
+
+            # Apply production-safe schema migrations only
+            for migration in 001-identity-service-schema.sql 007-add-parent-and-invitations.sql; do
+              if psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='${migration}'" | grep -q 1; then
+                echo "Skipping already applied migration: ${migration}"
+              else
+                echo "Applying migration: ${migration}"
+                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "database/postgres/${migration}"
+                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('${migration}');"
+              fi
+            done
+
+            unset PGPASSWORD
+            rm -rf "$DEPLOY_DIR"
             
             # Pull image
             docker pull $IMAGE_URI
