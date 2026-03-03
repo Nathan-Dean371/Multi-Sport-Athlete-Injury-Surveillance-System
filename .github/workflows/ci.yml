@@ -228,8 +228,24 @@ jobs:
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
 
             # Prepare tools and fetch migration files on EC2
-            sudo apt-get update
-            sudo apt-get install -y postgresql-client git
+            SUDO=""
+            if command -v sudo >/dev/null 2>&1; then
+              SUDO="sudo"
+            fi
+
+            if ! command -v git >/dev/null 2>&1 || ! command -v psql >/dev/null 2>&1; then
+              if command -v apt-get >/dev/null 2>&1; then
+                $SUDO apt-get update
+                $SUDO apt-get install -y git postgresql-client
+              elif command -v dnf >/dev/null 2>&1; then
+                $SUDO dnf install -y git postgresql
+              elif command -v yum >/dev/null 2>&1; then
+                $SUDO yum install -y git postgresql
+              else
+                echo "No supported package manager found (apt-get/dnf/yum)."
+                exit 1
+              fi
+            fi
 
             DEPLOY_DIR="/tmp/injury-surveillance-deploy"
             rm -rf "$DEPLOY_DIR"
