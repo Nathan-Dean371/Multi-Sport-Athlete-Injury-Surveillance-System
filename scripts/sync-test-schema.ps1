@@ -28,13 +28,12 @@ Write-Host ""
 # Check if test database exists, if not create it
 Write-Host "  Creating test database (if not exists)..." -ForegroundColor Gray
 try {
-    $output = docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres -f /dev/stdin @"
-SELECT 1 FROM pg_database WHERE datname = 'identity_service_test';
-"@ 2>&1
+    $output = docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'identity_service_test';" 2>&1
+    $dbExists = (($output | Out-String).Trim() -eq "1")
 
-    if ($output -notmatch "1 row") {
+    if (-not $dbExists) {
         Write-Host "  Test database doesn't exist, creating..." -ForegroundColor Yellow
-        Get-Content "$DatabaseDir\postgres\init-test-db.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres
+        Get-Content "$DatabaseDir\postgres\006-init-test-db.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres
         Write-Host "  [OK] Test database created" -ForegroundColor Green
     } else {
         Write-Host "  [OK] Test database already exists" -ForegroundColor Green
@@ -48,7 +47,7 @@ SELECT 1 FROM pg_database WHERE datname = 'identity_service_test';
 # Apply schema
 Write-Host "  Applying schema to test database..." -ForegroundColor Gray
 try {
-    Get-Content "$DatabaseDir\postgres\identity-service-schema.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d identity_service_test
+    Get-Content "$DatabaseDir\postgres\schema.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d identity_service_test
     Write-Host "  [OK] PostgreSQL schema synchronized" -ForegroundColor Green
 } catch {
     Write-Host "  [ERROR] Failed to apply PostgreSQL schema" -ForegroundColor Red
@@ -120,7 +119,7 @@ Write-Host ""
 
 # Verify Neo4j
 Write-Host "  Neo4j Constraints:" -ForegroundColor Gray
-$constraints = docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password -d neo4j "CALL db.constraints() YIELD name RETURN count(name) AS total" 2>&1
+$constraints = docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password -d neo4j "SHOW CONSTRAINTS YIELD name RETURN count(name) AS total" 2>&1
 Write-Host "    Total constraints: $($constraints | Select-String -Pattern '\d+' | ForEach-Object { $_.Matches.Value })" -ForegroundColor DarkGray
 
 Write-Host ""
@@ -131,6 +130,6 @@ Write-Host ""
 Write-Host "Test databases are ready for E2E testing!" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Connection Details:" -ForegroundColor Yellow
-Write-Host "  PostgreSQL: localhost:5432/identity_service_test" -ForegroundColor Gray
+Write-Host "  PostgreSQL: 127.0.0.1:5433/identity_service_test" -ForegroundColor Gray
 Write-Host "  Neo4j:      bolt://localhost:7688" -ForegroundColor Gray
 Write-Host ""

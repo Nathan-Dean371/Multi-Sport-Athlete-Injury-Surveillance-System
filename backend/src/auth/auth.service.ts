@@ -161,6 +161,16 @@ export class AuthService {
             ],
           );
           break;
+        case "parent":
+          identityTable = "parent_identities";
+          identityResult = await client.query(
+            `INSERT INTO parent_identities 
+             (pseudonym_id, first_name, last_name, email, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+             RETURNING parent_id as id`,
+            [pseudonymId, firstName, lastName, email],
+          );
+          break;
         default:
           throw new Error("Invalid identity type");
       }

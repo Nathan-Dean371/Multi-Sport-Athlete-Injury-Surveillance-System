@@ -89,7 +89,7 @@ Write-Host ""
 Write-Host "Test Environment Configuration:" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  PostgreSQL Test DB:" -ForegroundColor Yellow
-Write-Host "    Host:     localhost:5432" -ForegroundColor Gray
+Write-Host "    Host:     127.0.0.1:5433" -ForegroundColor Gray
 Write-Host "    Database: identity_service_test" -ForegroundColor Gray
 Write-Host "    User:     identity_admin" -ForegroundColor Gray
 Write-Host "    Password: identity-service-dev-password" -ForegroundColor Gray

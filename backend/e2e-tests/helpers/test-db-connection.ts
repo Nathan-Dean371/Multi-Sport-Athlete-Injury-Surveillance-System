@@ -1,12 +1,17 @@
 import { Pool } from "pg";
 import { ConfigService } from "@nestjs/config";
 import * as neo4j from "neo4j-driver";
+import * as dotenv from "dotenv";
+import * as path from "path";
 
 /**
  * Create test database connections
  * Uses .env.test configuration
  */
 export function createTestDatabaseConnections() {
+  // Load .env.test file explicitly
+  dotenv.config({ path: path.resolve(__dirname, "../../.env.test") });
+
   // Read from .env.test
   const postgresConfig = {
     host: process.env.POSTGRES_HOST || "localhost",
@@ -17,7 +22,7 @@ export function createTestDatabaseConnections() {
   };
 
   const neo4jConfig = {
-    uri: process.env.NEO4J_URI || "bolt://localhost:7687",
+    uri: process.env.NEO4J_URI || "bolt://localhost:7688",
     username: process.env.NEO4J_USERNAME || "neo4j",
     password: process.env.NEO4J_PASSWORD || "",
   };
