@@ -66,11 +66,11 @@ CREATE TABLE IF NOT EXISTS player_identities (
     CONSTRAINT chk_dob_reasonable CHECK (date_of_birth >= '1900-01-01' AND date_of_birth <= CURRENT_DATE)
 );
 
-CREATE INDEX idx_player_identities_pseudonym ON player_identities(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_player_identities_pseudonym ON player_identities(pseudonym_id);
 CREATE INDEX idx_player_identities_neo4j_id ON player_identities(neo4j_player_id);
-CREATE INDEX idx_player_identities_email ON player_identities(email) WHERE email IS NOT NULL;
-CREATE INDEX idx_player_identities_active ON player_identities(is_active) WHERE is_active = true;
-CREATE INDEX idx_player_identities_deleted ON player_identities(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_player_identities_email ON player_identities(email) WHERE email IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_player_identities_active ON player_identities(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_player_identities_deleted ON player_identities(deleted_at) WHERE deleted_at IS NULL;
 
 -- Coach/Staff Identities
 CREATE TABLE IF NOT EXISTS coach_identities (
@@ -103,10 +103,10 @@ CREATE TABLE IF NOT EXISTS coach_identities (
     deleted_by UUID
 );
 
-CREATE INDEX idx_coach_identities_pseudonym ON coach_identities(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_coach_identities_pseudonym ON coach_identities(pseudonym_id);
 CREATE INDEX idx_coach_identities_neo4j_id ON coach_identities(neo4j_coach_id);
-CREATE INDEX idx_coach_identities_email ON coach_identities(email);
-CREATE INDEX idx_coach_identities_active ON coach_identities(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_coach_identities_email ON coach_identities(email);
+CREATE INDEX IF NOT EXISTS idx_coach_identities_active ON coach_identities(is_active) WHERE is_active = true;
 
 -- Admin Identities
 CREATE TABLE IF NOT EXISTS admin_identities (
@@ -125,8 +125,8 @@ CREATE TABLE IF NOT EXISTS admin_identities (
     deleted_by UUID
 );
 
-CREATE INDEX idx_admin_identities_pseudonym ON admin_identities(pseudonym_id);
-CREATE INDEX idx_admin_identities_email ON admin_identities(email);
+CREATE INDEX IF NOT EXISTS idx_admin_identities_pseudonym ON admin_identities(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_admin_identities_email ON admin_identities(email);
 
 -- Parent Identities (Migration 007)
 CREATE TABLE IF NOT EXISTS parent_identities (
@@ -173,11 +173,11 @@ CREATE TABLE IF NOT EXISTS user_accounts (
     CONSTRAINT chk_failed_attempts CHECK (failed_login_attempts >= 0)
 );
 
-CREATE INDEX idx_user_accounts_email ON user_accounts(email);
-CREATE INDEX idx_user_accounts_pseudonym ON user_accounts(pseudonym_id);
-CREATE INDEX idx_user_accounts_identity ON user_accounts(identity_type, identity_id);
-CREATE INDEX idx_user_accounts_active ON user_accounts(is_active) WHERE is_active = true;
-CREATE INDEX idx_user_accounts_reset_token ON user_accounts(password_reset_token) WHERE password_reset_token IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_user_accounts_email ON user_accounts(email);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_pseudonym ON user_accounts(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_identity ON user_accounts(identity_type, identity_id);
+CREATE INDEX IF NOT EXISTS idx_user_accounts_active ON user_accounts(is_active) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_user_accounts_reset_token ON user_accounts(password_reset_token) WHERE password_reset_token IS NOT NULL;
 
 -- Parent Invitations (Migration 007)
 CREATE TABLE IF NOT EXISTS parent_invitations (
@@ -216,10 +216,10 @@ CREATE TABLE IF NOT EXISTS data_access_log (
     CONSTRAINT chk_access_type CHECK (access_type IN ('read', 'create', 'update', 'delete', 'export'))
 );
 
-CREATE INDEX idx_data_access_log_target ON data_access_log(target_type, target_id);
-CREATE INDEX idx_data_access_log_accessor ON data_access_log(accessor_type, accessor_id);
-CREATE INDEX idx_data_access_log_time ON data_access_log(accessed_at DESC);
-CREATE INDEX idx_data_access_log_pseudonym ON data_access_log(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_data_access_log_target ON data_access_log(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_data_access_log_accessor ON data_access_log(accessor_type, accessor_id);
+CREATE INDEX IF NOT EXISTS idx_data_access_log_time ON data_access_log(accessed_at DESC);
+CREATE INDEX IF NOT EXISTS idx_data_access_log_pseudonym ON data_access_log(pseudonym_id);
 
 -- Data Deletion Requests (Right to Erasure)
 CREATE TABLE IF NOT EXISTS data_deletion_requests (
@@ -240,9 +240,9 @@ CREATE TABLE IF NOT EXISTS data_deletion_requests (
     CONSTRAINT chk_deletion_status CHECK (status IN ('pending', 'approved', 'rejected', 'completed', 'cancelled'))
 );
 
-CREATE INDEX idx_deletion_requests_status ON data_deletion_requests(status);
-CREATE INDEX idx_deletion_requests_requester ON data_deletion_requests(requester_type, requester_id);
-CREATE INDEX idx_deletion_requests_date ON data_deletion_requests(request_date DESC);
+CREATE INDEX IF NOT EXISTS idx_deletion_requests_status ON data_deletion_requests(status);
+CREATE INDEX IF NOT EXISTS idx_deletion_requests_requester ON data_deletion_requests(requester_type, requester_id);
+CREATE INDEX IF NOT EXISTS idx_deletion_requests_date ON data_deletion_requests(request_date DESC);
 
 -- Data Export Requests (Right to Portability)
 CREATE TABLE IF NOT EXISTS data_export_requests (
@@ -263,8 +263,8 @@ CREATE TABLE IF NOT EXISTS data_export_requests (
     CONSTRAINT chk_export_status CHECK (status IN ('pending', 'processing', 'completed', 'failed', 'expired'))
 );
 
-CREATE INDEX idx_export_requests_status ON data_export_requests(status);
-CREATE INDEX idx_export_requests_requester ON data_export_requests(requester_type, requester_id);
+CREATE INDEX IF NOT EXISTS idx_export_requests_status ON data_export_requests(status);
+CREATE INDEX IF NOT EXISTS idx_export_requests_requester ON data_export_requests(requester_type, requester_id);
 
 -- ============================================================================
 -- PART 4: TRIGGERS FOR AUTOMATIC UPDATES
