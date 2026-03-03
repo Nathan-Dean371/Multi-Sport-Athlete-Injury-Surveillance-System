@@ -200,6 +200,9 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Checkout code (for migration SQL files)
+        uses: actions/checkout@v4
+
       - name: Deploy to EC2
         env:
           EC2_HOST: ${{ secrets.EC2_HOST }}
@@ -212,13 +215,17 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-          GITHUB_SHA: ${{ github.sha }}
-          GITHUB_TOKEN: ${{ github.token }}
         run: |
           # Save SSH key
           echo "$EC2_SSH_KEY" > ec2_key.pem
           chmod 600 ec2_key.pem
+
+          # Copy production-safe migration files to EC2
+          ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "mkdir -p /tmp/injury-surveillance-migrations"
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ./database/postgres/001-identity-service-schema.sql \
+            ./database/postgres/007-add-parent-and-invitations.sql \
+            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/
 
           # SSH into EC2 and deploy
           ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
@@ -227,37 +234,13 @@ jobs:
             # Login to ECR
             aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin $ECR_REGISTRY
 
-            # Prepare tools and fetch migration files on EC2
-            SUDO=""
-            if command -v sudo >/dev/null 2>&1; then
-              SUDO="sudo"
-            fi
-
-            if ! command -v git >/dev/null 2>&1 || ! command -v psql >/dev/null 2>&1; then
-              if command -v apt-get >/dev/null 2>&1; then
-                $SUDO apt-get update
-                $SUDO apt-get install -y git postgresql-client
-              elif command -v dnf >/dev/null 2>&1; then
-                $SUDO dnf install -y git postgresql
-              elif command -v yum >/dev/null 2>&1; then
-                $SUDO yum install -y git postgresql
-              else
-                echo "No supported package manager found (apt-get/dnf/yum)."
-                exit 1
-              fi
-            fi
-
-            DEPLOY_DIR="/tmp/injury-surveillance-deploy"
-            rm -rf "$DEPLOY_DIR"
-            git -c http.extraHeader="Authorization: Bearer ${GITHUB_TOKEN}" clone --depth 1 "https://github.com/${GITHUB_REPOSITORY}.git" "$DEPLOY_DIR"
-            cd "$DEPLOY_DIR"
-            git fetch --depth 1 origin "$GITHUB_SHA"
-            git checkout "$GITHUB_SHA"
-
-            export PGPASSWORD="$POSTGRES_PASSWORD"
+            MIGRATIONS_DIR="/tmp/injury-surveillance-migrations"
 
             # Track applied migrations
-            psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "
+            docker run --rm --network host \
+              -e PGPASSWORD="$POSTGRES_PASSWORD" \
+              postgres:16-alpine \
+              psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "
               CREATE TABLE IF NOT EXISTS schema_migrations (
                 filename TEXT PRIMARY KEY,
                 executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -266,17 +249,27 @@ jobs:
 
             # Apply production-safe schema migrations only
             for migration in 001-identity-service-schema.sql 007-add-parent-and-invitations.sql; do
-              if psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='${migration}'" | grep -q 1; then
+              if docker run --rm --network host \
+                -e PGPASSWORD="$POSTGRES_PASSWORD" \
+                postgres:16-alpine \
+                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='${migration}'" | grep -q 1; then
                 echo "Skipping already applied migration: ${migration}"
               else
                 echo "Applying migration: ${migration}"
-                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "database/postgres/${migration}"
-                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('${migration}');"
+                docker run --rm --network host \
+                  -e PGPASSWORD="$POSTGRES_PASSWORD" \
+                  -v "$MIGRATIONS_DIR:/migrations:ro" \
+                  postgres:16-alpine \
+                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/migrations/${migration}"
+
+                docker run --rm --network host \
+                  -e PGPASSWORD="$POSTGRES_PASSWORD" \
+                  postgres:16-alpine \
+                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('${migration}');"
               fi
             done
 
-            unset PGPASSWORD
-            rm -rf "$DEPLOY_DIR"
+            rm -rf "$MIGRATIONS_DIR"
             
             # Pull image
             docker pull $IMAGE_URI
