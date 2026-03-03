@@ -252,24 +252,24 @@ jobs:
               if docker run --rm --network host \
                 -e PGPASSWORD="$POSTGRES_PASSWORD" \
                 postgres:16-alpine \
-                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='${migration}'" | grep -q 1; then
-                echo "Skipping already applied migration: ${migration}"
+                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='\${migration}'" | grep -q 1; then
+                echo "Skipping already applied migration: \${migration}"
               else
-                echo "Applying migration: ${migration}"
+                echo "Applying migration: \${migration}"
                 docker run --rm --network host \
                   -e PGPASSWORD="$POSTGRES_PASSWORD" \
-                  -v "$MIGRATIONS_DIR:/migrations:ro" \
+                  -v "\$MIGRATIONS_DIR:/migrations:ro" \
                   postgres:16-alpine \
-                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/migrations/${migration}"
+                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/migrations/\${migration}"
 
                 docker run --rm --network host \
                   -e PGPASSWORD="$POSTGRES_PASSWORD" \
                   postgres:16-alpine \
-                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('${migration}');"
+                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('\${migration}');"
               fi
             done
 
-            rm -rf "$MIGRATIONS_DIR"
+            rm -rf "\$MIGRATIONS_DIR"
             
             # Pull image
             docker pull $IMAGE_URI
