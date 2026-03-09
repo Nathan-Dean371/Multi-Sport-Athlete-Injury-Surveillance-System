@@ -247,6 +247,56 @@ export class AuthService {
     };
   }
 
+  async getUserManagementStats() {
+    const identityTypes = ["coach", "parent", "player"];
+
+    const totalsResult = await this.pool.query(
+      `SELECT
+         identity_type,
+         COUNT(*)::int AS total,
+         COUNT(*) FILTER (WHERE is_active = true)::int AS active,
+         COUNT(*) FILTER (WHERE is_active = false)::int AS invited
+       FROM user_accounts
+       WHERE identity_type = ANY($1)
+       GROUP BY identity_type`,
+      [identityTypes],
+    );
+
+    const pendingParentInvitesResult = await this.pool.query(
+      `SELECT COUNT(*)::int AS pending
+       FROM parent_invitations
+       WHERE accepted = false`,
+    );
+
+    const statsMap = {
+      coach: { total: 0, invited: 0, active: 0 },
+      parent: { total: 0, invited: 0, active: 0 },
+      player: { total: 0, invited: 0, active: 0 },
+    };
+
+    for (const row of totalsResult.rows) {
+      const identityType = row.identity_type as keyof typeof statsMap;
+      if (statsMap[identityType]) {
+        statsMap[identityType] = {
+          total: Number(row.total),
+          invited: Number(row.invited),
+          active: Number(row.active),
+        };
+      }
+    }
+
+    // Parent invitations can exist before user_accounts rows are created.
+    statsMap.parent.invited += Number(
+      pendingParentInvitesResult.rows[0]?.pending || 0,
+    );
+
+    return {
+      coaches: statsMap.coach,
+      parents: statsMap.parent,
+      players: statsMap.player,
+    };
+  }
+
   private generateRandomId(): string {
     return Math.random().toString(36).substring(2, 10).toUpperCase();
   }

@@ -40,6 +40,24 @@ export interface InjuryStats {
   }>;
 }
 
+export interface UserManagementStats {
+  coaches: {
+    total: number;
+    invited: number;
+    active: number;
+  };
+  parents: {
+    total: number;
+    invited: number;
+    active: number;
+  };
+  players: {
+    total: number;
+    invited: number;
+    active: number;
+  };
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -190,6 +208,12 @@ class ApiClient {
 
   async logout() {
     this.clearToken();
+  }
+
+  async getUserManagementStats(): Promise<UserManagementStats> {
+    return this.request("/auth/user-management-stats", {
+      method: "GET",
+    });
   }
 }
 

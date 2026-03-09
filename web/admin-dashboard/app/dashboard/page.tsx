@@ -4,6 +4,7 @@ import { useAuthStore } from "@/store/authStore";
 import { apiClient } from "@/lib/api";
 import type { InjuryStats } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function DashboardPage() {
@@ -61,15 +62,23 @@ export default function DashboardPage() {
             </h1>
             <p className="text-gray-400 text-sm mt-1">Welcome, {displayName}</p>
           </div>
-          <button
-            onClick={() => {
-              logout();
-              router.push("/");
-            }}
-            className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
-          >
-            Sign Out
-          </button>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/users"
+              className="px-4 py-2 bg-lime-500/20 hover:bg-lime-500/30 text-lime-300 rounded-lg border border-lime-500/30 transition"
+            >
+              User Management
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                router.push("/");
+              }}
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
+            >
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
