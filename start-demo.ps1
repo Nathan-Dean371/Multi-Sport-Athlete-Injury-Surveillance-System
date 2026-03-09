@@ -2,10 +2,9 @@
 # Multi-Sport Athlete Injury Surveillance System
 # Demo Startup Script
 # ============================================================================
-# This script opens three PowerShell terminals to run:
-#   1. Docker containers (databases)
-#   2. Backend API server
-#   3. Mobile app (React Native/Expo)
+# This script opens two PowerShell terminals to run:
+#   1. Docker containers (databases + backend API)
+#   2. Mobile app (React Native/Expo)
 # ============================================================================
 
 [CmdletBinding()]
@@ -55,21 +54,16 @@ Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "Opening terminals..." -ForegroundColor Yellow
 
-# Terminal 1 - Docker Databases (new window, runs attached so logs are visible)
+# Terminal 1 - Docker (databases + backend)
 Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-docker.ps1"
 
-Write-Host "  [1] Database terminal opened" -ForegroundColor Green
+Write-Host "  [1] Docker terminal opened (databases + backend)" -ForegroundColor Green
 
-# Terminal 2 - Backend API
-Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-backend.ps1"
-
-Write-Host "  [2] Backend terminal opened" -ForegroundColor Green
-
-# Terminal 3 - Mobile App
+# Terminal 2 - Mobile App
 $mobileLauncherScript = ".\scripts\start-mobile-$MobileMode.ps1"
 Start-Process powershell -ArgumentList "-NoExit", "-File", $mobileLauncherScript
 
-Write-Host "  [3] Mobile terminal opened ($MobileMode mode)" -ForegroundColor Green
+Write-Host "  [2] Mobile terminal opened ($MobileMode mode)" -ForegroundColor Green
 
 Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan

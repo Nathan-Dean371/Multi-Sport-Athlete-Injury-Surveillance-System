@@ -72,6 +72,7 @@ services:
 
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./database/postgres:/docker-entrypoint-initdb.d:ro
 
     networks:
       - injury-surveillance-network
@@ -100,12 +101,13 @@ services:
       - postgres
 
   # --------------------------------------------------------------------------
-  # NestJS Backend API
+  # NestJS Backend API (Development with Hot Reload)
   # --------------------------------------------------------------------------
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: builder # Use builder stage which has dev dependencies
     container_name: injury-surveillance-backend
     restart: unless-stopped
     ports:
@@ -134,6 +136,12 @@ services:
       # CORS
       - CORS_ORIGIN=http://localhost:3001,http://localhost:19006
 
+    volumes:
+      # Mount source code for hot reload
+      - ./backend/src:/app/src:ro
+      # Keep node_modules in container (don't mount from host)
+      - backend-node-modules:/app/node_modules
+
     networks:
       - injury-surveillance-network
 
@@ -141,12 +149,13 @@ services:
       - postgres
       - neo4j
 
-    # Wait for databases to be ready
+    # Wait for databases to be ready, then start in dev mode with hot reload
     command: >
       sh -c "
         echo 'Waiting for databases to be ready...' &&
         sleep 10 &&
-        node dist/main
+        echo 'Starting backend in development mode with hot reload...' &&
+        npm run start:dev
       "
 
 volumes:
@@ -162,6 +171,8 @@ volumes:
     name: injury-surveillance-postgres-data
   pgadmin-data:
     name: injury-surveillance-pgadmin-data
+  backend-node-modules:
+    name: injury-surveillance-backend-node-modules
 
 networks:
   injury-surveillance-network:
