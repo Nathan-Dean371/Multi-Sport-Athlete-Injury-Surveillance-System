@@ -21,30 +21,24 @@ export class AcceptCoachInvitationDto {
   pseudonymId?: string;
 
   @ApiProperty({
-    description: "Coach's first name",
-    example: "John",
-  })
-  @IsString()
-  @IsNotEmpty()
-  firstName: string;
-
-  @ApiProperty({
-    description: "Coach's last name",
-    example: "Smith",
-  })
-  @IsString()
-  @IsNotEmpty()
-  lastName: string;
-
-  @ApiProperty({
     description:
-      "Coach's specialization (e.g., 'Football', 'Basketball', etc.)",
-    example: "Football",
+      "Coach's first name (optional, will use invitation data if not provided)",
+    example: "John",
     required: false,
   })
   @IsString()
   @IsOptional()
-  specialization?: string;
+  firstName?: string;
+
+  @ApiProperty({
+    description:
+      "Coach's last name (optional, will use invitation data if not provided)",
+    example: "Smith",
+    required: false,
+  })
+  @IsString()
+  @IsOptional()
+  lastName?: string;
 
   @ApiProperty({
     description: "Password for the coach account (minimum 8 characters)",

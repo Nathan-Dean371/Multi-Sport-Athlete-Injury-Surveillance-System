@@ -20,6 +20,7 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CoachDto, CoachListDto } from "./dto/coach.dto";
 import { Roles } from "../auth/roles.decorator";
 import { RolesGuard } from "../auth/roles.guard";
+import { Public } from "../auth/public.decorator";
 import { CreateCoachInvitationDto } from "./dto/create-coach-invitation.dto";
 import { AcceptCoachInvitationDto } from "./dto/accept-coach-invitation.dto";
 
@@ -59,7 +60,7 @@ export class CoachesController {
   @ApiOperation({
     summary: "Get coach details",
     description:
-      "Retrieve detailed information about a specific coach including their team count and specialization.",
+      "Retrieve detailed information about a specific coach including their team count.",
   })
   @ApiParam({
     name: "id",
@@ -121,6 +122,7 @@ export class CoachesController {
     return this.coachesService.createInvitation({ ...dto, adminPseudonymId });
   }
 
+  @Public()
   @Post("accept-invitation")
   @ApiOperation({
     summary: "Accept a coach invitation",
@@ -141,7 +143,6 @@ export class CoachesController {
             email: { type: "string" },
             firstName: { type: "string" },
             lastName: { type: "string" },
-            specialization: { type: "string" },
           },
         },
       },
@@ -239,5 +240,49 @@ export class CoachesController {
   })
   async cancelInvitation(@Param("invitationId") invitationId: string) {
     return this.coachesService.cancelInvitation(invitationId);
+  }
+
+  @Get("invitations/accepted")
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get all accepted coach invitations",
+    description:
+      "Retrieve a list of all accepted coach invitations. Only accessible by admins.",
+  })
+  @ApiResponse({
+    status: 200,
+    description: "List of accepted coach invitations",
+    schema: {
+      properties: {
+        invitations: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              invitationId: { type: "string" },
+              coachEmail: { type: "string" },
+              coachFirstName: { type: "string" },
+              coachLastName: { type: "string" },
+              createdAt: { type: "string" },
+              acceptedAt: { type: "string" },
+              adminPseudonymId: { type: "string" },
+            },
+          },
+        },
+        total: { type: "number" },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 401,
+    description: "Unauthorized - JWT token required",
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Forbidden - Admin access required",
+  })
+  async getAcceptedInvitations() {
+    return this.coachesService.getAcceptedInvitations();
   }
 }

@@ -221,7 +221,6 @@ CREATE (team4:Team {
 CREATE (coach1:Coach {
   coachId: 'COACH-001',
   pseudonymId: 'PSY-COACH-8F2A9D1B',
-  specialization: 'Physiotherapy',
   certifications: ['Chartered Physiotherapist', 'Sports Injury Specialist'],
   yearsExperience: 8,
   isActive: true,
@@ -232,7 +231,6 @@ CREATE (coach1:Coach {
 CREATE (coach2:Coach {
   coachId: 'COACH-002',
   pseudonymId: 'PSY-COACH-3B7E4C9A',
-  specialization: 'Head Coach',
   certifications: ['UEFA A License', 'Sports Science Degree'],
   yearsExperience: 12,
   isActive: true,
@@ -243,7 +241,6 @@ CREATE (coach2:Coach {
 CREATE (coach3:Coach {
   coachId: 'COACH-003',
   pseudonymId: 'PSY-COACH-6D1F8E2C',
-  specialization: 'Strength and Conditioning',
   certifications: ['CSCS', 'Exercise Science MSc'],
   yearsExperience: 6,
   isActive: true,
@@ -864,7 +861,7 @@ ORDER BY s.updateDate;
 
 // --- Verify coach assignments ---
 MATCH (c:Coach)-[:MANAGES]->(t:Team)
-RETURN c.pseudonymId AS Coach, c.specialization AS Role, 
+RETURN c.pseudonymId AS Coach, 
        collect(t.name) AS Teams;
 
 // ============================================================================
@@ -882,7 +879,7 @@ RETURN "Sample data creation complete! " +
 // - 4 Roles (Admin, Coach, Physio, Player)
 // - 4 Teams (2 Galway United, 2 ATU)
 // - 7 Players across teams
-// - 3 Coaches with different specializations
+// - 3 Coaches
 // - 1 Admin
 // - 3 Training Sessions
 // - 3 Injuries with varying severities

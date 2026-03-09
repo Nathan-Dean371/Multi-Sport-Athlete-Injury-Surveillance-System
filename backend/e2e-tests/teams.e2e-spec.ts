@@ -169,8 +169,7 @@ describe("Teams (E2E)", () => {
 
           CREATE (c:Coach {
             coachId: $coachId,
-            pseudonymId: $coachPseudo,
-            specialization: $coachSpec
+            pseudonymId: $coachPseudo
           })
           CREATE (c)-[:MANAGES]->(t)
 
@@ -192,7 +191,6 @@ describe("Teams (E2E)", () => {
             player2Position: "Defender",
             coachId: coachNeo4jId,
             coachPseudo: coachPseudonymId,
-            coachSpec: "Physiotherapy",
             status: "GREEN",
             statusNotes: "Feeling good",
             injuryId1: "INJ-TEAM-001",

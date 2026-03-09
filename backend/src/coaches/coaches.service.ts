@@ -35,7 +35,6 @@ export class CoachesService {
         WITH c, count(DISTINCT t) as teamCount
         RETURN c.coachId as coachId,
                c.pseudonymId as pseudonymId,
-               c.specialization as specialization,
                teamCount as teamCount
         ORDER BY c.coachId
       `;
@@ -77,7 +76,6 @@ export class CoachesService {
             firstName,
             lastName,
             email,
-            specialization: record.get("specialization"),
             teamCount: record.get("teamCount").toNumber(),
             isActive,
           };
@@ -110,7 +108,6 @@ export class CoachesService {
         WITH c, count(DISTINCT t) as teamCount
         RETURN c.coachId as coachId,
                c.pseudonymId as pseudonymId,
-               c.specialization as specialization,
                teamCount as teamCount
       `;
 
@@ -153,7 +150,6 @@ export class CoachesService {
         firstName,
         lastName,
         email,
-        specialization: record.get("specialization"),
         teamCount: record.get("teamCount").toNumber(),
         isActive,
       };
@@ -238,7 +234,7 @@ export class CoachesService {
       token,
       message:
         "Invitation created successfully. An email has been sent to the coach.",
-      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3000"}/accept-invitation/coach?token=${token}`,
+      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/coach?token=${token}`,
     };
   }
 
@@ -267,20 +263,27 @@ export class CoachesService {
 
       const invitation = res.rows[0];
 
+      // Use invitation data for firstName and lastName if not provided in request
+      const firstName = dto.firstName || invitation.coach_first_name;
+      const lastName = dto.lastName || invitation.coach_last_name;
+
       // Generate pseudonym ID if not provided
       const pseudonymId =
         dto.pseudonymId || `coach-${randomBytes(6).toString("hex")}`;
 
+      // Generate unique coach ID for Neo4j
+      const coachNeoId = `COACH-${randomBytes(4).toString("hex").toUpperCase()}`;
+
       // Create coach identity in PostgreSQL
       const coachIdentityResult = await client.query(
         `INSERT INTO coach_identities 
-         (pseudonym_id, first_name, last_name, email, created_at, updated_at)
-         VALUES ($1, $2, $3, $4, NOW(), NOW())
-         RETURNING coach_id`,
-        [pseudonymId, dto.firstName, dto.lastName, invitation.coach_email],
+         (pseudonym_id, neo4j_coach_id, first_name, last_name, email, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+         RETURNING id`,
+        [pseudonymId, coachNeoId, firstName, lastName, invitation.coach_email],
       );
 
-      const coachId = coachIdentityResult.rows[0].coach_id;
+      const coachIdentityId = coachIdentityResult.rows[0].id;
 
       // Hash password
       const passwordHash = await bcrypt.hash(dto.password, 10);
@@ -297,7 +300,7 @@ export class CoachesService {
           passwordSalt,
           "coach",
           pseudonymId,
-          coachId,
+          coachIdentityId,
         ],
       );
 
@@ -309,21 +312,16 @@ export class CoachesService {
         [dto.token],
       );
 
-      // Generate unique coach ID for Neo4j
-      const coachNeoId = `COACH-${randomBytes(4).toString("hex").toUpperCase()}`;
-
       // Create coach node in Neo4j
       await neo4jSession.run(
         `CREATE (c:Coach {
           coachId: $coachId,
           pseudonymId: $pseudonymId,
-          specialization: $specialization,
           createdAt: datetime()
         })`,
         {
           coachId: coachNeoId,
           pseudonymId: pseudonymId,
-          specialization: dto.specialization || null,
         },
       );
 
@@ -335,9 +333,8 @@ export class CoachesService {
           coachId: coachNeoId,
           pseudonymId,
           email: invitation.coach_email,
-          firstName: dto.firstName,
-          lastName: dto.lastName,
-          specialization: dto.specialization,
+          firstName: firstName,
+          lastName: lastName,
         },
       };
     } catch (error) {
@@ -371,6 +368,37 @@ export class CoachesService {
           coachLastName: row.coach_last_name,
           createdAt: row.created_at,
           expiresAt: row.expires_at,
+          adminPseudonymId: row.admin_pseudonym_id,
+        })),
+        total: result.rows.length,
+      };
+    } finally {
+      client.release();
+    }
+  }
+
+  /**
+   * Get all accepted coach invitations (Admin only)
+   */
+  async getAcceptedInvitations() {
+    const client = await this.pool.connect();
+    try {
+      const result = await client.query(
+        `SELECT invitation_id, coach_email, coach_first_name, coach_last_name, 
+                created_at, accepted_at, admin_pseudonym_id
+         FROM coach_invitations
+         WHERE accepted = true
+         ORDER BY accepted_at DESC`,
+      );
+
+      return {
+        invitations: result.rows.map((row) => ({
+          invitationId: row.invitation_id,
+          coachEmail: row.coach_email,
+          coachFirstName: row.coach_first_name,
+          coachLastName: row.coach_last_name,
+          createdAt: row.created_at,
+          acceptedAt: row.accepted_at,
           adminPseudonymId: row.admin_pseudonym_id,
         })),
         total: result.rows.length,

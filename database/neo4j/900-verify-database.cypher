@@ -191,7 +191,6 @@ ORDER BY Status, p.position;
 MATCH (c:Coach)-[:MANAGES]->(t:Team)
 WITH c, count(t) AS teamCount
 RETURN c.pseudonymId AS Coach,
-       c.specialization AS Role,
        teamCount AS TeamsManaged
 ORDER BY teamCount DESC;
 

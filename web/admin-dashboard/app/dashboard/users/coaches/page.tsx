@@ -65,14 +65,6 @@ export default function CoachesPage() {
       ),
     },
     {
-      header: "Specialization",
-      accessor: (coach) => (
-        <div className="text-gray-300 text-sm">
-          {coach.specialization || "N/A"}
-        </div>
-      ),
-    },
-    {
       header: "Coach ID",
       accessor: (coach) => (
         <div className="text-gray-400 text-sm font-mono">{coach.coachId}</div>
@@ -106,8 +98,7 @@ export default function CoachesPage() {
     return (
       fullName.includes(searchLower) ||
       (coach.email?.toLowerCase().includes(searchLower) ?? false) ||
-      coach.coachId.toLowerCase().includes(searchLower) ||
-      (coach.specialization?.toLowerCase().includes(searchLower) ?? false)
+      coach.coachId.toLowerCase().includes(searchLower)
     );
   };
 
@@ -116,7 +107,7 @@ export default function CoachesPage() {
       title="Manage Coaches"
       breadcrumbs={[{ label: "Back to Users", href: "/dashboard/users" }]}
       statsCards={statsCards}
-      searchPlaceholder="Search coaches by name, email, ID, or specialization..."
+      searchPlaceholder="Search coaches by name, email, or ID..."
       columns={columns}
       data={coaches}
       loading={loading}

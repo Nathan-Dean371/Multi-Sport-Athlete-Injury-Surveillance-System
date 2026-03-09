@@ -161,7 +161,6 @@ CREATE (team4:Team {
 CREATE (coach1:Coach {
   coachId: 'COACH-001',
   pseudonymId: 'PSY-COACH-8F2A9D1B',
-  specialization: 'Physiotherapy',
   certifications: ['Chartered Physiotherapist', 'Sports Injury Specialist'],
   yearsExperience: 8,
   isActive: true,
@@ -172,7 +171,6 @@ CREATE (coach1:Coach {
 CREATE (coach2:Coach {
   coachId: 'COACH-002',
   pseudonymId: 'PSY-COACH-3B7E4C9A',
-  specialization: 'Head Coach',
   certifications: ['UEFA A License', 'Sports Science Degree'],
   yearsExperience: 12,
   isActive: true,
@@ -183,7 +181,6 @@ CREATE (coach2:Coach {
 CREATE (coach3:Coach {
   coachId: 'COACH-003',
   pseudonymId: 'PSY-COACH-6D1F8E2C',
-  specialization: 'Strength and Conditioning',
   certifications: ['CSCS', 'Exercise Science MSc'],
   yearsExperience: 6,
   isActive: true,

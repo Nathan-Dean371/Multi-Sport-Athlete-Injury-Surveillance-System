@@ -64,7 +64,6 @@ export interface Coach {
   firstName?: string;
   lastName?: string;
   email?: string;
-  specialization?: string;
   teamCount: number;
   isActive: boolean;
 }
@@ -135,10 +134,26 @@ export interface PendingCoachInvitationsResponse {
   total: number;
 }
 
+export interface AcceptedCoachInvitation {
+  invitationId: string;
+  coachEmail: string;
+  coachFirstName: string | null;
+  coachLastName: string | null;
+  createdAt: string;
+  acceptedAt: string;
+  adminPseudonymId: string;
+}
+
+export interface AcceptedCoachInvitationsResponse {
+  invitations: AcceptedCoachInvitation[];
+  total: number;
+}
+
 export interface AcceptCoachInvitationRequest {
   token: string;
   password: string;
-  specialization?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface AcceptCoachInvitationResponse {
@@ -149,7 +164,6 @@ export interface AcceptCoachInvitationResponse {
     email: string;
     firstName: string | null;
     lastName: string | null;
-    specialization: string | null;
   };
 }
 
@@ -340,6 +354,12 @@ class ApiClient {
 
   async getPendingCoachInvitations(): Promise<PendingCoachInvitationsResponse> {
     return this.request("/coaches/invitations/pending", {
+      method: "GET",
+    });
+  }
+
+  async getAcceptedCoachInvitations(): Promise<AcceptedCoachInvitationsResponse> {
+    return this.request("/coaches/invitations/accepted", {
       method: "GET",
     });
   }

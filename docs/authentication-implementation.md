@@ -65,7 +65,7 @@ CREATE TABLE user_accounts (
 User accounts link to identity-specific tables:
 
 - **Players:** `player_identities` (contains PII, DOB, medical info)
-- **Coaches:** `coach_identities` (contains specialization, qualifications)
+- **Coaches:** `coach_identities` (contains professional qualifications)
 - **Admins:** `admin_identities` (contains administrative details)
 
 ---
@@ -79,6 +79,7 @@ User accounts link to identity-specific tables:
 Creates a new user account with associated identity record.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -86,11 +87,12 @@ Creates a new user account with associated identity record.
   "firstName": "John",
   "lastName": "Doe",
   "dateOfBirth": "2000-01-01",
-  "identityType": "player"  // or "coach", "admin"
+  "identityType": "player" // or "coach", "admin"
 }
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -104,6 +106,7 @@ Creates a new user account with associated identity record.
 ```
 
 **Process Flow:**
+
 1. Validate email doesn't already exist
 2. Hash password using bcrypt (10 rounds)
 3. Generate unique pseudonym ID
@@ -119,6 +122,7 @@ Creates a new user account with associated identity record.
 Authenticates existing user and returns JWT token.
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -127,6 +131,7 @@ Authenticates existing user and returns JWT token.
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -140,6 +145,7 @@ Authenticates existing user and returns JWT token.
 ```
 
 **Process Flow:**
+
 1. Query user by email
 2. Check if account is active and not locked
 3. Verify password using bcrypt.compare()
@@ -149,6 +155,7 @@ Authenticates existing user and returns JWT token.
 7. Return token and user info
 
 **Security Features:**
+
 - Account locking after 5 failed attempts
 - Tracks failed login attempts
 - Records last login timestamp
@@ -245,8 +252,8 @@ POSTGRES_PASSWORD=identity-service-dev-password
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret'),
-        signOptions: { expiresIn: '1d' },
+        secret: configService.get<string>("jwt.secret"),
+        signOptions: { expiresIn: "1d" },
       }),
       inject: [ConfigService],
     }),
@@ -265,6 +272,7 @@ export class AuthModule {}
 ### Manual Testing (PowerShell)
 
 **Register New User:**
+
 ```powershell
 $registerBody = @{
     email = "test@example.com"
@@ -280,6 +288,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/auth/register" `
 ```
 
 **Login Existing User:**
+
 ```powershell
 $loginBody = @{
     email = "liam.murphy@email.com"
@@ -293,6 +302,7 @@ $token = $response.accessToken
 ```
 
 **Use Token for Protected Routes:**
+
 ```powershell
 $headers = @{
     "Authorization" = "Bearer $token"
@@ -306,6 +316,7 @@ Invoke-RestMethod -Uri "http://localhost:3000/profile" -Headers $headers
 All sample accounts use password: `password123`
 
 **Players:**
+
 - liam.murphy@email.com
 - cian.obrien@email.com
 - sean.kelly@email.com
@@ -313,10 +324,12 @@ All sample accounts use password: `password123`
 - oisin.ryan@email.com
 
 **Coaches:**
+
 - sarah.oconnor@physio.ie
 - michael.fitzgerald@coaching.ie
 
 **Admin:**
+
 - james.osullivan@admin.ie
 
 ---
@@ -326,6 +339,7 @@ All sample accounts use password: `password123`
 ### Common Error Responses
 
 **401 Unauthorized - Invalid Credentials:**
+
 ```json
 {
   "message": "Invalid credentials",
@@ -335,6 +349,7 @@ All sample accounts use password: `password123`
 ```
 
 **401 Unauthorized - Account Inactive:**
+
 ```json
 {
   "message": "Account is inactive",
@@ -344,6 +359,7 @@ All sample accounts use password: `password123`
 ```
 
 **401 Unauthorized - Account Locked:**
+
 ```json
 {
   "message": "Account is locked",
@@ -353,6 +369,7 @@ All sample accounts use password: `password123`
 ```
 
 **409 Conflict - Email Exists:**
+
 ```json
 {
   "message": "Email already exists",
@@ -372,17 +389,17 @@ Registration uses PostgreSQL transactions to ensure data integrity:
 ```typescript
 const client = await this.pool.connect();
 try {
-  await client.query('BEGIN');
-  
+  await client.query("BEGIN");
+
   // 1. Insert into identity table (player/coach/admin)
   const identityResult = await client.query(/* ... */);
-  
+
   // 2. Insert into user_accounts
   const userResult = await client.query(/* ... */);
-  
-  await client.query('COMMIT');
+
+  await client.query("COMMIT");
 } catch (error) {
-  await client.query('ROLLBACK');
+  await client.query("ROLLBACK");
   throw error;
 } finally {
   client.release();
@@ -390,6 +407,7 @@ try {
 ```
 
 This ensures:
+
 - Both records created or neither created
 - No orphaned identity records
 - No orphaned user accounts
@@ -407,6 +425,7 @@ The authentication system uses **pseudonym IDs** to maintain privacy:
 2. **Neo4j** stores: Graph data using pseudonyms only
 
 **Example:**
+
 - PostgreSQL: `Liam Murphy → PSY-PLAYER-A1B2C3D4`
 - Neo4j: Player node with `playerId: "PLAYER-001"` and `pseudonymId: "PSY-PLAYER-A1B2C3D4"`
 
@@ -429,15 +448,15 @@ const query = `
 
 ## Implementation Timeline
 
-| Date | Task | Status |
-|------|------|--------|
+| Date         | Task                        | Status      |
+| ------------ | --------------------------- | ----------- |
 | Jan 14, 2026 | Database modules configured | ✅ Complete |
 | Jan 14, 2026 | Auth service implementation | ✅ Complete |
-| Jan 14, 2026 | JWT strategy & guards | ✅ Complete |
-| Jan 14, 2026 | DTOs and validation | ✅ Complete |
-| Jan 14, 2026 | Sample data population | ✅ Complete |
-| Jan 14, 2026 | Password hash correction | ✅ Complete |
-| Jan 14, 2026 | Testing and verification | ✅ Complete |
+| Jan 14, 2026 | JWT strategy & guards       | ✅ Complete |
+| Jan 14, 2026 | DTOs and validation         | ✅ Complete |
+| Jan 14, 2026 | Sample data population      | ✅ Complete |
+| Jan 14, 2026 | Password hash correction    | ✅ Complete |
+| Jan 14, 2026 | Testing and verification    | ✅ Complete |
 
 ---
 
@@ -519,18 +538,22 @@ const query = `
 ### Common Issues
 
 **Issue:** "Invalid credentials" on valid password
+
 - **Cause:** Password hash not properly stored
 - **Solution:** Regenerate hash using `bcrypt.hash()` with cost factor 10
 
 **Issue:** JWT token not validated
+
 - **Cause:** Secret mismatch or token expired
 - **Solution:** Check `JWT_SECRET` consistency, verify token expiration
 
 **Issue:** User account exists but can't login
+
 - **Cause:** `is_active` is false or `is_locked` is true
 - **Solution:** Update account status in database
 
 **Issue:** Registration creates identity but no user account
+
 - **Cause:** Transaction failure
 - **Solution:** Check database logs, ensure proper transaction handling
 
@@ -552,6 +575,7 @@ const query = `
 The authentication module provides a secure, scalable foundation for user management in the Multi-Sport Athlete Injury Surveillance System. It successfully integrates with the dual-database architecture, maintaining privacy through pseudonymization while providing robust authentication capabilities.
 
 **Key Achievements:**
+
 - ✅ JWT-based stateless authentication
 - ✅ Secure password hashing with bcrypt
 - ✅ Role-based identity management (player/coach/admin)
@@ -561,5 +585,3 @@ The authentication module provides a secure, scalable foundation for user manage
 - ✅ Pseudonym-based privacy protection
 - ✅ Comprehensive error handling
 - ✅ Production-ready configuration
-
-

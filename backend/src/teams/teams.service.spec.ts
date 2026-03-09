@@ -58,7 +58,6 @@ describe("TeamsService", () => {
           {
             coachId: "COACH-001",
             pseudonymId: "PSY-COACH-001",
-            specialization: "Strength & Conditioning",
           },
         ];
       if (key === "playerCount") return { toNumber: () => 25 };
@@ -299,8 +298,7 @@ describe("TeamsService", () => {
     it("should handle teams with no coaches", async () => {
       const recordNoCoaches = {
         get: (key: string) => {
-          if (key === "coaches")
-            return [{ coachId: null, pseudonymId: null, specialization: null }];
+          if (key === "coaches") return [{ coachId: null, pseudonymId: null }];
           return mockTeamDetailsRecord.get(key);
         },
       };

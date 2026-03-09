@@ -13,7 +13,6 @@ function AcceptInvitationContent() {
   const [formData, setFormData] = useState<AcceptCoachInvitationRequest>({
     token: token || "",
     password: "",
-    specialization: "",
   });
   const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,7 +56,8 @@ function AcceptInvitationContent() {
       const response = await apiClient.acceptCoachInvitation({
         token: formData.token,
         password: formData.password,
-        specialization: formData.specialization || undefined,
+        firstName: formData.firstName || undefined,
+        lastName: formData.lastName || undefined,
       });
 
       // Store coach email for welcome page
@@ -194,25 +194,6 @@ function AcceptInvitationContent() {
                 required
                 className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Re-enter your password"
-              />
-            </div>
-
-            {/* Specialization Field */}
-            <div>
-              <label
-                htmlFor="specialization"
-                className="block text-sm font-medium text-gray-300 mb-2"
-              >
-                Specialization <span className="text-gray-500">(Optional)</span>
-              </label>
-              <input
-                type="text"
-                id="specialization"
-                name="specialization"
-                value={formData.specialization}
-                onChange={handleChange}
-                className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="e.g., Youth Soccer, Basketball"
               />
             </div>
 

@@ -22,7 +22,7 @@ export class EmailService {
     firstName?: string,
     lastName?: string,
   ): Promise<void> {
-    const invitationLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/accept-invitation/coach?token=${token}`;
+    const invitationLink = `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/coach?token=${token}`;
 
     const greeting =
       firstName && lastName

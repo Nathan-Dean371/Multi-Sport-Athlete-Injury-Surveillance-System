@@ -31,12 +31,6 @@ export class CoachDto {
   })
   email?: string;
 
-  @ApiPropertyOptional({
-    example: "Physiotherapy",
-    description: "Coach specialization",
-  })
-  specialization?: string;
-
   @ApiProperty({
     example: 2,
     description: "Number of teams managed by this coach",

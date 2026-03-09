@@ -1,4 +1,4 @@
-import { PlayerStatus } from './status.types';
+import { PlayerStatus } from "./status.types";
 
 export interface Team {
   teamId: string;
@@ -34,7 +34,6 @@ export interface TeamRosterDto {
 export interface CoachDto {
   coachId: string;
   pseudonymId: string;
-  specialization?: string;
 }
 
 export interface TeamDetailsDto {

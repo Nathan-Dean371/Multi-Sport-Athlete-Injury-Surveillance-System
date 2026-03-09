@@ -68,18 +68,11 @@ export async function seedPostgresTestData(pool: Pool): Promise<TestDataIds> {
     // Create coach identity
     const coachResult = await client.query(
       `
-      INSERT INTO coach_identities (pseudonym_id, first_name, last_name, email, phone, specialization)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      INSERT INTO coach_identities (pseudonym_id, first_name, last_name, email, phone)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING pseudonym_id
     `,
-      [
-        "TEST-COACH-001",
-        "Test",
-        "Coach",
-        "coach@test.com",
-        "+1234567891",
-        "Strength & Conditioning",
-      ],
+      ["TEST-COACH-001", "Test", "Coach", "coach@test.com", "+1234567891"],
     );
 
     // Create coach user account
@@ -211,8 +204,7 @@ export async function seedNeo4jTestData(
       MATCH (t:Team {teamId: $teamId})
       CREATE (c:Coach {
         coachId: 'TEST-COACH-001',
-        pseudonymId: $coachPseudonymId,
-        specialization: 'Strength & Conditioning'
+        pseudonymId: $coachPseudonymId
       })
       CREATE (c)-[:MANAGES]->(t)
     `,

@@ -1,15 +1,20 @@
-import { Injectable, Inject, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Driver, Session } from 'neo4j-driver';
-import { Pool } from 'pg';
-import { TeamRosterDto, RosterPlayerDto } from './dto/team-roster.dto';
-import { TeamDetailsDto, CoachInfoDto } from './dto/team-details.dto';
-import { PlayerStatus } from '../status/dto/update-status.dto';
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { Driver, Session } from "neo4j-driver";
+import { Pool } from "pg";
+import { TeamRosterDto, RosterPlayerDto } from "./dto/team-roster.dto";
+import { TeamDetailsDto, CoachInfoDto } from "./dto/team-details.dto";
+import { PlayerStatus } from "../status/dto/update-status.dto";
 
 @Injectable()
 export class TeamsService {
   constructor(
-    @Inject('NEO4J_DRIVER') private readonly neo4jDriver: Driver,
-    @Inject('POSTGRES_POOL') private readonly pool: Pool,
+    @Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver,
+    @Inject("POSTGRES_POOL") private readonly pool: Pool,
   ) {}
 
   /**
@@ -50,14 +55,16 @@ export class TeamsService {
       }
 
       const record = result.records[0];
-      const playersData = record.get('players');
+      const playersData = record.get("players");
 
       // Extract pseudonym IDs to query PostgreSQL
       const pseudonymIds = playersData.map((p: any) => p.pseudonymId);
 
       // Fetch real names from PostgreSQL identity database
       const identityMap = await this.getPlayerIdentities(pseudonymIds);
-      console.log(`Fetched ${identityMap.size} player identities from PostgreSQL for ${pseudonymIds.length} pseudonym IDs`);
+      console.log(
+        `Fetched ${identityMap.size} player identities from PostgreSQL for ${pseudonymIds.length} pseudonym IDs`,
+      );
 
       // Transform players data with real names
       const players: RosterPlayerDto[] = playersData.map((p: any) => {
@@ -65,14 +72,16 @@ export class TeamsService {
         return {
           playerId: p.playerId,
           pseudonymId: p.pseudonymId,
-          firstName: identity?.firstName || 'Unknown',
-          lastName: identity?.lastName || 'Player',
+          firstName: identity?.firstName || "Unknown",
+          lastName: identity?.lastName || "Player",
           position: p.position,
-          jerseyNumber: '', // Will be assigned after sorting
+          jerseyNumber: "", // Will be assigned after sorting
           currentStatus: p.currentStatus as PlayerStatus,
           statusNotes: p.statusNotes,
           lastStatusUpdate: p.lastStatusUpdate,
-          activeInjuryCount: p.activeInjuryCount.toNumber ? p.activeInjuryCount.toNumber() : p.activeInjuryCount,
+          activeInjuryCount: p.activeInjuryCount.toNumber
+            ? p.activeInjuryCount.toNumber()
+            : p.activeInjuryCount,
         };
       });
 
@@ -89,19 +98,21 @@ export class TeamsService {
       });
 
       return {
-        teamId: record.get('teamId'),
-        teamName: record.get('teamName'),
-        sport: record.get('sport'),
+        teamId: record.get("teamId"),
+        teamName: record.get("teamName"),
+        sport: record.get("sport"),
         players,
-        totalPlayers: record.get('totalPlayers').toNumber(),
-        playersReportedToday: record.get('playersReportedToday').toNumber(),
+        totalPlayers: record.get("totalPlayers").toNumber(),
+        playersReportedToday: record.get("playersReportedToday").toNumber(),
         retrievedAt: new Date().toISOString(),
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to retrieve team roster: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to retrieve team roster: ${error.message}`,
+      );
     } finally {
       await session.close();
     }
@@ -110,7 +121,9 @@ export class TeamsService {
   /**
    * Get player identities (real names) from PostgreSQL by pseudonym IDs
    */
-  private async getPlayerIdentities(pseudonymIds: string[]): Promise<Map<string, {firstName: string, lastName: string}>> {
+  private async getPlayerIdentities(
+    pseudonymIds: string[],
+  ): Promise<Map<string, { firstName: string; lastName: string }>> {
     if (pseudonymIds.length === 0) {
       return new Map();
     }
@@ -126,7 +139,7 @@ export class TeamsService {
       const result = await this.pool.query(query, [pseudonymIds]);
 
       const identityMap = new Map();
-      result.rows.forEach(row => {
+      result.rows.forEach((row) => {
         identityMap.set(row.pseudonym_id, {
           firstName: row.first_name,
           lastName: row.last_name,
@@ -135,7 +148,7 @@ export class TeamsService {
 
       return identityMap;
     } catch (error) {
-      console.error('Error fetching player identities:', error);
+      console.error("Error fetching player identities:", error);
       // Return empty map on error to avoid breaking the roster view
       return new Map();
     }
@@ -163,8 +176,7 @@ export class TeamsService {
                t.seasonEnd as seasonEnd,
                collect(DISTINCT {
                  coachId: c.coachId,
-                 pseudonymId: c.pseudonymId,
-                 specialization: c.specialization
+                 pseudonymId: c.pseudonymId
                }) as coaches,
                count(DISTINCT p) as playerCount
       `;
@@ -176,7 +188,7 @@ export class TeamsService {
       }
 
       const record = result.records[0];
-      const coachesData = record.get('coaches');
+      const coachesData = record.get("coaches");
 
       // Filter out null coaches (from OPTIONAL MATCH when no coaches exist)
       const coaches: CoachInfoDto[] = coachesData
@@ -184,27 +196,28 @@ export class TeamsService {
         .map((c: any) => ({
           coachId: c.coachId,
           pseudonymId: c.pseudonymId,
-          specialization: c.specialization,
         }));
 
       return {
-        teamId: record.get('teamId'),
-        name: record.get('name'),
-        sport: record.get('sport'),
-        ageGroup: record.get('ageGroup'),
-        gender: record.get('gender'),
-        organizationId: record.get('organizationId'),
-        organizationName: record.get('organizationName'),
+        teamId: record.get("teamId"),
+        name: record.get("name"),
+        sport: record.get("sport"),
+        ageGroup: record.get("ageGroup"),
+        gender: record.get("gender"),
+        organizationId: record.get("organizationId"),
+        organizationName: record.get("organizationName"),
         coaches,
-        playerCount: record.get('playerCount').toNumber(),
-        seasonStart: record.get('seasonStart'),
-        seasonEnd: record.get('seasonEnd'),
+        playerCount: record.get("playerCount").toNumber(),
+        seasonStart: record.get("seasonStart"),
+        seasonEnd: record.get("seasonEnd"),
       };
     } catch (error) {
       if (error instanceof NotFoundException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to retrieve team details: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to retrieve team details: ${error.message}`,
+      );
     } finally {
       await session.close();
     }
@@ -213,7 +226,10 @@ export class TeamsService {
   /**
    * Helper method to verify if a coach has access to a specific team
    */
-  async verifyCoachAccess(coachPseudoId: string, teamId: string): Promise<boolean> {
+  async verifyCoachAccess(
+    coachPseudoId: string,
+    teamId: string,
+  ): Promise<boolean> {
     const session: Session = this.neo4jDriver.session();
 
     try {
@@ -228,9 +244,9 @@ export class TeamsService {
         return false;
       }
 
-      return result.records[0].get('hasAccess');
+      return result.records[0].get("hasAccess");
     } catch (error) {
-      console.error('Error verifying coach access:', error);
+      console.error("Error verifying coach access:", error);
       return false;
     } finally {
       await session.close();
@@ -265,20 +281,22 @@ export class TeamsService {
       const result = await session.run(query, { coachPseudoId });
 
       return result.records.map((record) => ({
-        teamId: record.get('teamId'),
-        name: record.get('name'),
-        sport: record.get('sport'),
-        ageGroup: record.get('ageGroup'),
-        gender: record.get('gender'),
-        organizationId: record.get('organizationId'),
-        organizationName: record.get('organizationName'),
+        teamId: record.get("teamId"),
+        name: record.get("name"),
+        sport: record.get("sport"),
+        ageGroup: record.get("ageGroup"),
+        gender: record.get("gender"),
+        organizationId: record.get("organizationId"),
+        organizationName: record.get("organizationName"),
         coaches: [], // Not needed for this list view
-        playerCount: record.get('playerCount').toNumber(),
-        seasonStart: record.get('seasonStart'),
-        seasonEnd: record.get('seasonEnd'),
+        playerCount: record.get("playerCount").toNumber(),
+        seasonStart: record.get("seasonStart"),
+        seasonEnd: record.get("seasonEnd"),
       }));
     } catch (error) {
-      throw new BadRequestException(`Failed to retrieve coach teams: ${error.message}`);
+      throw new BadRequestException(
+        `Failed to retrieve coach teams: ${error.message}`,
+      );
     } finally {
       await session.close();
     }
