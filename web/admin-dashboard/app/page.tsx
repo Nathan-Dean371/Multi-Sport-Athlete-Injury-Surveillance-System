@@ -1,39 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "@/store/authStore";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const { login } = useAuthStore();
+  const [localError, setLocalError] = useState("");
+  const { login, isLoading, error, isAuthenticated } = useAuthStore();
   const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/dashboard");
+    }
+  }, [isAuthenticated, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
+    setLocalError("");
+
+    if (!email || !password) {
+      setLocalError("Please fill in all fields");
+      return;
+    }
 
     try {
-      // Basic validation
-      if (!email || !password) {
-        setError("Please fill in all fields");
-        setLoading(false);
-        return;
-      }
-
-      // Simulated login - in real app, this would call your backend
       await login(email, password);
-      router.push("/dashboard");
     } catch (err) {
-      setError("Login failed. Please try again.");
-    } finally {
-      setLoading(false);
+      // Error is already handled by the store
+      setLocalError(error || "Login failed. Please check your credentials.");
     }
   };
+
+  const displayError = localError || error;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-black to-gray-900 flex items-center justify-center p-4">
@@ -61,7 +62,8 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@example.com"
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition disabled:opacity-50"
               />
             </div>
 
@@ -75,33 +77,39 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition"
+                disabled={isLoading}
+                className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400 transition disabled:opacity-50"
               />
             </div>
 
             {/* Error Message */}
-            {error && (
+            {displayError && (
               <div className="p-3 bg-red-900/30 border border-red-700 rounded-lg text-red-400 text-sm">
-                {error}
+                {displayError}
               </div>
             )}
 
-            {/* Demo Credentials */}
-            <div className="p-3 bg-gray-800 border border-gray-700 rounded-lg text-sm text-gray-400">
-              <p className="font-semibold text-gray-300 mb-2">
-                Demo Credentials:
+            {/* Info Box */}
+            <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg text-blue-400 text-sm">
+              <p className="font-semibold text-blue-300 mb-2">
+                Test Credentials:
               </p>
-              <p>Email: admin@example.com</p>
-              <p>Password: any password</p>
+              <p className="text-xs">
+                Password:{" "}
+                <code className="bg-blue-900/50 px-1 rounded">password123</code>
+              </p>
+              <p className="text-xs mt-1">
+                Contact your admin for email addresses
+              </p>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={isLoading}
               className="w-full bg-lime-400 hover:bg-lime-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-bold py-3 rounded-lg transition duration-200 mt-6"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {isLoading ? "Signing in..." : "Sign In"}
             </button>
           </form>
         </div>

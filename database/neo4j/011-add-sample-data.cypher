@@ -1,11 +1,15 @@
 // ============================================================================
-// Link Existing Injuries to Players and Add More Sample Data
+// Additional Sample Injuries and Sessions
 // ============================================================================
-// This script:
-// 1. Links existing injuries to players
-// 2. Adds more injury records
-// 3. Adds training sessions
-// 4. Creates status updates for injuries
+// Purpose:     Link existing injuries to players, add more injuries,
+//              training sessions, and status updates
+// Created:     2026
+// Idempotent:  No (uses CREATE - will duplicate on re-run)
+// Environment: Dev/Test only
+// Dependencies: 010-sample-data.cypher (must have base data)
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \
+//                -u neo4j -p injury-surveillance-password -d neo4j \
+//                < database/neo4j/011-add-sample-data.cypher
 // ============================================================================
 
 :begin;
@@ -143,10 +147,10 @@ CREATE (s:Session {
     createdAt: datetime()
 });
 
-// Link players to session
+// Link sessions to the player schedule owner
 MATCH (s:Session {sessionId: 'SESS-2024-001'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-001'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 // Session 2: Recovery Session - Oct 3
 CREATE (s:Session {
@@ -162,8 +166,8 @@ CREATE (s:Session {
 });
 
 MATCH (s:Session {sessionId: 'SESS-2024-002'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-002'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 // Session 3: Match Day - Oct 5
 CREATE (s:Session {
@@ -181,8 +185,8 @@ CREATE (s:Session {
 });
 
 MATCH (s:Session {sessionId: 'SESS-2024-003'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-003'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 // Link players to sessions they attended
 MATCH (p:Player) WHERE p.playerId IN ['PLAYER-001', 'PLAYER-002', 'PLAYER-003', 'PLAYER-004', 'PLAYER-005']
@@ -264,9 +268,9 @@ MATCH (i:Injury)
 RETURN i.status, count(i) as count
 ORDER BY count DESC;
 
-// Show recent training sessions
-MATCH (t:Team)-[:CONDUCTED_SESSION]->(s:Session)
-RETURN t.name, s.sessionType, s.sessionDate, s.intensity
+// Show recent training sessions by owner
+MATCH (p:Player)-[:OWNS_SESSION]->(s:Session)
+RETURN p.playerId AS ownerPlayerId, s.sessionType, s.sessionDate, s.intensity
 ORDER BY s.sessionDate DESC
 LIMIT 5;
 

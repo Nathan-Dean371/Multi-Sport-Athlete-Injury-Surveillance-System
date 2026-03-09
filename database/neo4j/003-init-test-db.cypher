@@ -1,12 +1,15 @@
 // ============================================================================
-// Initialize Neo4j Test Database
+// Test Database Initialization - DESTRUCTIVE
 // ============================================================================
-// This script clears and initializes the test database with constraints and
-// indexes only (no sample data). Sample data is managed by test suites.
-// 
-// Run with: 
-// docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j 
-//   -p injury-surveillance-test-password -d neo4j < init-test-db.cypher
+// Purpose:     Clear all data and reinitialize test database with fresh schema
+// Created:     2026
+// Idempotent:  Yes (DESTRUCTIVE - clears all nodes first)
+// Environment: Test ONLY - NEVER run on Dev/Prod
+// Dependencies: None
+// Usage:       docker exec -i injury-surveillance-neo4j-test cypher-shell \
+//                -u neo4j -p injury-surveillance-test-password -d neo4j \
+//                < database/neo4j/003-init-test-db.cypher
+// WARNING:     Deletes ALL data! Only use on test databases!
 // ============================================================================
 
 // ----------------------------------------------------------------------------

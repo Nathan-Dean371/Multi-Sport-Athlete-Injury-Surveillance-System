@@ -1,14 +1,16 @@
 // ============================================================================
-// Multi-Sport Athlete Injury Surveillance System
-// Neo4j Database Schema Setup Script
+// Neo4j Schema Setup - Core Constraints and Indexes
 // ============================================================================
-// 
-// This script creates all necessary constraints and indexes for the injury
-// surveillance system. Run this script ONCE when initializing a new database.
-//
-// Execution: Copy and paste this entire script into Neo4j Browser, or run:
-//   cat schema-setup.cypher | cypher-shell -u neo4j -p <password>
-//
+// Purpose:     Create all constraints, unique indexes, and performance indexes
+//              for the injury surveillance system graph database
+// Created:     2026
+// Idempotent:  Yes (uses IF NOT EXISTS)
+// Environment: All (Dev/Test/Prod)
+// Dependencies: None (run this first)
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \
+//                -u neo4j -p injury-surveillance-password -d neo4j \
+//                < database/neo4j/001-schema-setup.cypher
+// Notes:       Run ONCE when initializing database, safe to re-run
 // ============================================================================
 
 // ============================================================================

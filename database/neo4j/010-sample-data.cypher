@@ -1,17 +1,16 @@
 // ============================================================================
-// Multi-Sport Athlete Injury Surveillance System
-// Sample Data Creation Script
+// Comprehensive Sample Data
 // ============================================================================
-// 
-// This script creates comprehensive sample data for development and testing.
-// It includes multiple sports, organizations, teams, players, and injuries
-// with realistic relationships.
-//
-// IMPORTANT: Run schema-setup.cypher BEFORE running this script!
-//
-// Execution: Copy and paste sections into Neo4j Browser, or run:
-//   cat sample-data.cypher | cypher-shell -u neo4j -p <password>
-//
+// Purpose:     Create sample sports, organizations, teams, players, coaches,
+//              parents, sessions, injuries, and all relationships for dev/test
+// Created:     2026
+// Modified:    2026-03-09 (fixed Parent relationship ordering)
+// Idempotent:  Partial (uses CREATE, not MERGE - may create duplicates)
+// Environment: Dev/Test only
+// Dependencies: 001-schema-setup.cypher, 004-add-parent-session-constraints.cypher
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \
+//                -u neo4j -p injury-surveillance-password -d neo4j \
+//                < database/neo4j/010-sample-data.cypher
 // ============================================================================
 
 // ============================================================================
@@ -387,7 +386,42 @@ CREATE (player7:Player {
 :commit;
 
 // ============================================================================
-// PART 5: RELATIONSHIPS - Connect Everything
+// PART 5: PARENTS (Guardians)
+// ---------------------------------------------------------------------------
+// Create sample Parent nodes and link them to players using :PARENT_OF
+// ============================================================================
+
+:begin;
+
+// --- Create Parent Nodes ---
+CREATE (parent1:Parent {
+  parentId: 'PARENT-001',
+  pseudonymId: 'PSY-PARENT-001',
+  firstName: 'Mary',
+  lastName: 'Murphy',
+  email: 'mary.murphy@example.com',
+  phone: '087-1234567',
+  relationship: 'Mother',
+  createdAt: datetime(),
+  updatedAt: datetime()
+});
+
+CREATE (parent2:Parent {
+  parentId: 'PARENT-002',
+  pseudonymId: 'PSY-PARENT-002',
+  firstName: 'John',
+  lastName: 'O\'Connor',
+  email: 'john.oconnor@example.com',
+  phone: '087-7654321',
+  relationship: 'Father',
+  createdAt: datetime(),
+  updatedAt: datetime()
+});
+
+:commit;
+
+// ============================================================================
+// PART 6: RELATIONSHIPS - Connect Everything
 // ============================================================================
 
 :begin;
@@ -450,6 +484,14 @@ CREATE (admin1)-[:HAS_ROLE {assignedDate: date('2024-01-01')}]->(adminRole)
 CREATE (coach1)-[:HAS_ROLE {assignedDate: date('2023-08-01')}]->(physioRole)
 CREATE (coach2)-[:HAS_ROLE {assignedDate: date('2023-06-01')}]->(coachRole);
 
+// --- Parent-Player Relationships ---
+MATCH (parent1:Parent {parentId: 'PARENT-001'})
+MATCH (parent2:Parent {parentId: 'PARENT-002'})
+MATCH (p1:Player {playerId: 'PLAYER-001'})
+MATCH (p2:Player {playerId: 'PLAYER-002'})
+CREATE (parent1)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p1)
+CREATE (parent2)-[:PARENT_OF {relationship: 'Father', isPrimaryContact: true, consentGiven: true}]->(p2);
+
 :commit;
 
 // ============================================================================
@@ -501,14 +543,15 @@ CREATE (session3:Session {
   updatedAt: datetime()
 });
 
-// --- Link Sessions to Teams ---
+// --- Link Sessions to Player Schedules ---
 MATCH (session1:Session {sessionId: 'SESSION-001'})
 MATCH (session2:Session {sessionId: 'SESSION-002'})
 MATCH (session3:Session {sessionId: 'SESSION-003'})
-MATCH (team1:Team {teamId: 'TEAM-GU-U21-001'})
-CREATE (session1)-[:FOR_TEAM]->(team1)
-CREATE (session2)-[:FOR_TEAM]->(team1)
-CREATE (session3)-[:FOR_TEAM]->(team1);
+MATCH (p1:Player {playerId: 'PLAYER-001'})
+MATCH (p3:Player {playerId: 'PLAYER-003'})
+CREATE (p1)-[:OWNS_SESSION]->(session1)
+CREATE (p1)-[:OWNS_SESSION]->(session2)
+CREATE (p3)-[:OWNS_SESSION]->(session3);
 
 :commit;
 

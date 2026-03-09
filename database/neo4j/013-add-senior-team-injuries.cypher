@@ -1,8 +1,15 @@
 // ============================================================================
-// Add Sample Injuries for Senior Team Players
+// Senior Team Sample Injuries
 // ============================================================================
-// This script adds injuries for Galway United Senior Team players
-// (Darragh Brennan and Eoin McCarthy) so Coach 2 can see injury data
+// Purpose:     Add injuries for Galway United Senior Team players
+//              (PLAYER-006, PLAYER-007) for Coach 2 testing
+// Created:     2026
+// Idempotent:  No (uses CREATE - will duplicate on re-run)
+// Environment: Dev/Test only
+// Dependencies: 010-sample-data.cypher (requires senior players)
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \
+//                -u neo4j -p injury-surveillance-password -d neo4j \
+//                < database/neo4j/013-add-senior-team-injuries.cypher
 // ============================================================================
 
 :begin;

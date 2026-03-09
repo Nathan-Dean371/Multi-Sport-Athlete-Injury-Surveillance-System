@@ -1,5 +1,15 @@
 // ============================================================================
-// Link Existing Injuries to Players and Add Additional Sample Data
+// Idempotent Sample Data Addition
+// ============================================================================
+// Purpose:     Link injuries to players and add sample data using MERGE
+//              (safe to run multiple times)
+// Created:     2026
+// Idempotent:  Yes (uses MERGE with ON CREATE)
+// Environment: Dev/Test only
+// Dependencies: 001-schema-setup.cypher
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \
+//                -u neo4j -p injury-surveillance-password -d neo4j \
+//                < database/neo4j/012-link-and-add-data.cypher
 // ============================================================================
 
 // ----------------------------------------------------------------------------
@@ -108,8 +118,8 @@ ON CREATE SET
     s.createdAt = datetime();
 
 MATCH (s:Session {sessionId: 'SESS-2024-001'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-001'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 MERGE (s:Session {sessionId: 'SESS-2024-002'})
 ON CREATE SET
@@ -123,8 +133,8 @@ ON CREATE SET
     s.createdAt = datetime();
 
 MATCH (s:Session {sessionId: 'SESS-2024-002'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-002'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 MERGE (s:Session {sessionId: 'SESS-2024-003'})
 ON CREATE SET
@@ -140,8 +150,8 @@ ON CREATE SET
     s.createdAt = datetime();
 
 MATCH (s:Session {sessionId: 'SESS-2024-003'})
-MATCH (t:Team {teamId: 'TEAM-GU-U21'})
-MERGE (t)-[:CONDUCTED_SESSION]->(s);
+MATCH (p:Player {playerId: 'PLAYER-003'})
+MERGE (p)-[:OWNS_SESSION]->(s);
 
 // Link players to sessions
 MATCH (p:Player) WHERE p.playerId IN ['PLAYER-001', 'PLAYER-002', 'PLAYER-003', 'PLAYER-004', 'PLAYER-005']

@@ -1,12 +1,13 @@
 // ============================================================================
-// Multi-Sport Athlete Injury Surveillance System
-// Database Verification Queries
+// Database Verification and Health Checks
 // ============================================================================
-//
-// Run these queries to verify your database setup is correct and working
-// These queries test schema, data integrity, and performance
-//
-// ============================================================================
+// Purpose:     Comprehensive verification queries for schema, data integrity,
+//              relationships, and performance testing
+// Created:     2026
+// Idempotent:  Yes (read-only queries)
+// Environment: All (Dev/Test/Prod)
+// Dependencies: 001-schema-setup.cypher (or 002 for Aura)
+// Usage:       docker exec -i injury-surveillance-neo4j cypher-shell \\\n//                -u neo4j -p injury-surveillance-password -d neo4j \\\n//                < database/neo4j/900-verify-database.cypher\n// Notes:       Safe to run anytime. Contains PROFILE queries for performance.\n// ============================================================================
 
 // ============================================================================
 // PART 1: SCHEMA VERIFICATION
@@ -125,8 +126,8 @@ RETURN i.injuryId, i.injuryDate, i.returnToPlayDate;
 CALL db.relationshipTypes() YIELD relationshipType
 RETURN relationshipType
 ORDER BY relationshipType;
-// Should see: BELONGS_TO, CREATED_UPDATE, FOR_TEAM, HAS_ROLE, HAS_UPDATE, 
-//             MANAGES, OCCURRED_DURING, PERFORMED, PLAYS, PLAYS_FOR, SUSTAINED
+// Should see: BELONGS_TO, CREATED_UPDATE, HAS_ROLE, HAS_UPDATE,
+//             MANAGES, OCCURRED_DURING, OWNS_SESSION, PERFORMED, PLAYS, PLAYS_FOR, SUSTAINED
 
 // --- Count relationships by type ---
 MATCH ()-[r]->()

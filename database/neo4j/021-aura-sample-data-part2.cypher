@@ -1,7 +1,22 @@
 // ============================================================================
+// Neo4j Aura Sample Data - Part 2
+// ============================================================================
+// Purpose:     Create relationships, parents, sessions, and injuries for Neo4j Aura
+// Created:     2026
+// Idempotent:  No (uses CREATE - will duplicate on re-run)
+// Environment: Aura Dev only (cloud-optimized)
+// Dependencies: 020-aura-sample-data-part1.cypher (must run first)
+// Usage:       Copy/paste into Aura Browser OR use cypher-shell:
+//                cat database/neo4j/021-aura-sample-data-part2.cypher | \
+//                  cypher-shell -a <aura-uri> -u neo4j -p <password>
+// Notes:       Browser-compatible (no transaction commands)
+// ============================================================================
+
+// ============================================================================
 // PART 5: RELATIONSHIPS - Connect Everything
 // ============================================================================
 
+// --- Team-Organization and Team-Sport Relationships ---
 MATCH (team1:Team {teamId: 'TEAM-GU-U21-001'})
 MATCH (team2:Team {teamId: 'TEAM-GU-SENIOR-001'})
 MATCH (team3:Team {teamId: 'TEAM-ATU-SOCCER-001'})
@@ -19,6 +34,7 @@ CREATE (team2)-[:PLAYS]->(soccer)
 CREATE (team3)-[:PLAYS]->(soccer)
 CREATE (team4)-[:PLAYS]->(rugby);
 
+// --- Coach-Team Relationships ---
 MATCH (coach1:Coach {coachId: 'COACH-001'})
 MATCH (coach2:Coach {coachId: 'COACH-002'})
 MATCH (coach3:Coach {coachId: 'COACH-003'})
@@ -29,6 +45,7 @@ CREATE (coach1)-[:MANAGES]->(team1)
 CREATE (coach2)-[:MANAGES]->(team2)
 CREATE (coach3)-[:MANAGES]->(team3);
 
+// --- Player-Team Relationships ---
 MATCH (player1:Player {playerId: 'PLAYER-001'})
 MATCH (player2:Player {playerId: 'PLAYER-002'})
 MATCH (player3:Player {playerId: 'PLAYER-003'})
@@ -45,6 +62,38 @@ CREATE (player4)-[:PLAYS_FOR]->(team1)
 CREATE (player5)-[:PLAYS_FOR]->(team1)
 CREATE (player6)-[:PLAYS_FOR]->(team2)
 CREATE (player7)-[:PLAYS_FOR]->(team2);
+
+// --- Parent-Player Relationships ---
+MATCH (parent1:Parent {parentId: 'PARENT-001'})
+MATCH (parent2:Parent {parentId: 'PARENT-002'})
+MATCH (parent3:Parent {parentId: 'PARENT-003'})
+MATCH (p1:Player {playerId: 'PLAYER-001'})
+MATCH (p2:Player {playerId: 'PLAYER-002'})
+MATCH (p3:Player {playerId: 'PLAYER-003'})
+CREATE (parent1)-[:PARENT_OF {
+  relationship: 'Mother',
+  isPrimaryContact: true,
+  consentGiven: true,
+  consentDate: date('2024-01-10'),
+  canReceiveUpdates: true,
+  preferredContactMethod: 'Email'
+}]->(p1)
+CREATE (parent2)-[:PARENT_OF {
+  relationship: 'Father',
+  isPrimaryContact: true,
+  consentGiven: true,
+  consentDate: date('2024-01-10'),
+  canReceiveUpdates: true,
+  preferredContactMethod: 'SMS'
+}]->(p2)
+CREATE (parent3)-[:PARENT_OF {
+  relationship: 'Mother',
+  isPrimaryContact: false,
+  consentGiven: true,
+  consentDate: date('2024-01-28'),
+  canReceiveUpdates: true,
+  preferredContactMethod: 'Email'
+}]->(p3);
 
 // ============================================================================
 // PART 6: TRAINING SESSIONS
@@ -86,10 +135,11 @@ CREATE (session3:Session {
 MATCH (session1:Session {sessionId: 'SESSION-001'})
 MATCH (session2:Session {sessionId: 'SESSION-002'})
 MATCH (session3:Session {sessionId: 'SESSION-003'})
-MATCH (team1:Team {teamId: 'TEAM-GU-U21-001'})
-CREATE (session1)-[:FOR_TEAM]->(team1)
-CREATE (session2)-[:FOR_TEAM]->(team1)
-CREATE (session3)-[:FOR_TEAM]->(team1);
+MATCH (p1:Player {playerId: 'PLAYER-001'})
+MATCH (p3:Player {playerId: 'PLAYER-003'})
+CREATE (p1)-[:OWNS_SESSION]->(session1)
+CREATE (p1)-[:OWNS_SESSION]->(session2)
+CREATE (p3)-[:OWNS_SESSION]->(session3);
 
 // ============================================================================
 // PART 7: INJURIES

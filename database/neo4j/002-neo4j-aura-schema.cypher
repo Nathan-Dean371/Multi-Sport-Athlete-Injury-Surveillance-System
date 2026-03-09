@@ -1,3 +1,16 @@
+// ============================================================================
+// Neo4j Aura Schema Setup - Cloud-Optimized
+// ============================================================================
+// Purpose:     Create constraints and indexes for Neo4j Aura (cloud) instances
+// Created:     2026
+// Idempotent:  Yes (uses IF NOT EXISTS)
+// Environment: Neo4j Aura (cloud) only
+// Dependencies: None (run this first on Aura)
+// Usage:       cat database/neo4j/002-neo4j-aura-schema.cypher | \
+//                cypher-shell -a <aura-uri> -u neo4j -p <password>
+// Notes:       Optimized for Aura constraints. Use 001 for local/Docker.
+// ============================================================================
+
 // PART 1: UNIQUE CONSTRAINTS
 
 CREATE CONSTRAINT player_id_unique IF NOT EXISTS

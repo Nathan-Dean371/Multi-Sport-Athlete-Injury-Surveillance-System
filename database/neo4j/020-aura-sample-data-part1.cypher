@@ -1,4 +1,19 @@
 // ============================================================================
+// Neo4j Aura Sample Data - Part 1
+// ============================================================================
+// Purpose:     Create core reference data for Neo4j Aura cloud instances:
+//              sports, organizations, roles, teams, staff, players, and parents
+// Created:     2026
+// Idempotent:  No (uses CREATE - will duplicate on re-run)
+// Environment: Aura Dev only (cloud-optimized)
+// Dependencies: 002-neo4j-aura-schema.cypher
+// Usage:       Copy/paste into Aura Browser OR use cypher-shell:
+//                cat database/neo4j/020-aura-sample-data-part1.cypher | \
+//                  cypher-shell -a <aura-uri> -u neo4j -p <password>
+// Notes:       Browser-compatible (no transaction commands)
+// ============================================================================
+
+// ============================================================================
 // PART 1: CORE REFERENCE DATA - Sports & Organizations
 // ============================================================================
 
@@ -297,6 +312,43 @@ CREATE (player7:Player {
   allergies: [],
   isActive: true,
   joinDate: date('2021-01-15'),
+  createdAt: datetime(),
+  updatedAt: datetime()
+});
+
+// ============================================================================
+// PART 5: PARENTS
+// ============================================================================
+
+CREATE (parent1:Parent {
+  parentId: 'PARENT-001',
+  pseudonymId: 'PSY-PARENT-001',
+  relationship: 'Mother',
+  isPrimaryContact: true,
+  consentGiven: true,
+  consentDate: date('2024-01-10'),
+  createdAt: datetime(),
+  updatedAt: datetime()
+});
+
+CREATE (parent2:Parent {
+  parentId: 'PARENT-002',
+  pseudonymId: 'PSY-PARENT-002',
+  relationship: 'Father',
+  isPrimaryContact: true,
+  consentGiven: true,
+  consentDate: date('2024-01-10'),
+  createdAt: datetime(),
+  updatedAt: datetime()
+});
+
+CREATE (parent3:Parent {
+  parentId: 'PARENT-003',
+  pseudonymId: 'PSY-PARENT-003',
+  relationship: 'Mother',
+  isPrimaryContact: false,
+  consentGiven: true,
+  consentDate: date('2024-01-28'),
   createdAt: datetime(),
   updatedAt: datetime()
 });
