@@ -29,6 +29,17 @@ services:
     networks:
       - injury-surveillance-network
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
   # --------------------------------------------------------------------------
   # Neo4j Graph Database (Testing)
   # --------------------------------------------------------------------------
@@ -55,6 +66,17 @@ services:
     networks:
       - injury-surveillance-network
 
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
   # --------------------------------------------------------------------------
   # PostgreSQL Database
   # --------------------------------------------------------------------------
@@ -76,6 +98,13 @@ services:
 
     networks:
       - injury-surveillance-network
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U identity_admin -d identity_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   # --------------------------------------------------------------------------
   # pgAdmin (Optional)
@@ -146,17 +175,13 @@ services:
       - injury-surveillance-network
 
     depends_on:
-      - postgres
-      - neo4j
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
 
-    # Wait for databases to be ready, then start in dev mode with hot reload
-    command: >
-      sh -c "
-        echo 'Waiting for databases to be ready...' &&
-        sleep 10 &&
-        echo 'Starting backend in development mode with hot reload...' &&
-        npm run start:dev
-      "
+    # Start in dev mode with hot reload - healthchecks ensure DBs are ready
+    command: npm run start:dev
 
 volumes:
   neo4j-data:

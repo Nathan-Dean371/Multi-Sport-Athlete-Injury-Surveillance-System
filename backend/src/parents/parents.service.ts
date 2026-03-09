@@ -8,6 +8,7 @@ import { Pool } from "pg";
 import { Driver, Session } from "neo4j-driver";
 import { CreateParentInvitationDto } from "./dto/create-parent-invitation.dto";
 import { AcceptParentInvitationDto } from "./dto/accept-parent-invitation.dto";
+import { ParentDto, ParentListDto } from "./dto/parent.dto";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcryptjs";
 
@@ -137,6 +138,72 @@ export class ParentsService {
       return res.rows[0];
     } finally {
       client.release();
+    }
+  }
+
+  async findAllForAdmin(): Promise<ParentListDto> {
+    // Get parent data from Neo4j
+    const neo4jSession: Session = this.neo4jDriver.session();
+    try {
+      const result = await neo4jSession.run(`
+        MATCH (parent:Parent)
+        OPTIONAL MATCH (parent)-[:PARENT_OF]->(player:Player)
+        RETURN parent.pseudonymId as pseudonymId,
+               count(DISTINCT player) as childrenCount
+        ORDER BY parent.pseudonymId
+      `);
+
+      const pseudonymIds = result.records.map((r) => r.get("pseudonymId"));
+      const childrenCounts = new Map(
+        result.records.map((r) => [
+          r.get("pseudonymId"),
+          r.get("childrenCount").toNumber(),
+        ]),
+      );
+
+      if (pseudonymIds.length === 0) {
+        return { parents: [], total: 0 };
+      }
+
+      // Get identity data from PostgreSQL
+      const client = await this.pool.connect();
+      try {
+        const identityResult = await client.query(
+          `SELECT 
+             pi.parent_id,
+             pi.pseudonym_id,
+             pi.first_name,
+             pi.last_name,
+             pi.email,
+             pi.phone,
+             COALESCE(ua.is_active, true) as is_active
+           FROM parent_identities pi
+           LEFT JOIN user_accounts ua ON ua.pseudonym_id = pi.pseudonym_id AND ua.identity_type = 'parent'
+           WHERE pi.pseudonym_id = ANY($1::text[])
+           ORDER BY pi.last_name, pi.first_name`,
+          [pseudonymIds],
+        );
+
+        const parents: ParentDto[] = identityResult.rows.map((row) => ({
+          parentId: row.parent_id,
+          pseudonymId: row.pseudonym_id,
+          firstName: row.first_name,
+          lastName: row.last_name,
+          email: row.email,
+          phone: row.phone,
+          childrenCount: childrenCounts.get(row.pseudonym_id) || 0,
+          isActive: row.is_active ?? true,
+        }));
+
+        return {
+          parents,
+          total: parents.length,
+        };
+      } finally {
+        client.release();
+      }
+    } finally {
+      await neo4jSession.close();
     }
   }
 }

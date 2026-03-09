@@ -58,6 +58,101 @@ export interface UserManagementStats {
   };
 }
 
+export interface Coach {
+  coachId: string;
+  pseudonymId: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  specialization?: string;
+  teamCount: number;
+  isActive: boolean;
+}
+
+export interface CoachListResponse {
+  coaches: Coach[];
+  total: number;
+}
+
+export interface Parent {
+  parentId: string;
+  pseudonymId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  childrenCount: number;
+  isActive: boolean;
+}
+
+export interface ParentListResponse {
+  parents: Parent[];
+  total: number;
+}
+
+export interface Player {
+  playerId: string;
+  pseudonymId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  dateOfBirth: string;
+  position: string | null;
+  teamName: string | null;
+  injuryCount: number;
+  isActive: boolean;
+}
+
+export interface PlayerListResponse {
+  players: Player[];
+  total: number;
+}
+
+export interface CreateCoachInvitationRequest {
+  coachEmail: string;
+  coachFirstName?: string;
+  coachLastName?: string;
+}
+
+export interface CoachInvitationResponse {
+  token: string;
+  message: string;
+  invitationLink: string;
+}
+
+export interface PendingCoachInvitation {
+  invitationId: string;
+  coachEmail: string;
+  coachFirstName: string | null;
+  coachLastName: string | null;
+  createdAt: string;
+  expiresAt: string;
+  adminPseudonymId: string;
+}
+
+export interface PendingCoachInvitationsResponse {
+  invitations: PendingCoachInvitation[];
+  total: number;
+}
+
+export interface AcceptCoachInvitationRequest {
+  token: string;
+  password: string;
+  specialization?: string;
+}
+
+export interface AcceptCoachInvitationResponse {
+  message: string;
+  coach: {
+    coachId: string;
+    pseudonymId: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    specialization: string | null;
+  };
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -214,6 +309,70 @@ class ApiClient {
     return this.request("/auth/user-management-stats", {
       method: "GET",
     });
+  }
+
+  async getCoaches(): Promise<CoachListResponse> {
+    return this.request("/coaches", {
+      method: "GET",
+    });
+  }
+
+  async getParents(): Promise<ParentListResponse> {
+    return this.request("/parents", {
+      method: "GET",
+    });
+  }
+
+  async getPlayers(): Promise<PlayerListResponse> {
+    return this.request("/players/admin", {
+      method: "GET",
+    });
+  }
+
+  async inviteCoach(
+    data: CreateCoachInvitationRequest,
+  ): Promise<CoachInvitationResponse> {
+    return this.request("/coaches/invite", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPendingCoachInvitations(): Promise<PendingCoachInvitationsResponse> {
+    return this.request("/coaches/invitations/pending", {
+      method: "GET",
+    });
+  }
+
+  async cancelCoachInvitation(
+    invitationId: string,
+  ): Promise<{ message: string }> {
+    return this.request(`/coaches/invitations/${invitationId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async acceptCoachInvitation(
+    data: AcceptCoachInvitationRequest,
+  ): Promise<AcceptCoachInvitationResponse> {
+    // This is a public endpoint, no auth required
+    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const response = await fetch(`${API_BASE}/coaches/accept-invitation`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({
+        message: "Failed to accept invitation",
+      }));
+      throw new Error(error.message || "Failed to accept invitation");
+    }
+
+    return response.json();
   }
 }
 
