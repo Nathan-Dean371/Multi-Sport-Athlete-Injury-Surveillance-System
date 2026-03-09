@@ -73,6 +73,29 @@ FROM admin_identities
 WHERE email NOT IN (SELECT email FROM user_accounts)
 ON CONFLICT (email) DO NOTHING;
 
+-- Create user accounts for all parent identities
+INSERT INTO user_accounts (
+    email,
+    password_hash,
+    password_salt,
+    identity_type,
+    pseudonym_id,
+    identity_id,
+    is_active
+)
+SELECT
+    email,
+    '$2a$10$rQ5vN8vZ9YxK3nJ0p5Y8KeGZYqXQH0YL8eJ1YxK3nJ0p5Y8KeGZYq', -- bcrypt hash for 'password123'
+    'bcrypt',
+    'parent',
+    pseudonym_id,
+    parent_id,
+    true
+FROM parent_identities
+WHERE email IS NOT NULL
+  AND email NOT IN (SELECT email FROM user_accounts)
+ON CONFLICT (email) DO NOTHING;
+
 -- Verify user accounts created
 SELECT 
     'User Accounts Created' as status,

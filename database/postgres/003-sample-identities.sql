@@ -196,6 +196,53 @@ INSERT INTO player_identities (
     true,
     true
 );
+ON CONFLICT (pseudonym_id) DO NOTHING;
+
+-- ============================================================================
+-- PART 0: PARENT IDENTITIES (Ensure every player has a parent/guardian)
+-- ============================================================================
+
+INSERT INTO parent_identities (
+    pseudonym_id,
+    first_name,
+    last_name,
+    email,
+    phone
+)
+VALUES
+('PSY-PARENT-001', 'Mary', 'Murphy', 'mary.murphy@example.com', '+353 87 1234567'),
+('PSY-PARENT-002', 'John', 'O''Connor', 'john.oconnor@example.com', '+353 87 7654321'),
+('PSY-PARENT-003', 'Anne', 'Kelly', 'anne.kelly@example.com', '+353 85 777 6666'),
+('PSY-PARENT-004', 'Patrick', 'Walsh', 'patrick.walsh@example.com', '+353 87 666 5555'),
+('PSY-PARENT-005', 'Siobhan', 'Ryan', 'siobhan.ryan@example.com', '+353 86 555 4444'),
+('PSY-PARENT-006', 'Eileen', 'Brennan', 'eileen.brennan@example.com', '+353 85 444 3333'),
+('PSY-PARENT-007', 'Michael', 'McCarthy', 'michael.mccarthy@example.com', '+353 87 333 2222')
+ON CONFLICT (pseudonym_id) DO NOTHING;
+
+-- Link each player to their parent by pseudonym mapping (idempotent)
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-001') WHERE pseudonym_id = 'PSY-PLAYER-A1B2C3D4' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-002') WHERE pseudonym_id = 'PSY-PLAYER-E5F6G7H8' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-003') WHERE pseudonym_id = 'PSY-PLAYER-I9J0K1L2' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-004') WHERE pseudonym_id = 'PSY-PLAYER-M3N4O5P6' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-005') WHERE pseudonym_id = 'PSY-PLAYER-Q7R8S9T0' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-006') WHERE pseudonym_id = 'PSY-PLAYER-U1V2W3X4' AND parent_id IS NULL;
+UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-007') WHERE pseudonym_id = 'PSY-PLAYER-Y5Z6A7B8' AND parent_id IS NULL;
+
+-- If any players were inserted without parent_id (new seed runs), enforce parent mapping by updating from emergency contact name
+UPDATE player_identities p
+SET parent_id = pi.parent_id
+FROM parent_identities pi
+WHERE p.parent_id IS NULL
+  AND pi.first_name || ' ' || pi.last_name = p.emergency_contact_name;
+
+-- If all players now have parents, enforce NOT NULL constraint on parent_id
+DO $$
+BEGIN
+    IF (SELECT COUNT(*) FROM player_identities WHERE parent_id IS NULL) = 0 THEN
+        ALTER TABLE player_identities ALTER COLUMN parent_id SET NOT NULL;
+    END IF;
+END $$;
+
 
 -- ============================================================================
 -- PART 2: COACH IDENTITIES

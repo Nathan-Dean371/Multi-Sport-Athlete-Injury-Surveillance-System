@@ -418,6 +418,62 @@ CREATE (parent2:Parent {
   updatedAt: datetime()
 });
 
+// --- Additional Parents to mirror Postgres seed ---
+MERGE (parent3:Parent {parentId: 'PARENT-003'})
+ON CREATE SET
+  parent3.pseudonymId = 'PSY-PARENT-003',
+  parent3.firstName = 'Anne',
+  parent3.lastName = 'Kelly',
+  parent3.email = 'anne.kelly@example.com',
+  parent3.phone = '085-7776666',
+  parent3.relationship = 'Mother',
+  parent3.createdAt = datetime(),
+  parent3.updatedAt = datetime();
+
+MERGE (parent4:Parent {parentId: 'PARENT-004'})
+ON CREATE SET
+  parent4.pseudonymId = 'PSY-PARENT-004',
+  parent4.firstName = 'Patrick',
+  parent4.lastName = 'Walsh',
+  parent4.email = 'patrick.walsh@example.com',
+  parent4.phone = '087-6665555',
+  parent4.relationship = 'Father',
+  parent4.createdAt = datetime(),
+  parent4.updatedAt = datetime();
+
+MERGE (parent5:Parent {parentId: 'PARENT-005'})
+ON CREATE SET
+  parent5.pseudonymId = 'PSY-PARENT-005',
+  parent5.firstName = 'Siobhan',
+  parent5.lastName = 'Ryan',
+  parent5.email = 'siobhan.ryan@example.com',
+  parent5.phone = '086-5554444',
+  parent5.relationship = 'Mother',
+  parent5.createdAt = datetime(),
+  parent5.updatedAt = datetime();
+
+MERGE (parent6:Parent {parentId: 'PARENT-006'})
+ON CREATE SET
+  parent6.pseudonymId = 'PSY-PARENT-006',
+  parent6.firstName = 'Eileen',
+  parent6.lastName = 'Brennan',
+  parent6.email = 'eileen.brennan@example.com',
+  parent6.phone = '085-4443333',
+  parent6.relationship = 'Mother',
+  parent6.createdAt = datetime(),
+  parent6.updatedAt = datetime();
+
+MERGE (parent7:Parent {parentId: 'PARENT-007'})
+ON CREATE SET
+  parent7.pseudonymId = 'PSY-PARENT-007',
+  parent7.firstName = 'Michael',
+  parent7.lastName = 'McCarthy',
+  parent7.email = 'michael.mccarthy@example.com',
+  parent7.phone = '087-3332222',
+  parent7.relationship = 'Father',
+  parent7.createdAt = datetime(),
+  parent7.updatedAt = datetime();
+
 :commit;
 
 // ============================================================================
@@ -491,6 +547,29 @@ MATCH (p1:Player {playerId: 'PLAYER-001'})
 MATCH (p2:Player {playerId: 'PLAYER-002'})
 CREATE (parent1)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p1)
 CREATE (parent2)-[:PARENT_OF {relationship: 'Father', isPrimaryContact: true, consentGiven: true}]->(p2);
+
+// --- Link remaining parents to players (idempotent) ---
+MATCH (p1:Player {playerId: 'PLAYER-001'})
+MATCH (p2:Player {playerId: 'PLAYER-002'})
+MATCH (p3:Player {playerId: 'PLAYER-003'})
+MATCH (p4:Player {playerId: 'PLAYER-004'})
+MATCH (p5:Player {playerId: 'PLAYER-005'})
+MATCH (p6:Player {playerId: 'PLAYER-006'})
+MATCH (p7:Player {playerId: 'PLAYER-007'})
+MATCH (parent1:Parent {parentId: 'PARENT-001'})
+MATCH (parent2:Parent {parentId: 'PARENT-002'})
+MATCH (parent3:Parent {parentId: 'PARENT-003'})
+MATCH (parent4:Parent {parentId: 'PARENT-004'})
+MATCH (parent5:Parent {parentId: 'PARENT-005'})
+MATCH (parent6:Parent {parentId: 'PARENT-006'})
+MATCH (parent7:Parent {parentId: 'PARENT-007'})
+MERGE (parent1)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p1)
+MERGE (parent2)-[:PARENT_OF {relationship: 'Father', isPrimaryContact: true, consentGiven: true}]->(p2)
+MERGE (parent3)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p3)
+MERGE (parent4)-[:PARENT_OF {relationship: 'Father', isPrimaryContact: true, consentGiven: true}]->(p4)
+MERGE (parent5)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p5)
+MERGE (parent6)-[:PARENT_OF {relationship: 'Mother', isPrimaryContact: true, consentGiven: true}]->(p6)
+MERGE (parent7)-[:PARENT_OF {relationship: 'Father', isPrimaryContact: true, consentGiven: true}]->(p7);
 
 :commit;
 

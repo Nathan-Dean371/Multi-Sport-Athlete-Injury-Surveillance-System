@@ -20,6 +20,25 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
+-- ----------------------------------------------------------------------------
+-- Parent / Guardian Identities
+-- ----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS parent_identities (
+    parent_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    pseudonym_id VARCHAR(50) NOT NULL UNIQUE,
+    neo4j_parent_id VARCHAR(50) NOT NULL UNIQUE,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    email VARCHAR(255),
+    phone_number VARCHAR(20),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_parent_identities_pseudonym ON parent_identities(pseudonym_id);
+CREATE INDEX IF NOT EXISTS idx_parent_identities_email ON parent_identities(email) WHERE email IS NOT NULL;
+
+
 -- ============================================================================
 -- PART 1: IDENTITY TABLES
 -- ============================================================================
@@ -57,6 +76,9 @@ CREATE TABLE IF NOT EXISTS player_identities (
     emergency_contact_relationship VARCHAR(50),
     emergency_contact_phone VARCHAR(20),
     
+    -- Parent / Guardian relationship (required)
+    parent_id UUID,
+    
     -- Medical Information (encrypted)
     medical_history TEXT, -- Should be encrypted in production
     current_medications TEXT, -- Should be encrypted in production
@@ -86,12 +108,30 @@ CREATE TABLE IF NOT EXISTS player_identities (
     CONSTRAINT chk_dob_reasonable CHECK (date_of_birth >= '1900-01-01' AND date_of_birth <= CURRENT_DATE)
 );
 
+-- Add foreign key to parent_identities (if parent table exists)
+-- Ensure parent_id column exists (for older DBs where it wasn't present)
+ALTER TABLE IF EXISTS player_identities
+    ADD COLUMN IF NOT EXISTS parent_id UUID;
+
+-- Add foreign key constraint if it does not already exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints
+        WHERE constraint_name = 'fk_player_parent' AND table_name = 'player_identities'
+    ) THEN
+        ALTER TABLE player_identities
+            ADD CONSTRAINT fk_player_parent FOREIGN KEY (parent_id) REFERENCES parent_identities(parent_id);
+    END IF;
+END $$;
+
 -- Indexes for player_identities
 CREATE INDEX IF NOT EXISTS idx_player_identities_pseudonym ON player_identities(pseudonym_id);
 CREATE INDEX IF NOT EXISTS idx_player_identities_neo4j_id ON player_identities(neo4j_player_id);
 CREATE INDEX IF NOT EXISTS idx_player_identities_email ON player_identities(email) WHERE email IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_player_identities_active ON player_identities(is_active) WHERE is_active = true;
 CREATE INDEX IF NOT EXISTS idx_player_identities_deleted ON player_identities(deleted_at) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_player_parent ON player_identities(parent_id);
 
 -- Comments
 COMMENT ON TABLE player_identities IS 'Stores real identity information for players, linked to Neo4j via pseudonym_id';
@@ -240,7 +280,7 @@ CREATE TABLE IF NOT EXISTS user_accounts (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     
     -- Constraints
-    CONSTRAINT chk_identity_type CHECK (identity_type IN ('player', 'coach', 'admin')),
+    CONSTRAINT chk_identity_type CHECK (identity_type IN ('player', 'coach', 'admin', 'parent')),
     CONSTRAINT chk_failed_attempts CHECK (failed_login_attempts >= 0)
 );
 

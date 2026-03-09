@@ -1,69 +1,167 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
-import { Text, TextInput, Button, SegmentedButtons, Snackbar, useTheme, Card } from 'react-native-paper';
-import { useForm, Controller } from 'react-hook-form';
-import { yupResolver } from '@hookform/resolvers/yup';
-import * as yup from 'yup';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { useAuth } from '../../contexts/AuthContext';
-import { CreateInjuryDto, InjuryType, BodyPart, Side, Severity } from '../../types/injury.types';
-import injuryService from '../../services/injury.service';
-import { format } from 'date-fns';
+import React, { useState } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import {
+  Text,
+  TextInput,
+  Button,
+  SegmentedButtons,
+  Snackbar,
+  useTheme,
+  Card,
+  ProgressBar,
+  IconButton,
+} from "react-native-paper";
+import { useForm, Controller } from "react-hook-form";
+import { yupResolver } from "@hookform/resolvers/yup";
+import * as yup from "yup";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { useAuth } from "../../contexts/AuthContext";
+import {
+  CreateInjuryDto,
+  InjuryType,
+  BodyPart,
+  Side,
+  Severity,
+} from "../../types/injury.types";
+import injuryService from "../../services/injury.service";
+import { format } from "date-fns";
+import BodyDiagramSelector from "../../components/BodyDiagramSelector";
+
+const TOTAL_STEPS = 5;
 
 const schema = yup.object().shape({
-  playerId: yup.string().required('Player ID is required'),
-  injuryType: yup.string().required('Injury type is required'),
-  bodyPart: yup.string().required('Body part is required'),
-  side: yup.string().required('Side is required'),
-  severity: yup.string().required('Severity is required'),
-  injuryDate: yup.date().required('Injury date is required'),
+  playerId: yup.string().required("Player ID is required"),
+  injuryType: yup.string().required("Injury type is required"),
+  bodyPart: yup.string().required("Body part is required"),
+  side: yup.string().required("Side is required"),
+  severity: yup.string().required("Severity is required"),
+  injuryDate: yup.string().required("Injury date is required"),
   mechanism: yup.string(),
   diagnosis: yup.string(),
   treatmentPlan: yup.string(),
-  expectedReturnDate: yup.date(),
+  expectedReturnDate: yup.string(),
   notes: yup.string(),
 });
 
 export default function ReportInjuryScreen({ navigation, route }: any) {
-  const { playerId: routePlayerId, playerName: routePlayerName } = route?.params || {};
+  const { playerId: routePlayerId, playerName: routePlayerName } =
+    route?.params || {};
   const { user } = useAuth();
   const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarMessage, setSnackbarMessage] = useState("");
   const [showInjuryDatePicker, setShowInjuryDatePicker] = useState(false);
-  const [showReturnDatePicker, setShowReturnDatePicker] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [dateOption, setDateOption] = useState<"now" | "past">("now");
 
-  const { control, handleSubmit, formState: { errors }, setValue, watch } = useForm<CreateInjuryDto>({
-    resolver: yupResolver(schema),
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+    trigger,
+    getValues,
+  } = useForm<CreateInjuryDto>({
+    resolver: yupResolver(schema) as any,
+    mode: "onChange",
     defaultValues: {
-      playerId: routePlayerId || user?.pseudonymId || '',
+      playerId: routePlayerId || user?.pseudonymId || "",
       injuryType: undefined,
       bodyPart: undefined,
       side: Side.LEFT,
       severity: Severity.MODERATE,
-      injuryDate: new Date(),
-      mechanism: '',
-      diagnosis: '',
-      treatmentPlan: '',
+      injuryDate: format(new Date(), "yyyy-MM-dd"),
+      mechanism: "",
+      diagnosis: "",
+      treatmentPlan: "",
       expectedReturnDate: undefined,
-      notes: '',
+      notes: "",
     },
   });
 
-  const injuryDate = watch('injuryDate');
-  const expectedReturnDate = watch('expectedReturnDate');
+  const injuryDate = watch("injuryDate");
+  const injuryType = watch("injuryType");
+  const bodyPart = watch("bodyPart");
+  const side = watch("side");
+  const severity = watch("severity");
+
+  console.log("Form values:", {
+    injuryType,
+    bodyPart,
+    side,
+    severity,
+    injuryDate,
+  });
+
+  const handleNextStep = async () => {
+    let isValid = false;
+
+    console.log("handleNextStep - Current values:", getValues());
+
+    // Validate current step before proceeding
+    switch (currentStep) {
+      case 1:
+        isValid = await trigger("injuryType");
+        break;
+      case 2:
+        isValid = await trigger(["bodyPart", "side"]);
+        break;
+      case 3:
+        isValid = await trigger("severity");
+        break;
+      case 4:
+        isValid = await trigger("injuryDate");
+        break;
+      case 5:
+        // Notes are optional, always valid
+        isValid = true;
+        break;
+    }
+
+    console.log(
+      "Validation result:",
+      isValid,
+      "Moving from step",
+      currentStep,
+      "to",
+      currentStep + 1,
+    );
+
+    if (isValid && currentStep < TOTAL_STEPS) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleDateOptionChange = (option: "now" | "past") => {
+    setDateOption(option);
+    if (option === "now") {
+      setValue("injuryDate", format(new Date(), "yyyy-MM-dd"));
+    } else {
+      setShowInjuryDatePicker(true);
+    }
+  };
 
   const onSubmit = async (data: CreateInjuryDto) => {
     try {
       setLoading(true);
-      
+
+      // Data is already in the correct format
       const formattedData: CreateInjuryDto = {
         ...data,
-        injuryDate: format(new Date(data.injuryDate), 'yyyy-MM-dd'),
-        expectedReturnDate: data.expectedReturnDate 
-          ? format(new Date(data.expectedReturnDate), 'yyyy-MM-dd')
-          : undefined,
         mechanism: data.mechanism || undefined,
         diagnosis: data.diagnosis || undefined,
         treatmentPlan: data.treatmentPlan || undefined,
@@ -71,18 +169,19 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
       };
 
       await injuryService.createInjury(formattedData);
-      
-      setSnackbarMessage('Injury reported successfully!');
+
+      setSnackbarMessage("Injury reported successfully!");
       setSnackbarVisible(true);
-      
+
       // Navigate back to injury list after a short delay
       setTimeout(() => {
-        navigation.navigate('InjuryList');
+        navigation.navigate("InjuryList");
       }, 1500);
     } catch (error: any) {
-      console.error('Error creating injury:', error);
+      console.error("Error creating injury:", error);
       setSnackbarMessage(
-        error.response?.data?.message || 'Failed to report injury. Please try again.'
+        error.response?.data?.message ||
+          "Failed to report injury. Please try again.",
       );
       setSnackbarVisible(true);
     } finally {
@@ -95,311 +194,374 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
   const sides = Object.values(Side);
   const severities = Object.values(Severity);
 
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        // Step 1: Injury Type (Muscle Type)
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              What type of injury?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Select the muscle or injury type
+            </Text>
+
+            <Controller
+              control={control}
+              name="injuryType"
+              render={({ field: { onChange, value } }) => (
+                <View style={styles.optionsGrid}>
+                  {injuryTypes.map((type) => (
+                    <Button
+                      key={type}
+                      mode={value === type ? "contained" : "outlined"}
+                      onPress={() => {
+                        console.log("Injury type selected:", type);
+                        onChange(type);
+                      }}
+                      style={styles.gridButton}
+                      contentStyle={styles.gridButtonContent}
+                      labelStyle={styles.gridButtonLabel}
+                      textColor={value === type ? undefined : "#000000"}
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </View>
+              )}
+            />
+            {errors.injuryType && (
+              <Text variant="bodySmall" style={styles.errorText}>
+                {errors.injuryType.message}
+              </Text>
+            )}
+          </View>
+        );
+
+      case 2:
+        // Step 2: Body Part + Side (Visual Diagram)
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              Which body part?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Tap on the body diagram
+            </Text>
+
+            <BodyDiagramSelector
+              selectedBodyPart={bodyPart as BodyPart | undefined}
+              selectedSide={side as Side | undefined}
+              onBodyPartSelect={(bodyPart) => {
+                console.log("Body part selected:", bodyPart);
+                setValue("bodyPart", bodyPart, { shouldValidate: true });
+              }}
+              onSideSelect={(side) => {
+                console.log("Side selected:", side);
+                setValue("side", side, { shouldValidate: true });
+              }}
+            />
+            {errors.bodyPart && (
+              <Text variant="bodySmall" style={styles.errorText}>
+                {errors.bodyPart.message}
+              </Text>
+            )}
+          </View>
+        );
+
+      case 3:
+        // Step 3: Severity
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              How severe is the pain?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Select the severity level
+            </Text>
+
+            <Controller
+              control={control}
+              name="severity"
+              render={({ field: { onChange, value } }) => (
+                <View style={styles.severityContainer}>
+                  {severities.map((severityOption) => (
+                    <Button
+                      key={severityOption}
+                      mode={value === severityOption ? "contained" : "elevated"}
+                      onPress={() => onChange(severityOption)}
+                      style={[
+                        styles.severityButton,
+                        value === severityOption &&
+                          styles.severityButtonSelected,
+                      ]}
+                      contentStyle={styles.severityButtonContent}
+                      labelStyle={styles.severityButtonLabel}
+                      textColor={value === severityOption ? "#fff" : "#000000"}
+                      buttonColor={
+                        value === severityOption
+                          ? severityOption === Severity.MINOR
+                            ? "#4CAF50"
+                            : severityOption === Severity.MODERATE
+                              ? "#FF9800"
+                              : severityOption === Severity.SEVERE
+                                ? "#F44336"
+                                : "#D32F2F"
+                          : undefined
+                      }
+                    >
+                      {severityOption}
+                    </Button>
+                  ))}
+                </View>
+              )}
+            />
+            {errors.severity && (
+              <Text variant="bodySmall" style={styles.errorText}>
+                {errors.severity.message}
+              </Text>
+            )}
+          </View>
+        );
+
+      case 4:
+        // Step 4: Date
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              When did it happen?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Select when the injury occurred
+            </Text>
+
+            <View style={styles.dateOptionsContainer}>
+              <Button
+                mode={dateOption === "now" ? "contained" : "outlined"}
+                onPress={() => handleDateOptionChange("now")}
+                style={styles.dateOptionButton}
+                contentStyle={styles.dateOptionButtonContent}
+                icon="clock-outline"
+                textColor={dateOption === "now" ? undefined : "#000000"}
+              >
+                Just Now
+              </Button>
+              <Button
+                mode={dateOption === "past" ? "contained" : "outlined"}
+                onPress={() => handleDateOptionChange("past")}
+                style={styles.dateOptionButton}
+                contentStyle={styles.dateOptionButtonContent}
+                icon="calendar"
+                textColor={dateOption === "past" ? undefined : "#000000"}
+              >
+                Earlier Date
+              </Button>
+            </View>
+
+            {dateOption === "past" && (
+              <Card style={styles.dateCard} mode="outlined">
+                <Card.Content>
+                  <Text variant="titleSmall" style={styles.dateLabel}>
+                    Selected Date:
+                  </Text>
+                  <Text variant="headlineSmall" style={styles.dateValue}>
+                    {format(new Date(injuryDate), "MMMM dd, yyyy")}
+                  </Text>
+                  <Button
+                    mode="outlined"
+                    onPress={() => setShowInjuryDatePicker(true)}
+                    icon="calendar-edit"
+                    style={styles.changeDateButton}
+                    textColor="#000000"
+                  >
+                    Change Date
+                  </Button>
+                </Card.Content>
+              </Card>
+            )}
+
+            {showInjuryDatePicker && (
+              <DateTimePicker
+                value={injuryDate ? new Date(injuryDate) : new Date()}
+                mode="date"
+                display="default"
+                onChange={(event, selectedDate) => {
+                  setShowInjuryDatePicker(false);
+                  if (selectedDate) {
+                    setValue("injuryDate", format(selectedDate, "yyyy-MM-dd"));
+                  }
+                }}
+                maximumDate={new Date()}
+              />
+            )}
+          </View>
+        );
+
+      case 5:
+        // Step 5: Optional Notes
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              Any additional details?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Optional - Add notes about the injury
+            </Text>
+
+            <Card style={styles.summaryCard} mode="elevated">
+              <Card.Content>
+                <Text variant="titleSmall" style={styles.summaryTitle}>
+                  Summary
+                </Text>
+                <View style={styles.summaryRow}>
+                  <Text variant="bodyMedium" style={styles.summaryLabel}>
+                    Type:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.summaryValue}>
+                    {injuryType || "Not selected"}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text variant="bodyMedium" style={styles.summaryLabel}>
+                    Body Part:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.summaryValue}>
+                    {bodyPart ? `${bodyPart} (${side})` : "Not selected"}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text variant="bodyMedium" style={styles.summaryLabel}>
+                    Severity:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.summaryValue}>
+                    {severity}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text variant="bodyMedium" style={styles.summaryLabel}>
+                    Date:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.summaryValue}>
+                    {format(new Date(injuryDate), "MMM dd, yyyy")}
+                  </Text>
+                </View>
+              </Card.Content>
+            </Card>
+
+            <Controller
+              control={control}
+              name="notes"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <TextInput
+                  label="Additional Notes (Optional)"
+                  mode="outlined"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="E.g., mechanism of injury, symptoms, treatment needed..."
+                  textColor="#000000"
+                  style={styles.notesInput}
+                />
+              )}
+            />
+          </View>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
+      {/* Header with Progress */}
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Text variant="titleLarge" style={styles.headerTitle}>
+            Report Injury
+          </Text>
+          <Text variant="bodyMedium" style={styles.stepIndicator}>
+            Step {currentStep} of {TOTAL_STEPS}
+          </Text>
+        </View>
+        <ProgressBar
+          progress={currentStep / TOTAL_STEPS}
+          style={styles.progressBar}
+          color={theme.colors.primary}
+        />
+      </View>
+
+      {/* Player Info Card - Show when player was selected */}
+      {routePlayerName && currentStep === 1 && (
+        <Card style={styles.playerCard} mode="elevated">
+          <Card.Content>
+            <Text variant="labelMedium" style={styles.playerLabel}>
+              Reporting for:
+            </Text>
+            <Text variant="titleLarge" style={styles.playerName}>
+              {routePlayerName}
+            </Text>
+          </Card.Content>
+        </Card>
+      )}
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <Text variant="headlineSmall" style={styles.title}>
-          Report New Injury
-        </Text>
-
-        {/* Player Info Card - Show when player was selected */}
-        {routePlayerName && (
-          <Card style={styles.playerCard} mode="elevated">
-            <Card.Content>
-              <Text variant="labelMedium" style={styles.playerLabel}>
-                Reporting for:
-              </Text>
-              <Text variant="titleLarge" style={styles.playerName}>
-                {routePlayerName}
-              </Text>
-              <Text variant="bodySmall" style={styles.playerId}>
-                ID: {routePlayerId}
-              </Text>
-            </Card.Content>
-          </Card>
-        )}
-
-        {/* Player ID - Only visible for coaches/admins who didn't select from list */}
-        {user?.identityType !== 'player' && !routePlayerName && (
-          <>
-            <Controller
-              control={control}
-              name="playerId"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <TextInput
-                  label="Player ID *"
-                  mode="outlined"
-                  value={value}
-                  onChangeText={onChange}
-                  onBlur={onBlur}
-                  error={!!errors.playerId}
-                  textColor="#000000"
-                  style={styles.input}
-                />
-              )}
-            />
-            {errors.playerId && (
-              <Text variant="bodySmall" style={styles.errorText}>
-                {errors.playerId.message}
-              </Text>
-            )}
-          </>
-        )}
-
-        {/* Injury Type */}
-        <Text variant="titleSmall" style={styles.label}>Injury Type *</Text>
-        <Controller
-          control={control}
-          name="injuryType"
-          render={({ field: { onChange, value } }) => (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipScrollView}
-              contentContainerStyle={styles.chipContainer}
-            >
-              {injuryTypes.map((type) => (
-                <Button
-                  key={type}
-                  mode={value === type ? 'contained' : 'outlined'}
-                  onPress={() => onChange(type)}
-                  style={styles.chip}
-                  textColor={value === type ? undefined : '#000000'}
-                  compact
-                >
-                  {type}
-                </Button>
-              ))}
-            </ScrollView>
-          )}
-        />
-        {errors.injuryType && (
-          <Text variant="bodySmall" style={styles.errorText}>
-            {errors.injuryType.message}
-          </Text>
-        )}
-
-        {/* Body Part */}
-        <Text variant="titleSmall" style={styles.label}>Body Part *</Text>
-        <Controller
-          control={control}
-          name="bodyPart"
-          render={({ field: { onChange, value } }) => (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.chipScrollView}
-              contentContainerStyle={styles.chipContainer}
-            >
-              {bodyParts.map((part) => (
-                <Button
-                  key={part}
-                  mode={value === part ? 'contained' : 'outlined'}
-                  onPress={() => onChange(part)}
-                  style={styles.chip}
-                  textColor={value === part ? undefined : '#000000'}
-                  compact
-                >
-                  {part}
-                </Button>
-              ))}
-            </ScrollView>
-          )}
-        />
-        {errors.bodyPart && (
-          <Text variant="bodySmall" style={styles.errorText}>
-            {errors.bodyPart.message}
-          </Text>
-        )}
-
-        {/* Side */}
-        <Text variant="titleSmall" style={styles.label}>Side *</Text>
-        <Controller
-          control={control}
-          name="side"
-          render={({ field: { onChange, value } }) => (
-            <SegmentedButtons
-              value={value}
-              onValueChange={onChange}
-              buttons={sides.map((side) => ({
-                value: side,
-                label: side,
-                uncheckedColor: '#000000',
-                labelStyle: value === side ? undefined : { color: '#000000' },
-              }))}
-              style={styles.segmentedButtons}
-            />
-          )}
-        />
-
-        {/* Severity */}
-        <Text variant="titleSmall" style={styles.label}>Severity *</Text>
-        <Controller
-          control={control}
-          name="severity"
-          render={({ field: { onChange, value } }) => (
-            <SegmentedButtons
-              value={value}
-              onValueChange={onChange}
-              buttons={severities.map((severity) => ({
-                value: severity,
-                label: severity,
-                uncheckedColor: '#000000',
-                labelStyle: value === severity ? undefined : { color: '#000000' },
-              }))}
-              style={styles.segmentedButtons}
-            />
-          )}
-        />
-
-        {/* Injury Date */}
-        <Text variant="titleSmall" style={styles.label}>Injury Date *</Text>
-        <Button
-          mode="outlined"
-          onPress={() => setShowInjuryDatePicker(true)}
-          icon="calendar"
-          textColor="#000000"
-          style={styles.dateButton}
-        >
-          {injuryDate ? format(new Date(injuryDate), 'MMM dd, yyyy') : 'Select Date'}
-        </Button>
-        {showInjuryDatePicker && (
-          <DateTimePicker
-            value={injuryDate ? new Date(injuryDate) : new Date()}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowInjuryDatePicker(false);
-              if (selectedDate) {
-                setValue('injuryDate', selectedDate);
-              }
-            }}
-            maximumDate={new Date()}
-          />
-        )}
-
-        {/* Expected Return Date */}
-        <Text variant="titleSmall" style={styles.label}>Expected Return Date</Text>
-        <Button
-          mode="outlined"
-          onPress={() => setShowReturnDatePicker(true)}
-          icon="calendar"
-          textColor="#000000"
-          style={styles.dateButton}
-        >
-          {expectedReturnDate ? format(new Date(expectedReturnDate), 'MMM dd, yyyy') : 'Select Date (Optional)'}
-        </Button>
-        {showReturnDatePicker && (
-          <DateTimePicker
-            value={expectedReturnDate ? new Date(expectedReturnDate) : new Date()}
-            mode="date"
-            display="default"
-            onChange={(event, selectedDate) => {
-              setShowReturnDatePicker(false);
-              if (selectedDate) {
-                setValue('expectedReturnDate', selectedDate);
-              }
-            }}
-            minimumDate={new Date()}
-          />
-        )}
-
-        {/* Mechanism */}
-        <Controller
-          control={control}
-          name="mechanism"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Mechanism of Injury"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              placeholder="How did the injury occur?"
-              textColor="#000000"
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Diagnosis */}
-        <Controller
-          control={control}
-          name="diagnosis"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Diagnosis"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={3}
-              placeholder="Medical diagnosis..."
-              textColor="#000000"
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Treatment Plan */}
-        <Controller
-          control={control}
-          name="treatmentPlan"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Treatment Plan"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={3}
-              placeholder="Planned treatment and rehabilitation..."
-              textColor="#000000"
-              style={styles.input}
-            />
-          )}
-        />
-
-        {/* Notes */}
-        <Controller
-          control={control}
-          name="notes"
-          render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
-              label="Additional Notes"
-              mode="outlined"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              multiline
-              numberOfLines={3}
-              placeholder="Any additional information..."
-              textColor="#000000"
-              style={styles.input}
-            />
-          )}
-        />
-
-        <Button
-          mode="contained"
-          onPress={handleSubmit(onSubmit)}
-          loading={loading}
-          disabled={loading}
-          style={styles.submitButton}
-          contentStyle={styles.submitButtonContent}
-        >
-          Report Injury
-        </Button>
+        {renderStepContent()}
       </ScrollView>
+
+      {/* Navigation Footer */}
+      <View style={styles.footer}>
+        <View style={styles.footerButtons}>
+          {currentStep > 1 && (
+            <Button
+              mode="outlined"
+              onPress={handlePrevStep}
+              style={styles.backButton}
+              icon="arrow-left"
+              textColor="#000000"
+            >
+              Back
+            </Button>
+          )}
+
+          {currentStep < TOTAL_STEPS ? (
+            <Button
+              mode="contained"
+              onPress={handleNextStep}
+              style={styles.nextButton}
+              icon="arrow-right"
+              contentStyle={{
+                ...styles.nextButtonContent,
+                flexDirection: "row-reverse",
+              }}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              mode="contained"
+              onPress={handleSubmit(onSubmit)}
+              loading={loading}
+              disabled={loading}
+              style={styles.submitButton}
+              contentStyle={styles.submitButtonContent}
+              icon="check"
+            >
+              Submit Report
+            </Button>
+          )}
+        </View>
+      </View>
 
       <Snackbar
         visible={snackbarVisible}
@@ -415,73 +577,211 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
+  },
+  header: {
+    backgroundColor: "#fff",
+    paddingTop: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  headerContent: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  headerTitle: {
+    fontWeight: "bold",
+    color: "#000",
+  },
+  stepIndicator: {
+    color: "#666",
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: 20,
     paddingBottom: 32,
   },
-  title: {
-    fontWeight: 'bold',
+  stepContainer: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#000",
+  },
+  stepSubtitle: {
+    color: "#666",
     marginBottom: 24,
-    color: '#000',
   },
   playerCard: {
-    marginBottom: 20,
-    backgroundColor: '#E1BEE7',
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: "#E1BEE7",
   },
   playerLabel: {
-    color: '#424242',
+    color: "#424242",
     marginBottom: 4,
   },
   playerName: {
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
-  playerId: {
-    color: '#616161',
-    fontFamily: 'monospace',
+  optionsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginTop: 8,
   },
-  label: {
-    marginBottom: 8,
-    marginTop: 16,
-    fontWeight: '600',
-    color: '#000',
-  },
-  input: {
-    backgroundColor: '#fff',
-    marginBottom: 4,
-  },
-  chipScrollView: {
-    maxHeight: 50,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 8,
-  },
-  chip: {
-    marginRight: 8,
-  },
-  segmentedButtons: {
+  gridButton: {
+    flexBasis: "47%",
+    flexGrow: 0,
     marginBottom: 8,
   },
-  dateButton: {
-    marginBottom: 8,
+  gridButtonContent: {
+    paddingVertical: 12,
   },
-  errorText: {
-    color: '#B00020',
-    marginBottom: 8,
+  gridButtonLabel: {
+    fontSize: 14,
   },
-  submitButton: {
+  sideLabel: {
     marginTop: 24,
+    marginBottom: 12,
+    fontWeight: "600",
+    color: "#000",
+  },
+  sideButtonsContainer: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  sideButton: {
+    flex: 1,
+  },
+  sideButtonContent: {
+    paddingVertical: 12,
+  },
+  severityContainer: {
+    gap: 16,
+    marginTop: 8,
+  },
+  severityButton: {
+    borderRadius: 12,
+  },
+  severityButtonSelected: {
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  severityButtonContent: {
+    paddingVertical: 20,
+  },
+  severityButtonLabel: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  dateOptionsContainer: {
+    flexDirection: "row",
+    gap: 12,
+    marginTop: 8,
     marginBottom: 16,
   },
+  dateOptionButton: {
+    flex: 1,
+  },
+  dateOptionButtonContent: {
+    paddingVertical: 16,
+  },
+  dateCard: {
+    marginTop: 8,
+    backgroundColor: "#F5F5F5",
+  },
+  dateLabel: {
+    color: "#666",
+    marginBottom: 4,
+  },
+  dateValue: {
+    fontWeight: "bold",
+    color: "#000",
+    marginBottom: 12,
+  },
+  changeDateButton: {
+    marginTop: 4,
+  },
+  summaryCard: {
+    marginBottom: 20,
+    backgroundColor: "#E3F2FD",
+  },
+  summaryTitle: {
+    fontWeight: "bold",
+    marginBottom: 12,
+    color: "#000",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  summaryLabel: {
+    color: "#666",
+    fontWeight: "500",
+  },
+  summaryValue: {
+    color: "#000",
+    fontWeight: "bold",
+  },
+  notesInput: {
+    backgroundColor: "#fff",
+    marginTop: 8,
+  },
+  footer: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E0E0E0",
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  footerButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  backButton: {
+    flex: 1,
+  },
+  nextButton: {
+    flex: 2,
+  },
+  nextButtonContent: {
+    paddingVertical: 6,
+  },
+  submitButton: {
+    flex: 2,
+  },
   submitButtonContent: {
-    paddingVertical: 8,
+    paddingVertical: 6,
+  },
+  errorText: {
+    color: "#B00020",
+    marginTop: 8,
   },
 });
