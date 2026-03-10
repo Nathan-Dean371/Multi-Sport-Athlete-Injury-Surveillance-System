@@ -31,6 +31,7 @@ interface EntityManagementPageProps<T> {
   emptyMessage?: string;
   noResultsMessage?: string;
   actions?: ReactNode; // Custom action buttons (e.g., "Invite" button)
+  additionalContent?: ReactNode; // Additional content (e.g., Report Builder)
 }
 
 const colorClasses = {
@@ -56,6 +57,7 @@ export default function EntityManagementPage<T>({
   emptyMessage = "No data found.",
   noResultsMessage = "No results found matching your search.",
   actions,
+  additionalContent,
 }: EntityManagementPageProps<T>) {
   const { isAuthenticated, user, logout, checkAuth } = useAuthStore();
   const router = useRouter();
@@ -152,6 +154,9 @@ export default function EntityManagementPage<T>({
             </div>
           ))}
         </div>
+
+        {/* Additional Content (e.g., Report Builder) */}
+        {additionalContent && <div className="mb-8">{additionalContent}</div>}
 
         {/* Search Bar and Actions */}
         <div className="mb-6 flex gap-4 items-center">

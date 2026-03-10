@@ -1,8 +1,6 @@
 "use client";
 
 import { useAuthStore } from "@/store/authStore";
-import { apiClient } from "@/lib/api";
-import type { InjuryStats } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -11,8 +9,6 @@ export default function DashboardPage() {
   const { isAuthenticated, user, logout, checkAuth } = useAuthStore();
   const router = useRouter();
   const [hydrated, setHydrated] = useState(false);
-  const [stats, setStats] = useState<InjuryStats | null>(null);
-  const [statsLoading, setStatsLoading] = useState(true);
 
   useEffect(() => {
     checkAuth();
@@ -24,22 +20,6 @@ export default function DashboardPage() {
       router.push("/");
     }
   }, [hydrated, isAuthenticated, router]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      const fetchStats = async () => {
-        try {
-          const data = await apiClient.getStats();
-          setStats(data);
-        } catch (error) {
-          console.error("Failed to fetch stats:", error);
-        } finally {
-          setStatsLoading(false);
-        }
-      };
-      fetchStats();
-    }
-  }, [isAuthenticated]);
 
   if (!hydrated || !isAuthenticated || !user) {
     return (
@@ -63,6 +43,12 @@ export default function DashboardPage() {
             <p className="text-gray-400 text-sm mt-1">Welcome, {displayName}</p>
           </div>
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/injuries"
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg border border-red-500/30 transition"
+            >
+              🏥 Injuries
+            </Link>
             <Link
               href="/dashboard/users"
               className="px-4 py-2 bg-lime-500/20 hover:bg-lime-500/30 text-lime-300 rounded-lg border border-lime-500/30 transition"
@@ -106,214 +92,61 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Statistics Section */}
-        <div>
-          <h3 className="text-xl font-bold text-white mb-4">
-            Injury Statistics
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            {/* Total Players Card */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm font-medium">
-                    Total Players
-                  </p>
-                  <p className="text-3xl font-bold text-lime-400 mt-2">
-                    {statsLoading ? "-" : stats?.totalPlayers || 0}
-                  </p>
-                </div>
-                <div className="text-2xl">👥</div>
-              </div>
-            </div>
-
-            {/* Total Injuries Card */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm font-medium">
-                    Total Injuries
-                  </p>
-                  <p className="text-3xl font-bold text-orange-400 mt-2">
-                    {statsLoading ? "-" : stats?.totalInjuries || 0}
-                  </p>
-                </div>
-                <div className="text-2xl">🏥</div>
-              </div>
-            </div>
-
-            {/* Active Injuries Card */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm font-medium">
-                    Active Injuries
-                  </p>
-                  <p className="text-3xl font-bold text-red-400 mt-2">
-                    {statsLoading ? "-" : stats?.activeInjuries || 0}
-                  </p>
-                </div>
-                <div className="text-2xl">⚠️</div>
-              </div>
-            </div>
-
-            {/* Resolved Injuries Card */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-gray-700 transition">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-gray-400 text-sm font-medium">
-                    Resolved Injuries
-                  </p>
-                  <p className="text-3xl font-bold text-green-400 mt-2">
-                    {statsLoading ? "-" : stats?.resolvedInjuries || 0}
-                  </p>
-                </div>
-                <div className="text-2xl">✅</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Breakdown Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Injuries by Type */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <h4 className="text-lg font-bold text-white mb-4">
-                Injuries by Type
+        {/* Quick Navigation */}
+        <div className="mb-8">
+          <h3 className="text-xl font-bold text-white mb-4">Quick Access</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Link
+              href="/dashboard/injuries"
+              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-red-500/50 hover:bg-red-500/5 transition group"
+            >
+              <div className="text-3xl mb-3">🏥</div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-red-400 transition">
+                Injuries Dashboard
               </h4>
-              <div className="space-y-3">
-                {statsLoading ? (
-                  <p className="text-gray-400">Loading...</p>
-                ) : stats?.injuriesByType ? (
-                  Object.entries(stats.injuriesByType).map(([type, count]) => (
-                    <div
-                      key={type}
-                      className="flex justify-between items-center"
-                    >
-                      <span className="text-gray-400">{type}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-gray-800 rounded-full h-2">
-                          <div
-                            className="bg-lime-400 h-2 rounded-full"
-                            style={{
-                              width: `${Math.min((count / 10) * 100, 100)}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-white font-semibold w-6 text-right">
-                          {count}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : null}
-              </div>
-            </div>
+              <p className="text-sm text-gray-400">
+                View and analyze injury data with custom reports
+              </p>
+            </Link>
 
-            {/* Injuries by Severity */}
-            <div className="bg-gray-900 border border-gray-800 rounded-lg p-6">
-              <h4 className="text-lg font-bold text-white mb-4">
-                Injuries by Severity
+            <Link
+              href="/dashboard/users/players"
+              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-lime-500/50 hover:bg-lime-500/5 transition group"
+            >
+              <div className="text-3xl mb-3">👥</div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-lime-400 transition">
+                Players
               </h4>
-              <div className="space-y-3">
-                {statsLoading ? (
-                  <p className="text-gray-400">Loading...</p>
-                ) : stats?.injuriesBySeverity ? (
-                  Object.entries(stats.injuriesBySeverity).map(
-                    ([severity, count]) => {
-                      let color = "bg-green-500";
-                      if (severity === "Moderate") color = "bg-orange-500";
-                      if (severity === "Severe") color = "bg-red-500";
+              <p className="text-sm text-gray-400">
+                Manage players and analyze their injury patterns
+              </p>
+            </Link>
 
-                      return (
-                        <div
-                          key={severity}
-                          className="flex justify-between items-center"
-                        >
-                          <span className="text-gray-400">{severity}</span>
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 bg-gray-800 rounded-full h-2">
-                              <div
-                                className={`${color} h-2 rounded-full`}
-                                style={{
-                                  width: `${Math.min((count / 15) * 100, 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <span className="text-white font-semibold w-6 text-right">
-                              {count}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    },
-                  )
-                ) : null}
-              </div>
-            </div>
-          </div>
+            <Link
+              href="/dashboard/users/coaches"
+              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-blue-500/50 hover:bg-blue-500/5 transition group"
+            >
+              <div className="text-3xl mb-3">👨‍🏫</div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition">
+                Coaches
+              </h4>
+              <p className="text-sm text-gray-400">
+                Manage coaches and view team injury reports
+              </p>
+            </Link>
 
-          {/* Recent Injuries Table */}
-          <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-800">
-              <h4 className="text-lg font-bold text-white">Recent Injuries</h4>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-800 border-b border-gray-700">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
-                      Player
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
-                      Injury Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-sm font-semibold text-gray-300">
-                      Reported
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-800">
-                  {statsLoading ? (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-4 text-gray-400">
-                        Loading...
-                      </td>
-                    </tr>
-                  ) : stats?.recentInjuries ? (
-                    stats.recentInjuries.map((injury) => (
-                      <tr
-                        key={injury.id}
-                        className="hover:bg-gray-800/50 transition"
-                      >
-                        <td className="px-6 py-4 text-sm text-white">
-                          {injury.playerName}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-400">
-                          {injury.type}
-                        </td>
-                        <td className="px-6 py-4 text-sm">
-                          <span
-                            className={`inline-block px-3 py-1 rounded border text-xs font-medium ${
-                              injury.status === "Active"
-                                ? "bg-red-500/20 text-red-400 border-red-500/30"
-                                : "bg-green-500/20 text-green-400 border-green-500/30"
-                            }`}
-                          >
-                            {injury.status}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {new Date(injury.reportedDate).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
+            <Link
+              href="/dashboard/users/parents"
+              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-purple-500/50 hover:bg-purple-500/5 transition group"
+            >
+              <div className="text-3xl mb-3">👪</div>
+              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition">
+                Parents
+              </h4>
+              <p className="text-sm text-gray-400">
+                Manage parents and track child injury information
+              </p>
+            </Link>
           </div>
         </div>
       </main>

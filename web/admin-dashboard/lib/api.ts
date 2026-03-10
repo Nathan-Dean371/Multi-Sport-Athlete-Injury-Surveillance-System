@@ -167,6 +167,88 @@ export interface AcceptCoachInvitationResponse {
   };
 }
 
+// Report Builder Types
+export type ReportMetric =
+  | "Injury Count"
+  | "Active Injuries"
+  | "Recovered Injuries"
+  | "Chronic Injuries"
+  | "Average Recovery Days"
+  | "Total Recovery Days"
+  | "Minimum Recovery Days"
+  | "Maximum Recovery Days"
+  | "Minor Injuries Count"
+  | "Moderate Injuries Count"
+  | "Severe Injuries Count"
+  | "Critical Injuries Count"
+  | "Injuries by Body Part"
+  | "Injuries by Type"
+  | "Players Affected"
+  | "Re-injury Rate"
+  | "Average Treatment Duration"
+  | "Injuries with Treatment Plan";
+
+export type AggregateFunction =
+  | "Count"
+  | "Total"
+  | "Average"
+  | "Minimum"
+  | "Maximum";
+
+export interface ReportConfig {
+  metrics: ReportMetric[];
+  aggregateFunction: AggregateFunction;
+  statusFilter?: string[];
+  severityFilter?: string[];
+  injuryTypeFilter?: string[];
+  bodyPartFilter?: string[];
+  fromDate?: string;
+  toDate?: string;
+  teamId?: string;
+  includeTestData?: boolean;
+  exportFormat?: "json" | "csv" | "excel";
+}
+
+export interface ReportDataResult {
+  metric: string;
+  value: number | string;
+  breakdown?: Record<string, number>;
+}
+
+export interface ReportResponse {
+  reportId?: string;
+  reportName?: string;
+  generatedAt: string;
+  filters: {
+    status?: string[];
+    severity?: string[];
+    injuryType?: string[];
+    bodyPart?: string[];
+    fromDate?: string;
+    toDate?: string;
+    teamId?: string;
+  };
+  aggregateFunction: AggregateFunction;
+  data: ReportDataResult[];
+  totalRecords: number;
+  format: "json" | "csv" | "excel";
+}
+
+export interface SaveReportRequest extends ReportConfig {
+  reportName: string;
+  description?: string;
+}
+
+export interface SavedReport {
+  reportId: string;
+  reportName: string;
+  description?: string;
+  config: ReportConfig;
+  createdBy: string;
+  createdAt: string;
+  lastModified: string;
+}
+
 class ApiClient {
   private token: string | null = null;
 
@@ -393,6 +475,45 @@ class ApiClient {
     }
 
     return response.json();
+  }
+
+  // Report Builder Methods
+  async buildReport(config: ReportConfig): Promise<ReportResponse> {
+    return this.request("/reports/build", {
+      method: "POST",
+      body: JSON.stringify(config),
+    });
+  }
+
+  async saveReport(data: SaveReportRequest): Promise<SavedReport> {
+    return this.request("/reports/save", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getSavedReports(): Promise<SavedReport[]> {
+    return this.request("/reports/saved", {
+      method: "GET",
+    });
+  }
+
+  async getSavedReport(reportId: string): Promise<SavedReport> {
+    return this.request(`/reports/saved/${reportId}`, {
+      method: "GET",
+    });
+  }
+
+  async generateFromSavedReport(reportId: string): Promise<ReportResponse> {
+    return this.request(`/reports/saved/${reportId}/generate`, {
+      method: "POST",
+    });
+  }
+
+  async deleteReport(reportId: string): Promise<{ deleted: boolean }> {
+    return this.request(`/reports/saved/${reportId}`, {
+      method: "DELETE",
+    });
   }
 }
 
