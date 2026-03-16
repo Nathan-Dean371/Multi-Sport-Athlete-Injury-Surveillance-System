@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import type { Parent } from "@/lib/api";
 import EntityManagementPage, {
@@ -73,6 +74,14 @@ export default function ParentsPage() {
       ),
     },
     {
+      header: "Pseudonym",
+      accessor: (parent) => (
+        <div className="text-gray-400 text-sm font-mono">
+          {parent.pseudonymId || "-"}
+        </div>
+      ),
+    },
+    {
       header: "Children",
       accessor: (parent) => (
         <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-blue-900/30 text-blue-400 border border-blue-700">
@@ -89,6 +98,18 @@ export default function ParentsPage() {
         ) : (
           <StatusBadge label="Inactive" color="orange" />
         ),
+      className: "text-center",
+    },
+    {
+      header: "Activity",
+      accessor: (parent) => (
+        <Link
+          href={`/dashboard/user-activity?userId=${parent.pseudonymId || parent.parentId}`}
+          className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+        >
+          View Activity
+        </Link>
+      ),
       className: "text-center",
     },
   ];

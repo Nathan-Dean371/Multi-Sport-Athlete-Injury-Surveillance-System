@@ -28,22 +28,12 @@ interface FilterConfig {
 // Entity-specific metrics based on the data in each table
 const ENTITY_METRICS: Record<string, ReportMetric[]> = {
   injuries: [
-    "Injury Count",
-    "Active Injuries",
-    "Recovered Injuries",
-    "Chronic Injuries",
-    "Average Recovery Days",
-    "Total Recovery Days",
-    "Minimum Recovery Days",
-    "Maximum Recovery Days",
+    "Injuries by Body Part",
+    "Injuries by Type",
     "Minor Injuries Count",
     "Moderate Injuries Count",
     "Severe Injuries Count",
     "Critical Injuries Count",
-    "Injuries by Body Part",
-    "Injuries by Type",
-    "Players Affected",
-    "Re-injury Rate",
   ],
   players: [
     "Injury Count",
@@ -305,6 +295,11 @@ export default function ReportBuilder({
             </p>
           </div>
         </div>
+
+        <div>
+          <h2>None Selected = All for that filter</h2>
+        </div>
+
         <svg
           className={`w-6 h-6 text-gray-400 transition-transform ${isExpanded ? "rotate-180" : ""}`}
           fill="none"
@@ -496,7 +491,7 @@ export default function ReportBuilder({
                     </div>
                   </div>
 
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 overflow-y-auto">
                     {reportData.data.map((item, index) => (
                       <div key={index} className="bg-gray-900 rounded-lg p-3">
                         <div className="flex justify-between items-center mb-2">

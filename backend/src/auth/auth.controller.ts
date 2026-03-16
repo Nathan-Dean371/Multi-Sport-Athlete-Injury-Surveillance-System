@@ -6,6 +6,9 @@ import {
   HttpStatus,
   Get,
   UseGuards,
+  Req,
+  Param,
+  Query,
 } from "@nestjs/common";
 import { ApiTags, ApiOperation, ApiResponse } from "@nestjs/swagger";
 import { AuthService } from "./auth.service";
@@ -46,8 +49,43 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 401, description: "Invalid credentials" })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Req() req: any,
+  ): Promise<AuthResponseDto> {
+    const ip = req.ip || req.headers?.["x-forwarded-for"] || null;
+    return this.authService.login(loginDto, ip);
+  }
+
+  @Get("user-activity")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get user activity",
+    description: "Retrieve login activity for a user",
+  })
+  async getUserActivity(
+    @Query("userId") userId?: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
+  ) {
+    const l = limit ? Number(limit) : 50;
+    const o = offset ? Number(offset) : 0;
+    return this.authService.getUserActivity({ userId, limit: l, offset: o });
+  }
+
+  // Backwards-compatible route supporting path param style: /auth/user-activity/:userId
+  @Get("user-activity/:userId")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  async getUserActivityByParam(
+    @Param("userId") userId: string,
+    @Query("limit") limit?: string,
+    @Query("offset") offset?: string,
+  ) {
+    const l = limit ? Number(limit) : 50;
+    const o = offset ? Number(offset) : 0;
+    return this.authService.getUserActivity({ userId, limit: l, offset: o });
   }
 
   @Post("register")

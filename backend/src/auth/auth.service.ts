@@ -11,7 +11,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(loginDto: LoginDto, ip?: string): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
     // Query user account
@@ -23,6 +23,7 @@ export class AuthService {
     );
 
     if (result.rows.length === 0) {
+      // No user found - cannot record activity without user id
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -40,6 +41,13 @@ export class AuthService {
     // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.password_hash);
     if (!isPasswordValid) {
+      // Record failed login attempt
+      await this.pool.query(
+        `INSERT INTO user_activity (user_account_id, occurred_at, success, ip_address)
+         VALUES ($1, CURRENT_TIMESTAMP, false, $2)`,
+        [user.id, ip],
+      );
+
       // Increment failed login attempts
       await this.pool.query(
         `UPDATE user_accounts 
@@ -48,6 +56,7 @@ export class AuthService {
          WHERE id = $1`,
         [user.id],
       );
+
       throw new UnauthorizedException("Invalid credentials");
     }
 
@@ -58,6 +67,13 @@ export class AuthService {
            failed_login_attempts = 0
        WHERE id = $1`,
       [user.id],
+    );
+
+    // Record successful login activity
+    await this.pool.query(
+      `INSERT INTO user_activity (user_account_id, occurred_at, success, ip_address)
+       VALUES ($1, CURRENT_TIMESTAMP, true, $2)`,
+      [user.id, ip],
     );
 
     // Generate JWT token
@@ -79,6 +95,78 @@ export class AuthService {
         pseudonymId: user.pseudonym_id,
       },
     };
+  }
+
+  async getUserActivity(query: {
+    userId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const { userId, limit = 50, offset = 0 } = query;
+
+    // If no userId provided, return all activity (paginated)
+    if (!userId) {
+      const resAll = await this.pool.query(
+        `SELECT ua.id, ua.user_account_id, ua.occurred_at, ua.success, ua.ip_address, acc.pseudonym_id
+         FROM user_activity ua
+         LEFT JOIN user_accounts acc ON acc.id = ua.user_account_id
+         ORDER BY ua.occurred_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset],
+      );
+
+      return resAll.rows.map((r) => ({
+        id: r.id,
+        userAccountId: r.user_account_id,
+        occurredAt: r.occurred_at,
+        success: r.success,
+        ipAddress: r.ip_address,
+        pseudonymId: r.pseudonym_id,
+      }));
+    }
+
+    // Accept either a user_accounts.id (UUID) or a pseudonym_id.
+    // Validate input first to avoid passing non-UUID text into a UUID column query.
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    let accountId: string | null = null;
+
+    if (uuidRegex.test(userId)) {
+      // Treat as UUID
+      const existsRes = await this.pool.query(
+        `SELECT id FROM user_accounts WHERE id = $1`,
+        [userId],
+      );
+      if (existsRes.rows.length === 0) return [];
+      accountId = existsRes.rows[0].id;
+    } else {
+      // Treat as pseudonym_id
+      const pseudoRes = await this.pool.query(
+        `SELECT id FROM user_accounts WHERE pseudonym_id = $1`,
+        [userId],
+      );
+      if (pseudoRes.rows.length === 0) return [];
+      accountId = pseudoRes.rows[0].id;
+    }
+
+    const res = await this.pool.query(
+      `SELECT ua.id, ua.user_account_id, ua.occurred_at, ua.success, ua.ip_address, acc.pseudonym_id
+       FROM user_activity ua
+       LEFT JOIN user_accounts acc ON acc.id = ua.user_account_id
+       WHERE ua.user_account_id = $1
+       ORDER BY ua.occurred_at DESC
+       LIMIT $2 OFFSET $3`,
+      [accountId, limit, offset],
+    );
+
+    return res.rows.map((r) => ({
+      id: r.id,
+      userAccountId: r.user_account_id,
+      occurredAt: r.occurred_at,
+      success: r.success,
+      ipAddress: r.ip_address,
+      pseudonymId: r.pseudonym_id,
+    }));
   }
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {

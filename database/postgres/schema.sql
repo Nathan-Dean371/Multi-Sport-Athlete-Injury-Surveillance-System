@@ -191,6 +191,20 @@ CREATE TABLE IF NOT EXISTS parent_invitations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- ---------------------------------------------------------------------------
+-- User Activity (Migration 009)
+-- Records login attempts for audit and admin reporting
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS user_activity (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_account_id UUID NOT NULL REFERENCES user_accounts(id) ON DELETE CASCADE,
+    occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    success BOOLEAN NOT NULL,
+    ip_address TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_activity_user_occurred_at ON user_activity(user_account_id, occurred_at DESC);
+
 -- ============================================================================
 -- PART 3: GDPR COMPLIANCE
 -- ============================================================================

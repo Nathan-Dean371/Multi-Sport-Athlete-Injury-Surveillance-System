@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { apiClient } from "@/lib/api";
 import type { Coach } from "@/lib/api";
@@ -71,6 +72,14 @@ export default function CoachesPage() {
       ),
     },
     {
+      header: "Pseudonym",
+      accessor: (coach) => (
+        <div className="text-gray-400 text-sm font-mono">
+          {coach.pseudonymId || "-"}
+        </div>
+      ),
+    },
+    {
       header: "Teams",
       accessor: (coach) => (
         <span className="inline-flex items-center justify-center px-3 py-1 rounded-full text-sm font-medium bg-lime-900/30 text-lime-400 border border-lime-700">
@@ -87,6 +96,18 @@ export default function CoachesPage() {
         ) : (
           <StatusBadge label="Inactive" color="orange" />
         ),
+      className: "text-center",
+    },
+    {
+      header: "Activity",
+      accessor: (coach) => (
+        <Link
+          href={`/dashboard/user-activity?userId=${coach.pseudonymId || coach.coachId}`}
+          className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+        >
+          View Activity
+        </Link>
+      ),
       className: "text-center",
     },
   ];

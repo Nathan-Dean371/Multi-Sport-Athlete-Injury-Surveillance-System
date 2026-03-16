@@ -167,6 +167,15 @@ export interface AcceptCoachInvitationResponse {
   };
 }
 
+export interface UserActivity {
+  id: string;
+  userAccountId: string;
+  occurredAt: string;
+  success: boolean;
+  pseudonymId?: string | null;
+  ipAddress?: string | null;
+}
+
 // Report Builder Types
 export type ReportMetric =
   | "Injury Count"
@@ -514,6 +523,17 @@ class ApiClient {
     return this.request(`/reports/saved/${reportId}`, {
       method: "DELETE",
     });
+  }
+
+  async getUserActivity(
+    userId?: string,
+    limit = 50,
+    offset = 0,
+  ): Promise<UserActivity[]> {
+    const endpoint = userId
+      ? `/auth/user-activity/${userId}?limit=${limit}&offset=${offset}`
+      : `/auth/user-activity?limit=${limit}&offset=${offset}`;
+    return this.request(endpoint, { method: "GET" });
   }
 }
 

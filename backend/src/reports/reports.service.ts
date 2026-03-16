@@ -26,16 +26,50 @@ export class ReportsService {
   async buildReport(config: ReportConfigDto): Promise<ReportResponseDto> {
     const session = this.neo4jDriver.session();
 
+    // Helper: normalize Neo4j Integer (driver Integer or serialized { low, high }) to JS number/string/null
+    const normalizeValue = (v: any): number | string | null => {
+      if (v === null || v === undefined) return null;
+
+      // neo4j-driver Integer with toNumber()
+      if (typeof v === "object" && typeof v.toNumber === "function") {
+        try {
+          return v.toNumber();
+        } catch {
+          // fall through to other checks
+        }
+      }
+
+      // Serialized neo4j integer shape { low, high }
+      if (
+        typeof v === "object" &&
+        Object.prototype.hasOwnProperty.call(v, "low") &&
+        Object.prototype.hasOwnProperty.call(v, "high")
+      ) {
+        const low = Number(v.low);
+        const high = Number(v.high);
+        // combine high/low into a single JS number (handles 64-bit split)
+        const combined = high === 0 ? low : high * 4294967296 + (low >>> 0);
+        // if safe integer, return number, otherwise string
+        return Number.isSafeInteger(combined) ? combined : String(combined);
+      }
+
+      if (typeof v === "number" || typeof v === "string") return v;
+
+      // Try numeric coercion, otherwise return string
+      const coerced = Number(v);
+      return Number.isNaN(coerced) ? String(v) : coerced;
+    };
+
     try {
       const data: ReportDataResult[] = [];
-      let totalRecords = 0;
+      let totalRecords: any = 0;
 
       // Build the base query with filters
       const whereConditions = this.buildWhereConditions(config);
       const baseQuery = `
-        MATCH (i:Injury)
-        ${whereConditions.length > 0 ? "WHERE " + whereConditions.join(" AND ") : ""}
-      `;
+      MATCH (i:Injury)
+      ${whereConditions.length > 0 ? "WHERE " + whereConditions.join(" AND ") : ""}
+    `;
 
       // Get total records count
       const countResult = await session.run(
@@ -61,6 +95,35 @@ export class ReportsService {
         }
       }
 
+      // Normalize numbers in data and breakdowns
+      const normalizedData = data.map((item) => {
+        const normalizedValue = normalizeValue(item.value);
+        let normalizedBreakdown: Record<string, number> | undefined;
+        if (item.breakdown) {
+          normalizedBreakdown = Object.fromEntries(
+            Object.entries(item.breakdown).map(([k, v]) => {
+              const norm = normalizeValue(v);
+              const num = typeof norm === "number" ? norm : Number(norm);
+              const finalNum = Number.isNaN(num) ? 0 : num;
+              return [k, finalNum];
+            }),
+          );
+        }
+
+        return {
+          ...item,
+          value: normalizedValue ?? 0,
+          breakdown: normalizedBreakdown,
+        } as ReportDataResult;
+      });
+
+      // Normalize totalRecords
+      const normalizedTotal = normalizeValue(totalRecords);
+      const finalTotal =
+        typeof normalizedTotal === "number"
+          ? normalizedTotal
+          : Number(normalizedTotal) || 0;
+
       return {
         generatedAt: new Date().toISOString(),
         filters: {
@@ -73,8 +136,8 @@ export class ReportsService {
           teamId: config.teamId,
         },
         aggregateFunction: config.aggregateFunction,
-        data,
-        totalRecords,
+        data: normalizedData,
+        totalRecords: finalTotal,
         format: config.exportFormat || "json",
       };
     } finally {

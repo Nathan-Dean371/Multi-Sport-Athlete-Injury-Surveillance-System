@@ -35,20 +35,12 @@ export default function ReportBuilderPage() {
 
   // Available options
   const availableMetrics: ReportMetric[] = [
-    "Injury Count",
-    "Active Injuries",
-    "Recovered Injuries",
-    "Chronic Injuries",
-    "Average Recovery Days",
-    "Total Recovery Days",
+    "Injuries by Body Part",
+    "Injuries by Type",
     "Minor Injuries Count",
     "Moderate Injuries Count",
     "Severe Injuries Count",
     "Critical Injuries Count",
-    "Injuries by Body Part",
-    "Injuries by Type",
-    "Players Affected",
-    "Re-injury Rate",
   ];
 
   const aggregateFunctions: AggregateFunction[] = [

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { apiClient } from "@/lib/api";
 import type { Player } from "@/lib/api";
 import EntityManagementPage, {
@@ -79,6 +80,14 @@ export default function PlayersPage() {
       ),
     },
     {
+      header: "Pseudonym",
+      accessor: (player) => (
+        <div className="text-gray-400 text-sm font-mono">
+          {player.pseudonymId || "-"}
+        </div>
+      ),
+    },
+    {
       header: "Team",
       accessor: (player) => (
         <div className="text-gray-300 text-sm">
@@ -109,6 +118,18 @@ export default function PlayersPage() {
         ) : (
           <StatusBadge label="Inactive" color="orange" />
         ),
+      className: "text-center",
+    },
+    {
+      header: "Activity",
+      accessor: (player) => (
+        <Link
+          href={`/dashboard/user-activity?userId=${player.pseudonymId || player.playerId}`}
+          className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+        >
+          View Activity
+        </Link>
+      ),
       className: "text-center",
     },
   ];

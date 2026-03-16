@@ -83,12 +83,6 @@ export default function DashboardPage() {
               ID:{" "}
               <span className="text-gray-500 font-mono text-sm">{user.id}</span>
             </p>
-            <p>
-              Role:{" "}
-              <span className="text-lime-400 capitalize">
-                {user.identity_type}
-              </span>
-            </p>
           </div>
         </div>
 
