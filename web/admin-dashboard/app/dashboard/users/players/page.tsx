@@ -122,9 +122,9 @@ export default function PlayersPage() {
     },
     {
       header: "Activity",
-      accessor: (player) => (
+      accessor: () => (
         <Link
-          href={`/dashboard/user-activity?userId=${player.pseudonymId || player.playerId}`}
+          href="/dashboard/user-activity"
           className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
         >
           View Activity

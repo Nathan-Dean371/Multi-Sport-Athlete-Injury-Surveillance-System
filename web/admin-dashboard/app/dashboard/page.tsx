@@ -55,6 +55,12 @@ export default function DashboardPage() {
             >
               User Management
             </Link>
+            <Link
+              href="/dashboard/user-activity"
+              className="px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 rounded-lg border border-blue-500/30 transition"
+            >
+              User Activity
+            </Link>
             <button
               onClick={() => {
                 logout();
@@ -91,23 +97,9 @@ export default function DashboardPage() {
           <h3 className="text-xl font-bold text-white mb-4">Quick Access</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Link
-              href="/dashboard/injuries"
-              className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-red-500/50 hover:bg-red-500/5 transition group"
-            >
-              <div className="text-3xl mb-3">🏥</div>
-              <h4 className="text-lg font-bold text-white mb-2 group-hover:text-red-400 transition">
-                Injuries Dashboard
-              </h4>
-              <p className="text-sm text-gray-400">
-                View and analyze injury data with custom reports
-              </p>
-            </Link>
-
-            <Link
               href="/dashboard/users/players"
               className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-lime-500/50 hover:bg-lime-500/5 transition group"
             >
-              <div className="text-3xl mb-3">👥</div>
               <h4 className="text-lg font-bold text-white mb-2 group-hover:text-lime-400 transition">
                 Players
               </h4>
@@ -120,7 +112,6 @@ export default function DashboardPage() {
               href="/dashboard/users/coaches"
               className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-blue-500/50 hover:bg-blue-500/5 transition group"
             >
-              <div className="text-3xl mb-3">👨‍🏫</div>
               <h4 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition">
                 Coaches
               </h4>
@@ -133,7 +124,6 @@ export default function DashboardPage() {
               href="/dashboard/users/parents"
               className="bg-gray-900 border border-gray-800 rounded-lg p-6 hover:border-purple-500/50 hover:bg-purple-500/5 transition group"
             >
-              <div className="text-3xl mb-3">👪</div>
               <h4 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition">
                 Parents
               </h4>

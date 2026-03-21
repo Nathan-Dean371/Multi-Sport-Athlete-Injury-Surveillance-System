@@ -102,9 +102,9 @@ export default function ParentsPage() {
     },
     {
       header: "Activity",
-      accessor: (parent) => (
+      accessor: () => (
         <Link
-          href={`/dashboard/user-activity?userId=${parent.pseudonymId || parent.parentId}`}
+          href="/dashboard/user-activity"
           className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
         >
           View Activity

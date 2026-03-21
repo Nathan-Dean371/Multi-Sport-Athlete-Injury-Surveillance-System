@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import Link from "next/link";
 
 const ClientUserActivity = dynamic(() => import("./ClientUserActivity"), {
   suspense: true,
@@ -13,8 +14,17 @@ export default function UserActivityPage() {
           <div>
             <h1 className="text-3xl font-bold text-white">User Activity</h1>
             <p className="text-gray-400 text-sm mt-1">
-              View login activity for a user
+              View login activity for all users
             </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard"
+              className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg border border-gray-700 transition"
+            >
+              ← Back to Dashboard
+            </Link>
           </div>
         </div>
       </header>
