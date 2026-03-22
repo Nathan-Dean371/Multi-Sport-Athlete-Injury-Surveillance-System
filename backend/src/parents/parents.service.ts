@@ -3,6 +3,7 @@ import {
   Inject,
   BadRequestException,
   NotFoundException,
+  ConflictException,
 } from "@nestjs/common";
 import { Pool } from "pg";
 import { Driver, Session } from "neo4j-driver";
@@ -19,6 +20,33 @@ export class ParentsService {
     @Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver,
   ) {}
 
+  async createAthleteInvitation(
+    parentPseudonymId: string,
+    email: string,
+    firstName: string,
+    lastName: string,
+  ) {
+    const token = randomBytes(16).toString("hex");
+
+    const client = await this.pool.connect();
+    try {
+      await client.query(
+        `INSERT INTO player_invitations (parent_pseudonym_id, email, first_name, last_name, token, created_at)
+         VALUES ($1,$2,$3,$4,$5,NOW())`,
+        [parentPseudonymId, email, firstName, lastName, token],
+      );
+    } finally {
+      client.release();
+    }
+
+    // In production we'd send email; for now return token and a direct link so tests/dev can use it
+    return {
+      token,
+      message: "Athlete invitation created",
+      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/athlete?token=${token}`,
+    };
+  }
+
   async createInvitation(
     dto: CreateParentInvitationDto & { coachPseudonymId?: string },
   ) {
@@ -26,6 +54,18 @@ export class ParentsService {
 
     const client = await this.pool.connect();
     try {
+      if (dto.parentEmail) {
+        const existingAccount = await client.query(
+          `SELECT 1 FROM user_accounts WHERE email=$1 LIMIT 1`,
+          [dto.parentEmail],
+        );
+        if (existingAccount.rows.length > 0) {
+          throw new ConflictException(
+            "An account with this email already exists",
+          );
+        }
+      }
+
       await client.query(
         `INSERT INTO parent_invitations (coach_pseudonym_id, parent_email, parent_phone, token, created_at)
          VALUES ($1,$2,$3,$4,NOW())`,
@@ -40,8 +80,12 @@ export class ParentsService {
       client.release();
     }
 
-    // In production we'd send email; for now return token so tests/dev can use it
-    return { token };
+    // In production we'd send email; for now return token and a direct link so tests/dev can use it
+    return {
+      token,
+      message: "Parent invitation created",
+      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/parent?token=${token}`,
+    };
   }
 
   async acceptInvitation(dto: AcceptParentInvitationDto) {
@@ -61,6 +105,28 @@ export class ParentsService {
 
       if (inv.accepted) {
         throw new BadRequestException("Invitation already accepted");
+      }
+
+      if (inv.parent_email) {
+        const existingAccount = await client.query(
+          `SELECT identity_type FROM user_accounts WHERE email=$1 LIMIT 1`,
+          [inv.parent_email],
+        );
+        if (existingAccount.rows.length > 0) {
+          throw new ConflictException(
+            "An account with this email already exists",
+          );
+        }
+
+        const existingParentIdentity = await client.query(
+          `SELECT 1 FROM parent_identities WHERE email=$1 LIMIT 1`,
+          [inv.parent_email],
+        );
+        if (existingParentIdentity.rows.length > 0) {
+          throw new ConflictException(
+            "A parent identity with this email already exists",
+          );
+        }
       }
 
       // create parent identity in Postgres
@@ -104,13 +170,29 @@ export class ParentsService {
         [inv.invitation_id],
       );
 
-      // Create Parent node in Neo4j and link to coach and/or players once linked via API
+      // Create Parent node in Neo4j and link it to the inviting coach (so coaches can
+      // traverse to invited families even before a player joins a team).
       const session: Session = this.neo4jDriver.session();
       try {
         await session.run(
-          `CREATE (p:Parent {parentId: $parentId, pseudonymId: $pseudonymId, createdAt: datetime()})`,
-          { parentId: pseudo, pseudonymId: pseudo },
+          `MERGE (p:Parent {pseudonymId: $pseudonymId})
+           ON CREATE SET p.parentId = $parentId, p.createdAt = datetime()`,
+          { parentId, pseudonymId: pseudo },
         );
+
+        if (inv.coach_pseudonym_id) {
+          await session.run(
+            `MERGE (c:Coach {pseudonymId: $coachPseudonymId})
+             ON CREATE SET c.createdAt = datetime()
+             WITH c
+             MATCH (p:Parent {pseudonymId: $parentPseudonymId})
+             MERGE (c)-[:INVITED_PARENT]->(p)`,
+            {
+              coachPseudonymId: inv.coach_pseudonym_id,
+              parentPseudonymId: pseudo,
+            },
+          );
+        }
       } finally {
         await session.close();
       }

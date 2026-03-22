@@ -1,9 +1,17 @@
-import { Injectable, Inject, NotFoundException } from "@nestjs/common";
-import { Driver } from "neo4j-driver";
+import {
+  Injectable,
+  Inject,
+  NotFoundException,
+  BadRequestException,
+} from "@nestjs/common";
+import { Driver, Session } from "neo4j-driver";
 import { Pool } from "pg";
 import { PlayerDto, PlayerListDto } from "./dto/player.dto";
 import { PlayerAdminDto, PlayerAdminListDto } from "./dto/player-admin.dto";
 import { PlayerInjuriesDto, InjuryDto } from "./dto/injury.dto";
+import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
+import { randomBytes } from "crypto";
+import * as bcrypt from "bcryptjs";
 
 @Injectable()
 export class PlayersService {
@@ -11,6 +19,148 @@ export class PlayersService {
     @Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver,
     @Inject("POSTGRES_POOL") private readonly pool: Pool,
   ) {}
+
+  async acceptInvite(dto: AcceptPlayerInvitationDto) {
+    const client = await this.pool.connect();
+    const neo4jSession: Session = this.neo4jDriver.session();
+
+    try {
+      await client.query("BEGIN");
+
+      const inviteRes = await client.query(
+        `SELECT * FROM player_invitations WHERE token = $1`,
+        [dto.token],
+      );
+
+      if (inviteRes.rows.length === 0) {
+        throw new NotFoundException("Invitation not found");
+      }
+
+      const invitation = inviteRes.rows[0];
+
+      if (invitation.accepted) {
+        throw new BadRequestException("Invitation already accepted");
+      }
+
+      // Ensure the parent exists in Postgres (needed to link player identity)
+      const parentRes = await client.query(
+        `SELECT parent_id, pseudonym_id FROM parent_identities WHERE pseudonym_id = $1`,
+        [invitation.parent_pseudonym_id],
+      );
+
+      if (parentRes.rows.length === 0) {
+        throw new NotFoundException("Parent not found for invitation");
+      }
+
+      const parentId = parentRes.rows[0].parent_id;
+      const email = invitation.email;
+      const firstName = invitation.first_name;
+      const lastName = invitation.last_name;
+
+      // Prevent duplicate account creation
+      const existingUser = await client.query(
+        `SELECT id FROM user_accounts WHERE email = $1`,
+        [email],
+      );
+      if (existingUser.rows.length > 0) {
+        throw new BadRequestException("Account already exists for this email");
+      }
+
+      const pseudonymId =
+        dto.pseudonymId ||
+        `PSY-PLAYER-${randomBytes(4).toString("hex").toUpperCase()}`;
+      const neo4jPlayerId = `PLAYER-${randomBytes(4).toString("hex").toUpperCase()}`;
+
+      const playerIdentityResult = await client.query(
+        `INSERT INTO player_identities
+         (pseudonym_id, neo4j_player_id, first_name, last_name, date_of_birth, email, parent_id, is_active, gdpr_consent_given, gdpr_consent_date, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true, true, CURRENT_TIMESTAMP, NOW(), NOW())
+         RETURNING id`,
+        [
+          pseudonymId,
+          neo4jPlayerId,
+          firstName,
+          lastName,
+          dto.dateOfBirth,
+          email,
+          parentId,
+        ],
+      );
+
+      const playerIdentityId = playerIdentityResult.rows[0].id;
+
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+      const passwordSalt = "bcrypt";
+
+      await client.query(
+        `INSERT INTO user_accounts
+         (email, password_hash, password_salt, identity_type, pseudonym_id, identity_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, true)`,
+        [
+          email,
+          passwordHash,
+          passwordSalt,
+          "player",
+          pseudonymId,
+          playerIdentityId,
+        ],
+      );
+
+      await client.query(
+        `UPDATE player_invitations
+         SET accepted = true, accepted_at = NOW()
+         WHERE token = $1`,
+        [dto.token],
+      );
+
+      // Ensure parent node exists in Neo4j, then create player node and relationship
+      await neo4jSession.run(
+        `MERGE (p:Parent {pseudonymId: $parentPseudonymId})
+         ON CREATE SET p.parentId = $parentPseudonymId, p.createdAt = datetime()`,
+        { parentPseudonymId: invitation.parent_pseudonym_id },
+      );
+
+      await neo4jSession.run(
+        `CREATE (pl:Player {
+          playerId: $playerId,
+          pseudonymId: $pseudonymId,
+          isActive: true,
+          createdAt: datetime(),
+          updatedAt: datetime()
+        })`,
+        { playerId: neo4jPlayerId, pseudonymId },
+      );
+
+      await neo4jSession.run(
+        `MATCH (p:Parent {pseudonymId: $parentPseudonymId})
+         MATCH (pl:Player {pseudonymId: $playerPseudonymId})
+         MERGE (p)-[:PARENT_OF {createdAt: datetime()}]->(pl)`,
+        {
+          parentPseudonymId: invitation.parent_pseudonym_id,
+          playerPseudonymId: pseudonymId,
+        },
+      );
+
+      await client.query("COMMIT");
+
+      return {
+        message: "Player invitation accepted successfully",
+        player: {
+          playerId: neo4jPlayerId,
+          pseudonymId,
+          email,
+          firstName,
+          lastName,
+        },
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+      await neo4jSession.close();
+    }
+  }
 
   async findAll(): Promise<PlayerListDto> {
     const session = this.neo4jDriver.session();

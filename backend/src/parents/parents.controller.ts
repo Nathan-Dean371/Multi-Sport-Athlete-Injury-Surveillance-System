@@ -8,6 +8,7 @@ import {
 import { ParentsService } from "./parents.service";
 import { CreateParentInvitationDto } from "./dto/create-parent-invitation.dto";
 import { AcceptParentInvitationDto } from "./dto/accept-parent-invitation.dto";
+import { CreateAthleteInvitationDto } from "./dto/create-athlete-invitation.dto";
 import { ParentListDto } from "./dto/parent.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { Roles } from "../auth/roles.decorator";
@@ -53,6 +54,22 @@ export class ParentsController {
   @Post("accept")
   async acceptInvitation(@Body() dto: AcceptParentInvitationDto) {
     return this.parentsService.acceptInvitation(dto);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("parent")
+  @Post("invite-athlete")
+  async inviteAthlete(
+    @Body() dto: CreateAthleteInvitationDto,
+    @Req() req: any,
+  ) {
+    const parentPseudonymId = req.user.pseudonymId;
+    return this.parentsService.createAthleteInvitation(
+      parentPseudonymId,
+      dto.email,
+      dto.firstName,
+      dto.lastName,
+    );
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

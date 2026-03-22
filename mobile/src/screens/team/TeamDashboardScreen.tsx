@@ -1,13 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, Chip, useTheme, Divider, ProgressBar, Badge, List, Button, Menu } from 'react-native-paper';
-import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
-import colors from '../../constants/colors';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import teamService from '../../services/team.service';
-import { TeamRosterDto, RosterPlayerDto, TeamDetailsDto } from '../../types/team.types';
-import { PlayerStatus } from '../../types/status.types';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import {
+  Text,
+  Card,
+  Chip,
+  useTheme,
+  Divider,
+  ProgressBar,
+  Badge,
+  List,
+  Button,
+  Menu,
+} from "react-native-paper";
+import { useAuth } from "../../contexts/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import colors from "../../constants/colors";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import teamService from "../../services/team.service";
+import {
+  TeamRosterDto,
+  RosterPlayerDto,
+  TeamDetailsDto,
+} from "../../types/team.types";
+import { PlayerStatus } from "../../types/status.types";
 
 export default function TeamDashboardScreen() {
   const { user } = useAuth();
@@ -31,7 +46,7 @@ export default function TeamDashboardScreen() {
       setError(null);
       const coachTeams = await teamService.getCoachTeams();
       setTeams(coachTeams);
-      
+
       // Auto-select first team if only one team
       if (coachTeams.length === 1) {
         selectTeam(coachTeams[0]);
@@ -39,11 +54,11 @@ export default function TeamDashboardScreen() {
         // Select first team by default
         selectTeam(coachTeams[0]);
       } else {
-        setError('No teams found. Please contact your administrator.');
+        setError("No teams found. Please contact your administrator.");
       }
     } catch (err: any) {
-      console.error('Error fetching coach teams:', err);
-      setError(err.message || 'Failed to load teams');
+      console.error("Error fetching coach teams:", err);
+      setError(err.message || "Failed to load teams");
     } finally {
       setLoading(false);
     }
@@ -60,8 +75,8 @@ export default function TeamDashboardScreen() {
       const data = await teamService.getTeamRoster(teamId);
       setRoster(data);
     } catch (err: any) {
-      console.error('Error fetching team roster:', err);
-      setError(err.message || 'Failed to load team roster');
+      console.error("Error fetching team roster:", err);
+      setError(err.message || "Failed to load team roster");
     }
   };
 
@@ -77,42 +92,42 @@ export default function TeamDashboardScreen() {
 
   const getStatusColor = (status?: PlayerStatus): string => {
     if (!status) return theme.colors.surfaceVariant;
-    
+
     switch (status) {
       case PlayerStatus.GREEN:
         return colors.success;
       case PlayerStatus.ORANGE:
         return colors.warning;
       case PlayerStatus.RED:
-        return '#F44336';
+        return "#F44336";
       default:
         return theme.colors.surfaceVariant;
     }
   };
 
   const getStatusLabel = (status?: PlayerStatus): string => {
-    if (!status) return 'Not Reported';
+    if (!status) return "Not Reported";
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
 
   const getStatusIcon = (status?: PlayerStatus): string => {
-    if (!status) return 'help-circle-outline';
-    
+    if (!status) return "help-circle-outline";
+
     switch (status) {
       case PlayerStatus.GREEN:
-        return 'check-circle';
+        return "check-circle";
       case PlayerStatus.ORANGE:
-        return 'alert';
+        return "alert";
       case PlayerStatus.RED:
-        return 'close-circle';
+        return "close-circle";
       default:
-        return 'help-circle-outline';
+        return "help-circle-outline";
     }
   };
 
   const renderPlayerCard = (player: RosterPlayerDto) => {
     const hasReportedToday = !!player.currentStatus;
-    
+
     return (
       <Card key={player.playerId} style={styles.playerCard}>
         <Card.Content>
@@ -123,9 +138,12 @@ export default function TeamDashboardScreen() {
                   {player.firstName} {player.lastName}
                 </Text>
                 {player.activeInjuryCount > 0 && (
-                  <Badge 
-                    size={20} 
-                    style={[styles.injuryBadge, { backgroundColor: theme.colors.error }]}
+                  <Badge
+                    size={20}
+                    style={[
+                      styles.injuryBadge,
+                      { backgroundColor: theme.colors.error },
+                    ]}
                   >
                     {player.activeInjuryCount}
                   </Badge>
@@ -135,12 +153,12 @@ export default function TeamDashboardScreen() {
                 #{player.jerseyNumber} • {player.position}
               </Text>
             </View>
-            
+
             <Chip
               icon={getStatusIcon(player.currentStatus)}
               style={[
                 styles.statusChip,
-                { backgroundColor: getStatusColor(player.currentStatus) }
+                { backgroundColor: getStatusColor(player.currentStatus) },
               ]}
               textStyle={styles.statusChipText}
             >
@@ -157,7 +175,8 @@ export default function TeamDashboardScreen() {
 
           {!hasReportedToday && player.lastStatusUpdate && (
             <Text style={styles.lastUpdate}>
-              Last update: {new Date(player.lastStatusUpdate).toLocaleDateString()}
+              Last update:{" "}
+              {new Date(player.lastStatusUpdate).toLocaleDateString()}
             </Text>
           )}
         </Card.Content>
@@ -167,7 +186,7 @@ export default function TeamDashboardScreen() {
 
   const groupPlayersByStatus = () => {
     if (!roster) return {};
-    
+
     const groups: Record<string, RosterPlayerDto[]> = {
       notReported: [],
       green: [],
@@ -175,7 +194,7 @@ export default function TeamDashboardScreen() {
       red: [],
     };
 
-    roster.players.forEach(player => {
+    roster.players.forEach((player) => {
       if (!player.currentStatus) {
         groups.notReported.push(player);
       } else {
@@ -194,10 +213,14 @@ export default function TeamDashboardScreen() {
     return (
       <View style={styles.errorContainer}>
         <Text style={styles.errorText}>
-          {error || 'No team data available'}
+          {error || "No team data available"}
         </Text>
         {teams.length === 0 && (
-          <Button mode="outlined" onPress={fetchCoachTeams} style={{ marginTop: 16 }}>
+          <Button
+            mode="outlined"
+            onPress={fetchCoachTeams}
+            style={{ marginTop: 16 }}
+          >
             Retry
           </Button>
         )}
@@ -206,12 +229,13 @@ export default function TeamDashboardScreen() {
   }
 
   const groups = groupPlayersByStatus();
-  const reportingPercentage = roster.totalPlayers > 0 
-    ? roster.playersReportedToday / roster.totalPlayers 
-    : 0;
+  const reportingPercentage =
+    roster.totalPlayers > 0
+      ? roster.playersReportedToday / roster.totalPlayers
+      : 0;
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -228,7 +252,7 @@ export default function TeamDashboardScreen() {
                 mode="outlined"
                 onPress={() => setMenuVisible(true)}
                 icon="chevron-down"
-                contentStyle={{ flexDirection: 'row-reverse' }}
+                contentStyle={{ flexDirection: "row-reverse" }}
                 style={styles.teamSelectorButton}
               >
                 {selectedTeam.name}
@@ -240,7 +264,9 @@ export default function TeamDashboardScreen() {
                 key={team.teamId}
                 onPress={() => selectTeam(team)}
                 title={team.name}
-                leadingIcon={selectedTeam?.teamId === team.teamId ? 'check' : undefined}
+                leadingIcon={
+                  selectedTeam?.teamId === team.teamId ? "check" : undefined
+                }
               />
             ))}
           </Menu>
@@ -252,16 +278,18 @@ export default function TeamDashboardScreen() {
         <Card.Content>
           <Text style={styles.teamName}>{roster.teamName}</Text>
           <Text style={styles.sport}>{roster.sport}</Text>
-          
+
           <Divider style={styles.divider} />
-          
+
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{roster.totalPlayers}</Text>
               <Text style={styles.statLabel}>Total Players</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{roster.playersReportedToday}</Text>
+              <Text style={styles.statValue}>
+                {roster.playersReportedToday}
+              </Text>
               <Text style={styles.statLabel}>Reported Today</Text>
             </View>
             <View style={styles.statItem}>
@@ -276,8 +304,8 @@ export default function TeamDashboardScreen() {
             <Text style={styles.progressLabel}>
               Daily Reporting: {Math.round(reportingPercentage * 100)}%
             </Text>
-            <ProgressBar 
-              progress={reportingPercentage} 
+            <ProgressBar
+              progress={reportingPercentage}
               color={theme.colors.primary}
               style={styles.progressBar}
             />
@@ -285,25 +313,47 @@ export default function TeamDashboardScreen() {
         </Card.Content>
       </Card>
 
+      <View style={styles.actionsContainer}>
+        <Button
+          mode="outlined"
+          icon="account-plus"
+          onPress={() => navigation.navigate("InviteParent")}
+        >
+          Invite Parent
+        </Button>
+      </View>
+
       {/* Status Overview */}
       <Card style={styles.overviewCard}>
         <Card.Content>
           <Text style={styles.sectionTitle}>Status Overview</Text>
           <View style={styles.overviewGrid}>
             <View style={styles.overviewItem}>
-              <View style={[styles.overviewBadge, { backgroundColor: '#F44336' }]}>
+              <View
+                style={[styles.overviewBadge, { backgroundColor: "#F44336" }]}
+              >
                 <Text style={styles.overviewCount}>{groups.red.length}</Text>
               </View>
               <Text style={styles.overviewLabel}>Red</Text>
             </View>
             <View style={styles.overviewItem}>
-              <View style={[styles.overviewBadge, { backgroundColor: colors.warning }]}> 
+              <View
+                style={[
+                  styles.overviewBadge,
+                  { backgroundColor: colors.warning },
+                ]}
+              >
                 <Text style={styles.overviewCount}>{groups.orange.length}</Text>
               </View>
               <Text style={styles.overviewLabel}>Orange</Text>
             </View>
             <View style={styles.overviewItem}>
-              <View style={[styles.overviewBadge, { backgroundColor: colors.success }]}> 
+              <View
+                style={[
+                  styles.overviewBadge,
+                  { backgroundColor: colors.success },
+                ]}
+              >
                 <Text style={styles.overviewCount}>{groups.green.length}</Text>
               </View>
               <Text style={styles.overviewLabel}>Green</Text>
@@ -319,20 +369,24 @@ export default function TeamDashboardScreen() {
           <Button
             mode="outlined"
             icon="account-group"
-            onPress={() => navigation.navigate('TeamRoster', { 
-              teamId: selectedTeam.teamId, 
-              teamName: selectedTeam.name 
-            })}
+            onPress={() =>
+              navigation.navigate("TeamRoster", {
+                teamId: selectedTeam.teamId,
+                teamName: selectedTeam.name,
+              })
+            }
             compact
           >
             View All
           </Button>
         </View>
-        
+
         {/* Priority: Red Status Players */}
         {groups.red.length > 0 && (
           <View style={styles.statusGroup}>
-            <Text style={styles.groupTitle}>⚠️ Immediate Attention Required</Text>
+            <Text style={styles.groupTitle}>
+              ⚠️ Immediate Attention Required
+            </Text>
             {groups.red.map(renderPlayerCard)}
           </View>
         )}
@@ -381,34 +435,38 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 8,
   },
+  actionsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 8,
+  },
   teamName: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   sport: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
   },
   divider: {
     marginVertical: 16,
   },
   statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     marginBottom: 16,
   },
   statItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statValue: {
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.primary,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   progressContainer: {
@@ -417,7 +475,7 @@ const styles = StyleSheet.create({
   progressLabel: {
     fontSize: 14,
     marginBottom: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   progressBar: {
     height: 8,
@@ -430,41 +488,41 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   overviewGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
   },
   overviewItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   overviewBadge: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   overviewCount: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.white,
   },
   overviewLabel: {
     fontSize: 12,
     marginTop: 8,
-    color: '#666',
+    color: "#666",
   },
   playersSection: {
     padding: 16,
     paddingTop: 8,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   statusGroup: {
@@ -472,7 +530,7 @@ const styles = StyleSheet.create({
   },
   groupTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 12,
     color: colors.text,
   },
@@ -480,68 +538,68 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   playerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
   playerInfo: {
     flex: 1,
   },
   playerNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   playerName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   injuryBadge: {
     marginLeft: 8,
   },
   playerDetails: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   statusChip: {
     marginLeft: 12,
   },
   statusChipText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },
   notesContainer: {
     marginTop: 12,
     padding: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
     borderRadius: 4,
   },
   notesLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
     marginBottom: 4,
   },
   notesText: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
   lastUpdate: {
     fontSize: 12,
-    color: '#999',
+    color: "#999",
     marginTop: 8,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   errorText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
 });

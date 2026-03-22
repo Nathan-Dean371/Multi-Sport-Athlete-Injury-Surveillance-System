@@ -1,4 +1,4 @@
-import { Controller, Get, Param, UseGuards } from "@nestjs/common";
+import { Controller, Get, Param, UseGuards, Post, Body } from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -10,9 +10,11 @@ import { PlayersService } from "./players.service";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { RolesGuard } from "../auth/roles.guard";
 import { Roles } from "../auth/roles.decorator";
+import { Public } from "../auth/public.decorator";
 import { PlayerDto, PlayerListDto } from "./dto/player.dto";
 import { PlayerAdminListDto } from "./dto/player-admin.dto";
 import { PlayerInjuriesDto } from "./dto/injury.dto";
+import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
 
 @ApiTags("players")
 @ApiBearerAuth("JWT-auth")
@@ -20,6 +22,12 @@ import { PlayerInjuriesDto } from "./dto/injury.dto";
 @UseGuards(JwtAuthGuard)
 export class PlayersController {
   constructor(private readonly playersService: PlayersService) {}
+
+  @Public()
+  @Post("accept-invite")
+  async acceptInvite(@Body() dto: AcceptPlayerInvitationDto) {
+    return this.playersService.acceptInvite(dto);
+  }
 
   @UseGuards(RolesGuard)
   @Roles("admin")

@@ -2,11 +2,13 @@ import { Test, TestingModule } from "@nestjs/testing";
 import { PlayersService } from "./players.service";
 import { NotFoundException } from "@nestjs/common";
 import { Driver, Session } from "neo4j-driver";
+import { Pool } from "pg";
 
 describe("PlayersService", () => {
   let service: PlayersService;
   let mockNeo4jDriver: jest.Mocked<Driver>;
   let mockSession: jest.Mocked<Session>;
+  let mockPostgresPool: jest.Mocked<Pool>;
 
   const mockPlayerProperties = {
     playerId: "PLAYER-001",
@@ -53,12 +55,22 @@ describe("PlayersService", () => {
       close: jest.fn(),
     } as any;
 
+    mockPostgresPool = {
+      connect: jest.fn(),
+      query: jest.fn(),
+      end: jest.fn(),
+    } as any;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlayersService,
         {
           provide: "NEO4J_DRIVER",
           useValue: mockNeo4jDriver,
+        },
+        {
+          provide: "POSTGRES_POOL",
+          useValue: mockPostgresPool,
         },
       ],
     }).compile();

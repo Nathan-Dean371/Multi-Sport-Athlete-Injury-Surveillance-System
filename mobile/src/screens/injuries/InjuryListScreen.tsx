@@ -1,29 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Searchbar, Chip, FAB, useTheme } from 'react-native-paper';
-import { useFocusEffect } from '@react-navigation/native';
-import { useAuth } from '../../contexts/AuthContext';
-import InjuryCard from '../../components/injury/InjuryCard';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import EmptyState from '../../components/common/EmptyState';
-import { InjuryDetailDto, InjuryStatus } from '../../types/injury.types';
-import injuryService from '../../services/injury.service';
+import React, { useState, useEffect, useCallback } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import { Text, Searchbar, Chip, FAB, useTheme } from "react-native-paper";
+import { useFocusEffect } from "@react-navigation/native";
+import { useAuth } from "../../contexts/AuthContext";
+import InjuryCard from "../../components/injury/InjuryCard";
+import LoadingSpinner from "../../components/common/LoadingSpinner";
+import EmptyState from "../../components/common/EmptyState";
+import { InjuryDetailDto, InjuryStatus } from "../../types/injury.types";
+import injuryService from "../../services/injury.service";
 
 export default function InjuryListScreen({ navigation }: any) {
   const { user } = useAuth();
   const theme = useTheme();
   const [injuries, setInjuries] = useState<InjuryDetailDto[]>([]);
-  const [filteredInjuries, setFilteredInjuries] = useState<InjuryDetailDto[]>([]);
+  const [filteredInjuries, setFilteredInjuries] = useState<InjuryDetailDto[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<InjuryStatus | 'ALL'>('ALL');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedFilter, setSelectedFilter] = useState<InjuryStatus | "ALL">(
+    "ALL",
+  );
 
   useFocusEffect(
     useCallback(() => {
-      console.log('📍 InjuryListScreen focused - fetching injuries');
+      console.log("📍 InjuryListScreen focused - fetching injuries");
       fetchInjuries();
-    }, [user])
+    }, [user]),
   );
 
   useEffect(() => {
@@ -34,13 +38,14 @@ export default function InjuryListScreen({ navigation }: any) {
     try {
       setLoading(true);
       const response = await injuryService.getAllInjuries({
-        playerId: user?.identityType === 'player' ? user.pseudonymId : undefined,
+        playerId:
+          user?.identityType === "player" ? user.pseudonymId : undefined,
       });
-      console.log('📋 Fetched injuries:', response.data.length, 'injuries');
-      console.log('📋 First injury:', response.data[0]);
+      console.log("📋 Fetched injuries:", response.data.length, "injuries");
+      console.log("📋 First injury:", response.data[0]);
       setInjuries(response.data);
     } catch (error) {
-      console.error('Error fetching injuries:', error);
+      console.error("Error fetching injuries:", error);
     } finally {
       setLoading(false);
     }
@@ -56,7 +61,7 @@ export default function InjuryListScreen({ navigation }: any) {
     let filtered = injuries;
 
     // Filter by status
-    if (selectedFilter !== 'ALL') {
+    if (selectedFilter !== "ALL") {
       filtered = filtered.filter((injury) => injury.status === selectedFilter);
     }
 
@@ -67,7 +72,7 @@ export default function InjuryListScreen({ navigation }: any) {
         (injury) =>
           injury.injuryType.toLowerCase().includes(query) ||
           injury.bodyPart.toLowerCase().includes(query) ||
-          injury.diagnosis?.toLowerCase().includes(query)
+          injury.diagnosis?.toLowerCase().includes(query),
       );
     }
 
@@ -75,29 +80,39 @@ export default function InjuryListScreen({ navigation }: any) {
   };
 
   const handleInjuryPress = (injury: InjuryDetailDto) => {
-    console.log('🎯 Navigating to injury detail:', {
+    console.log("🎯 Navigating to injury detail:", {
       injuryId: injury.injuryId,
       injuryType: injury.injuryType,
-      fullInjury: injury
+      fullInjury: injury,
     });
-    navigation.navigate('InjuryDetail', { injuryId: injury.injuryId });
+    navigation.navigate("InjuryDetail", { injuryId: injury.injuryId });
   };
 
   const handleReportInjury = () => {
+    // Parents should not be able to report injuries
+    if (user?.identityType === "parent") {
+      return;
+    }
+
     // For coaches, navigate to the new report type selection screen
-    if (user?.identityType === 'coach' || user?.identityType === 'admin') {
-      navigation.navigate('SelectReportType');
+    if (user?.identityType === "coach" || user?.identityType === "admin") {
+      navigation.navigate("SelectReportType");
     } else {
       // Players can directly report their own injuries
-      navigation.navigate('ReportInjury');
+      navigation.navigate("ReportInjury");
     }
   };
 
-  const filters: Array<{ label: string; value: InjuryStatus | 'ALL' }> = [
-    { label: 'All', value: 'ALL' },
-    { label: 'Active', value: InjuryStatus.ACTIVE },
-    { label: 'Recovering', value: InjuryStatus.RECOVERING },
-    { label: 'Recovered', value: InjuryStatus.RECOVERED },
+  const canReportInjury =
+    user?.identityType === "player" ||
+    user?.identityType === "coach" ||
+    user?.identityType === "admin";
+
+  const filters: Array<{ label: string; value: InjuryStatus | "ALL" }> = [
+    { label: "All", value: "ALL" },
+    { label: "Active", value: InjuryStatus.ACTIVE },
+    { label: "Recovering", value: InjuryStatus.RECOVERING },
+    { label: "Recovered", value: InjuryStatus.RECOVERED },
   ];
 
   if (loading) {
@@ -113,7 +128,7 @@ export default function InjuryListScreen({ navigation }: any) {
           value={searchQuery}
           style={styles.searchBar}
         />
-        
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -146,15 +161,16 @@ export default function InjuryListScreen({ navigation }: any) {
             icon="medical-bag"
             title="No Injuries Found"
             message={
-              searchQuery || selectedFilter !== 'ALL'
-                ? 'Try adjusting your filters'
-                : 'No injury records available'
+              searchQuery || selectedFilter !== "ALL"
+                ? "Try adjusting your filters"
+                : "No injury records available"
             }
           />
         ) : (
           <>
             <Text variant="bodySmall" style={styles.resultCount}>
-              {filteredInjuries.length} {filteredInjuries.length === 1 ? 'injury' : 'injuries'} found
+              {filteredInjuries.length}{" "}
+              {filteredInjuries.length === 1 ? "injury" : "injuries"} found
             </Text>
             {filteredInjuries.map((injury) => (
               <InjuryCard
@@ -167,12 +183,14 @@ export default function InjuryListScreen({ navigation }: any) {
         )}
       </ScrollView>
 
-      <FAB
-        icon="plus"
-        label="Report Injury"
-        style={styles.fab}
-        onPress={handleReportInjury}
-      />
+      {canReportInjury && (
+        <FAB
+          icon="plus"
+          label="Report Injury"
+          style={styles.fab}
+          onPress={handleReportInjury}
+        />
+      )}
     </View>
   );
 }
@@ -180,12 +198,12 @@ export default function InjuryListScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
     padding: 16,
     paddingBottom: 8,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     elevation: 2,
   },
   searchBar: {
@@ -210,10 +228,10 @@ const styles = StyleSheet.create({
   },
   resultCount: {
     marginBottom: 12,
-    color: '#424242',
+    color: "#424242",
   },
   fab: {
-    position: 'absolute',
+    position: "absolute",
     right: 16,
     bottom: 16,
   },

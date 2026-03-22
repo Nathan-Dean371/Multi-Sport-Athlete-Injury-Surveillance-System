@@ -1,22 +1,25 @@
-import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
-import { Icon } from 'react-native-paper';
-import { useAuth } from '../contexts/AuthContext';
-import HomeScreen from '../screens/HomeScreen';
-import StatusUpdateScreen from '../screens/status/StatusUpdateScreen';
-import StatusHistoryScreen from '../screens/status/StatusHistoryScreen';
-import InjuryListScreen from '../screens/injuries/InjuryListScreen';
-import InjuryDetailScreen from '../screens/injuries/InjuryDetailScreen';
-import ReportInjuryScreen from '../screens/injuries/ReportInjuryScreen';
-import EditInjuryScreen from '../screens/injuries/EditInjuryScreen';
-import SelectReportTypeScreen from '../screens/injuries/SelectReportTypeScreen';
-import SelectPlayerScreen from '../screens/injuries/SelectPlayerScreen';
-import QuickReportInjuryScreen from '../screens/injuries/QuickReportInjuryScreen';
-import ProfileScreen from '../screens/profile/ProfileScreen';
-import TeamDashboardScreen from '../screens/team/TeamDashboardScreen';
-import TeamRosterScreen from '../screens/team/TeamRosterScreen';
-import PlayerDetailScreen from '../screens/team/PlayerDetailScreen';
+import React from "react";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
+import { Icon } from "react-native-paper";
+import { useAuth } from "../contexts/AuthContext";
+import HomeScreen from "../screens/HomeScreen";
+import StatusUpdateScreen from "../screens/status/StatusUpdateScreen";
+import StatusHistoryScreen from "../screens/status/StatusHistoryScreen";
+import InjuryListScreen from "../screens/injuries/InjuryListScreen";
+import InjuryDetailScreen from "../screens/injuries/InjuryDetailScreen";
+import ReportInjuryScreen from "../screens/injuries/ReportInjuryScreen";
+import EditInjuryScreen from "../screens/injuries/EditInjuryScreen";
+import SelectReportTypeScreen from "../screens/injuries/SelectReportTypeScreen";
+import SelectPlayerScreen from "../screens/injuries/SelectPlayerScreen";
+import QuickReportInjuryScreen from "../screens/injuries/QuickReportInjuryScreen";
+import ProfileScreen from "../screens/profile/ProfileScreen";
+import TeamDashboardScreen from "../screens/team/TeamDashboardScreen";
+import TeamRosterScreen from "../screens/team/TeamRosterScreen";
+import PlayerDetailScreen from "../screens/team/PlayerDetailScreen";
+import ParentDashboardScreen from "../screens/parents/ParentDashboardScreen";
+import InviteParentScreen from "../screens/team/InviteParentScreen";
+import InviteAthleteScreen from "../screens/parents/InviteAthleteScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -25,10 +28,10 @@ const Stack = createStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="HomeScreen" 
-        component={HomeScreen} 
-        options={{ title: 'Home' }}
+      <Stack.Screen
+        name="HomeScreen"
+        component={HomeScreen}
+        options={{ title: "Home" }}
       />
     </Stack.Navigator>
   );
@@ -37,15 +40,15 @@ function HomeStack() {
 function StatusStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="StatusUpdate" 
-        component={StatusUpdateScreen} 
-        options={{ title: 'Update Status' }}
+      <Stack.Screen
+        name="StatusUpdate"
+        component={StatusUpdateScreen}
+        options={{ title: "Update Status" }}
       />
-      <Stack.Screen 
-        name="StatusHistory" 
-        component={StatusHistoryScreen} 
-        options={{ title: 'Status History' }}
+      <Stack.Screen
+        name="StatusHistory"
+        component={StatusHistoryScreen}
+        options={{ title: "Status History" }}
       />
     </Stack.Navigator>
   );
@@ -54,45 +57,45 @@ function StatusStack() {
 function InjuryStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="InjuryList" 
-        component={InjuryListScreen} 
-        options={{ title: 'Injuries' }}
+      <Stack.Screen
+        name="InjuryList"
+        component={InjuryListScreen}
+        options={{ title: "Injuries" }}
       />
-      <Stack.Screen 
-        name="InjuryDetail" 
-        component={InjuryDetailScreen} 
-        options={{ title: 'Injury Details' }}
+      <Stack.Screen
+        name="InjuryDetail"
+        component={InjuryDetailScreen}
+        options={{ title: "Injury Details" }}
       />
-      <Stack.Screen 
-        name="SelectReportType" 
-        component={SelectReportTypeScreen} 
-        options={{ title: 'Report Injury' }}
+      <Stack.Screen
+        name="SelectReportType"
+        component={SelectReportTypeScreen}
+        options={{ title: "Report Injury" }}
       />
-      <Stack.Screen 
-        name="SelectPlayer" 
-        component={SelectPlayerScreen} 
-        options={{ title: 'Select Player' }}
+      <Stack.Screen
+        name="SelectPlayer"
+        component={SelectPlayerScreen}
+        options={{ title: "Select Player" }}
       />
-      <Stack.Screen 
-        name="QuickReportInjury" 
-        component={QuickReportInjuryScreen} 
-        options={{ title: 'Quick Report' }}
+      <Stack.Screen
+        name="QuickReportInjury"
+        component={QuickReportInjuryScreen}
+        options={{ title: "Quick Report" }}
       />
-      <Stack.Screen 
-        name="ReportInjury" 
-        component={ReportInjuryScreen} 
-        options={{ title: 'Detailed Report' }}
+      <Stack.Screen
+        name="ReportInjury"
+        component={ReportInjuryScreen}
+        options={{ title: "Detailed Report" }}
       />
-      <Stack.Screen 
-        name="EditInjury" 
-        component={EditInjuryScreen} 
-        options={{ title: 'Update Injury' }}
+      <Stack.Screen
+        name="EditInjury"
+        component={EditInjuryScreen}
+        options={{ title: "Update Injury" }}
       />
-      <Stack.Screen 
-        name="PlayerDetail" 
-        component={PlayerDetailScreen} 
-        options={{ title: 'Player Details' }}
+      <Stack.Screen
+        name="PlayerDetail"
+        component={PlayerDetailScreen}
+        options={{ title: "Player Details" }}
       />
     </Stack.Navigator>
   );
@@ -101,10 +104,10 @@ function InjuryStack() {
 function ProfileStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="ProfileScreen" 
-        component={ProfileScreen} 
-        options={{ title: 'Profile' }}
+      <Stack.Screen
+        name="ProfileScreen"
+        component={ProfileScreen}
+        options={{ title: "Profile" }}
       />
     </Stack.Navigator>
   );
@@ -113,25 +116,47 @@ function ProfileStack() {
 function TeamStack() {
   return (
     <Stack.Navigator>
-      <Stack.Screen 
-        name="TeamDashboard" 
-        component={TeamDashboardScreen} 
-        options={{ title: 'Team Dashboard' }}
+      <Stack.Screen
+        name="TeamDashboard"
+        component={TeamDashboardScreen}
+        options={{ title: "Team Dashboard" }}
       />
-      <Stack.Screen 
-        name="TeamRoster" 
-        component={TeamRosterScreen} 
-        options={{ title: 'Full Team Roster' }}
+      <Stack.Screen
+        name="TeamRoster"
+        component={TeamRosterScreen}
+        options={{ title: "Full Team Roster" }}
       />
-      <Stack.Screen 
-        name="PlayerDetail" 
-        component={PlayerDetailScreen} 
-        options={{ title: 'Player Details' }}
+      <Stack.Screen
+        name="InviteParent"
+        component={InviteParentScreen}
+        options={{ title: "Invite Parent" }}
       />
-      <Stack.Screen 
-        name="InjuryDetail" 
-        component={InjuryDetailScreen} 
-        options={{ title: 'Injury Details' }}
+      <Stack.Screen
+        name="PlayerDetail"
+        component={PlayerDetailScreen}
+        options={{ title: "Player Details" }}
+      />
+      <Stack.Screen
+        name="InjuryDetail"
+        component={InjuryDetailScreen}
+        options={{ title: "Injury Details" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+function ParentStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="ParentDashboard"
+        component={ParentDashboardScreen}
+        options={{ title: "Parent Dashboard" }}
+      />
+      <Stack.Screen
+        name="InviteAthlete"
+        component={InviteAthleteScreen}
+        options={{ title: "Invite Athlete" }}
       />
     </Stack.Navigator>
   );
@@ -139,15 +164,16 @@ function TeamStack() {
 
 export default function TabNavigator() {
   const { user } = useAuth();
-  const isPlayer = user?.identityType === 'player';
-  const isCoach = user?.identityType === 'coach';
+  const isPlayer = user?.identityType === "player";
+  const isCoach = user?.identityType === "coach";
+  const isParent = user?.identityType === "parent";
 
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: '#6200EE',
-        tabBarInactiveTintColor: 'gray',
+        tabBarActiveTintColor: "#6200EE",
+        tabBarInactiveTintColor: "gray",
       }}
     >
       <Tab.Screen
@@ -159,7 +185,7 @@ export default function TabNavigator() {
           ),
         }}
       />
-      
+
       {isPlayer && (
         <Tab.Screen
           name="Status"
@@ -171,7 +197,7 @@ export default function TabNavigator() {
           }}
         />
       )}
-      
+
       <Tab.Screen
         name="Injuries"
         component={InjuryStack}
@@ -181,7 +207,7 @@ export default function TabNavigator() {
           ),
         }}
       />
-      
+
       {isCoach && (
         <Tab.Screen
           name="Team"
@@ -193,7 +219,19 @@ export default function TabNavigator() {
           }}
         />
       )}
-      
+
+      {isParent && (
+        <Tab.Screen
+          name="Parent"
+          component={ParentStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="human-male-child" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
+
       <Tab.Screen
         name="Profile"
         component={ProfileStack}

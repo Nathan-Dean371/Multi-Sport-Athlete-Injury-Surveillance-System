@@ -1,9 +1,17 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
-import { Text, Card, Button, Divider, List, Avatar, useTheme } from 'react-native-paper';
-import { useAuth } from '../../contexts/AuthContext';
-import colors from '../../constants/colors';
-import Constants from 'expo-constants';
+import React from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
+import {
+  Text,
+  Card,
+  Button,
+  Divider,
+  List,
+  Avatar,
+  useTheme,
+} from "react-native-paper";
+import { useAuth } from "../../contexts/AuthContext";
+import colors from "../../constants/colors";
+import Constants from "expo-constants";
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -13,17 +21,19 @@ export default function ProfileScreen() {
     try {
       await signOut();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     }
   };
 
   const getRoleColor = (identityType: string) => {
     switch (identityType) {
-      case 'admin':
+      case "admin":
         return theme.colors.error;
-      case 'coach':
+      case "coach":
         return theme.colors.primary;
-      case 'player':
+      case "parent":
+        return theme.colors.secondary;
+      case "player":
         return theme.colors.tertiary;
       default:
         return theme.colors.secondary;
@@ -38,19 +48,22 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       {/* User Header */}
       <View style={styles.header}>
-        <Avatar.Text 
-          size={100} 
-          label={user?.email?.substring(0, 2).toUpperCase() || 'U'} 
-          style={{ backgroundColor: getRoleColor(user?.identityType || '') }}
+        <Avatar.Text
+          size={100}
+          label={user?.email?.substring(0, 2).toUpperCase() || "U"}
+          style={{ backgroundColor: getRoleColor(user?.identityType || "") }}
         />
         <Text variant="headlineMedium" style={styles.email}>
           {user?.email}
         </Text>
-        <Text 
-          variant="titleMedium" 
-          style={[styles.role, { color: getRoleColor(user?.identityType || '') }]}
+        <Text
+          variant="titleMedium"
+          style={[
+            styles.role,
+            { color: getRoleColor(user?.identityType || "") },
+          ]}
         >
-          {getRoleLabel(user?.identityType || 'Unknown')}
+          {getRoleLabel(user?.identityType || "Unknown")}
         </Text>
       </View>
 
@@ -61,13 +74,13 @@ export default function ProfileScreen() {
             Account Information
           </Text>
           <Divider style={styles.divider} />
-          
+
           <View style={styles.infoRow}>
             <Text variant="labelLarge" style={styles.label}>
               User ID:
             </Text>
             <Text variant="bodyMedium" style={styles.value}>
-              {user?.pseudonymId || 'N/A'}
+              {user?.pseudonymId || "N/A"}
             </Text>
           </View>
 
@@ -85,7 +98,7 @@ export default function ProfileScreen() {
               Role:
             </Text>
             <Text variant="bodyMedium" style={styles.value}>
-              {getRoleLabel(user?.identityType || 'Unknown')}
+              {getRoleLabel(user?.identityType || "Unknown")}
             </Text>
           </View>
 
@@ -93,7 +106,10 @@ export default function ProfileScreen() {
             <Text variant="labelLarge" style={styles.label}>
               Status:
             </Text>
-            <Text variant="bodyMedium" style={[styles.value, { color: colors.primary }]}>
+            <Text
+              variant="bodyMedium"
+              style={[styles.value, { color: colors.primary }]}
+            >
               Active
             </Text>
           </View>
@@ -107,28 +123,28 @@ export default function ProfileScreen() {
             Settings
           </Text>
           <Divider style={styles.divider} />
-          
+
           <List.Item
             title="Notifications"
             description="Coming soon..."
-            left={props => <List.Icon {...props} icon="bell" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
+            left={(props) => <List.Icon {...props} icon="bell" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
             disabled
           />
-          
+
           <List.Item
             title="Privacy"
             description="Coming soon..."
-            left={props => <List.Icon {...props} icon="shield-account" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
+            left={(props) => <List.Icon {...props} icon="shield-account" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
             disabled
           />
-          
+
           <List.Item
             title="Help & Support"
             description="Coming soon..."
-            left={props => <List.Icon {...props} icon="help-circle" />}
-            right={props => <List.Icon {...props} icon="chevron-right" />}
+            left={(props) => <List.Icon {...props} icon="help-circle" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
             disabled
           />
         </Card.Content>
@@ -141,13 +157,13 @@ export default function ProfileScreen() {
             App Information
           </Text>
           <Divider style={styles.divider} />
-          
+
           <View style={styles.infoRow}>
             <Text variant="labelLarge" style={styles.label}>
               Version:
             </Text>
             <Text variant="bodyMedium" style={styles.value}>
-              {Constants.expoConfig?.version || '1.0.0'}
+              {Constants.expoConfig?.version || "1.0.0"}
             </Text>
           </View>
 
@@ -156,7 +172,7 @@ export default function ProfileScreen() {
               Build:
             </Text>
             <Text variant="bodyMedium" style={styles.value}>
-              {Constants.expoConfig?.extra?.buildNumber || 'Development'}
+              {Constants.expoConfig?.extra?.buildNumber || "Development"}
             </Text>
           </View>
         </Card.Content>
@@ -188,41 +204,41 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 24,
     paddingTop: 32,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   email: {
     marginTop: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   role: {
     marginTop: 4,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   card: {
     margin: 16,
     marginBottom: 8,
   },
   cardTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 4,
   },
   divider: {
     marginVertical: 12,
   },
   infoRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 12,
   },
   label: {
     width: 100,
     color: colors.textSecondary,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   value: {
     flex: 1,
@@ -233,12 +249,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 24,
     paddingTop: 16,
   },
   footerText: {
-    color: '#9E9E9E',
+    color: "#9E9E9E",
     marginBottom: 4,
   },
 });

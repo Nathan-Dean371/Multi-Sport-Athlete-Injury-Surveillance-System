@@ -11,48 +11,62 @@ import {
   Button,
   Text,
   HelperText,
-  useTheme,
+  Card,
+  Divider,
 } from "react-native-paper";
-import { useAuth } from "../../contexts/AuthContext";
 import { useForm, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { LoginRequest } from "../../types/auth.types";
+import parentsService from "../../services/parents.service";
+import { InviteParentRequest } from "../../types/invite.types";
 
 const schema = yup.object().shape({
-  email: yup.string().email("Invalid email").required("Email is required"),
-  password: yup
+  parentEmail: yup
     .string()
-    .min(6, "Password must be at least 6 characters")
-    .required("Password is required"),
+    .email("Invalid email")
+    .required("Email is required"),
+  parentPhone: yup.string().optional(),
 });
 
-export default function LoginScreen({ navigation }: any) {
-  const { signIn } = useAuth();
-  const theme = useTheme();
+export default function InviteParentScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  const [invitationLink, setInvitationLink] = useState<string | null>(null);
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginRequest>({
+    reset,
+  } = useForm<InviteParentRequest>({
     resolver: yupResolver(schema),
     defaultValues: {
-      email: "",
-      password: "",
+      parentEmail: "",
+      parentPhone: "",
     },
   });
 
-  const onSubmit = async (data: LoginRequest) => {
+  const onSubmit = async (data: InviteParentRequest) => {
     try {
       setLoading(true);
       setError("");
-      await signIn(data);
+      setToken(null);
+      setInvitationLink(null);
+
+      const res = await parentsService.inviteParent({
+        parentEmail: data.parentEmail,
+        parentPhone: data.parentPhone?.trim()
+          ? data.parentPhone.trim()
+          : undefined,
+      });
+      setToken(res.token);
+      setInvitationLink(res.invitationLink || null);
+      reset({ parentEmail: "", parentPhone: "" });
     } catch (err: any) {
       setError(
-        err.response?.data?.message || "Login failed. Please try again.",
+        err.response?.data?.message ||
+          "Failed to invite parent. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -66,52 +80,49 @@ export default function LoginScreen({ navigation }: any) {
     >
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.content}>
-          <Text variant="headlineLarge" style={styles.title}>
-            Injury Surveillance
-          </Text>
-          <Text variant="titleMedium" style={styles.subtitle}>
-            Sign in to continue
+          <Text variant="headlineMedium" style={styles.title}>
+            Invite Parent
           </Text>
 
           <Controller
             control={control}
-            name="email"
+            name="parentEmail"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Email"
+                label="Parent Email"
                 mode="outlined"
                 value={value}
                 onChangeText={onChange}
                 onBlur={onBlur}
                 keyboardType="email-address"
                 autoCapitalize="none"
-                error={!!errors.email}
+                error={!!errors.parentEmail}
                 style={styles.input}
               />
             )}
           />
-          <HelperText type="error" visible={!!errors.email}>
-            {errors.email?.message}
+          <HelperText type="error" visible={!!errors.parentEmail}>
+            {errors.parentEmail?.message}
           </HelperText>
 
           <Controller
             control={control}
-            name="password"
+            name="parentPhone"
             render={({ field: { onChange, onBlur, value } }) => (
               <TextInput
-                label="Password"
+                label="Parent Phone (optional)"
                 mode="outlined"
-                value={value}
+                value={value || ""}
                 onChangeText={onChange}
                 onBlur={onBlur}
-                secureTextEntry
-                error={!!errors.password}
+                keyboardType="phone-pad"
+                error={!!errors.parentPhone}
                 style={styles.input}
               />
             )}
           />
-          <HelperText type="error" visible={!!errors.password}>
-            {errors.password?.message}
+          <HelperText type="error" visible={!!errors.parentPhone}>
+            {errors.parentPhone?.message}
           </HelperText>
 
           {error ? (
@@ -127,31 +138,39 @@ export default function LoginScreen({ navigation }: any) {
             disabled={loading}
             style={styles.button}
           >
-            Sign In
+            Send Invite
           </Button>
+
+          {invitationLink ? (
+            <Card style={styles.tokenCard}>
+              <Card.Content>
+                <Text variant="titleMedium" style={styles.tokenTitle}>
+                  Invitation Link
+                </Text>
+                <Divider style={styles.divider} />
+                <Text selectable>{invitationLink}</Text>
+              </Card.Content>
+            </Card>
+          ) : null}
+
+          {token ? (
+            <Card style={styles.tokenCard}>
+              <Card.Content>
+                <Text variant="titleMedium" style={styles.tokenTitle}>
+                  Invitation Token
+                </Text>
+                <Divider style={styles.divider} />
+                <Text selectable>{token}</Text>
+              </Card.Content>
+            </Card>
+          ) : null}
 
           <Button
             mode="text"
-            onPress={() => navigation.navigate("Register")}
+            onPress={() => navigation.goBack()}
             style={styles.linkButton}
           >
-            Don't have an account? Sign Up
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate("AcceptParentInvite")}
-            style={styles.linkButton}
-          >
-            Accept a Parent Invitation
-          </Button>
-
-          <Button
-            mode="text"
-            onPress={() => navigation.navigate("AcceptAthleteInvite")}
-            style={styles.linkButton}
-          >
-            Accept an Athlete Invitation
+            Back
           </Button>
         </View>
       </ScrollView>
@@ -166,20 +185,15 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: "center",
   },
   content: {
     padding: 24,
+    paddingTop: 24,
   },
   title: {
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: 24,
     fontWeight: "bold",
-  },
-  subtitle: {
-    textAlign: "center",
-    marginBottom: 32,
-    color: "#424242",
   },
   input: {
     marginBottom: 4,
@@ -189,9 +203,18 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   linkButton: {
-    marginTop: 8,
+    marginTop: 12,
   },
   errorText: {
     textAlign: "center",
+  },
+  tokenCard: {
+    marginTop: 16,
+  },
+  tokenTitle: {
+    fontWeight: "bold",
+  },
+  divider: {
+    marginVertical: 12,
   },
 });

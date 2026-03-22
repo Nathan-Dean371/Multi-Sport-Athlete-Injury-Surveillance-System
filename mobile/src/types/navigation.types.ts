@@ -1,4 +1,4 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
+import { NavigatorScreenParams } from "@react-navigation/native";
 
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
@@ -8,6 +8,8 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
   Login: undefined;
   Register: undefined;
+  AcceptParentInvite: undefined;
+  AcceptAthleteInvite: undefined;
 };
 
 export type MainTabParamList = {
@@ -15,7 +17,13 @@ export type MainTabParamList = {
   Status: undefined;
   Injuries: undefined;
   Team: undefined;
+  Parent: undefined;
   Profile: undefined;
+};
+
+export type ParentStackParamList = {
+  ParentDashboard: undefined;
+  InviteAthlete: undefined;
 };
 
 export type HomeStackParamList = {
@@ -37,6 +45,7 @@ export type InjuryStackParamList = {
 export type TeamStackParamList = {
   TeamRoster: undefined;
   TeamDashboard: undefined;
+  InviteParent: undefined;
   PlayerDetail: { playerId: string };
 };
 

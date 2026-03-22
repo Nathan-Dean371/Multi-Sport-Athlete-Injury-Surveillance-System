@@ -9,7 +9,7 @@ export interface RegisterRequest {
   firstName: string;
   lastName: string;
   dateOfBirth: Date | string;
-  identityType: 'player' | 'coach' | 'admin';
+  identityType: "player" | "coach" | "parent" | "admin";
 }
 
 export interface AuthResponse {
@@ -20,6 +20,6 @@ export interface AuthResponse {
 export interface User {
   id: string;
   email: string;
-  identityType: 'player' | 'coach' | 'admin';
+  identityType: "player" | "coach" | "parent" | "admin";
   pseudonymId: string;
 }

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsString, MinLength } from "class-validator";
+import { IsNotEmpty, IsString, MinLength, IsOptional } from "class-validator";
 
 export class AcceptParentInvitationDto {
   @IsString()
@@ -6,8 +6,8 @@ export class AcceptParentInvitationDto {
   token: string;
 
   @IsString()
-  @IsNotEmpty()
-  pseudonymId: string; // the parent will be assigned a pseudonymId on accept
+  @IsOptional()
+  pseudonymId?: string; // will be auto-generated if not provided
 
   @IsString()
   @IsNotEmpty()

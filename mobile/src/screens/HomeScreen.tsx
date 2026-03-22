@@ -1,16 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Text, Card, Button, Avatar, Divider, useTheme, IconButton } from 'react-native-paper';
-import colors from '../constants/colors';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import InjuryCard from '../components/injury/InjuryCard';
-import StatusSelector from '../components/status/StatusSelector';
-import { PlayerStatus } from '../types/status.types';
-import { InjuryDetailDto } from '../types/injury.types';
-import injuryService from '../services/injury.service';
-import statusService from '../services/status.service';
+import React, { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView, RefreshControl } from "react-native";
+import {
+  Text,
+  Card,
+  Button,
+  Avatar,
+  Divider,
+  useTheme,
+  IconButton,
+} from "react-native-paper";
+import colors from "../constants/colors";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigation } from "@react-navigation/native";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import InjuryCard from "../components/injury/InjuryCard";
+import StatusSelector from "../components/status/StatusSelector";
+import { PlayerStatus } from "../types/status.types";
+import { InjuryDetailDto } from "../types/injury.types";
+import injuryService from "../services/injury.service";
+import statusService from "../services/status.service";
 
 export default function HomeScreen() {
   const { user } = useAuth();
@@ -20,7 +28,9 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [recentInjuries, setRecentInjuries] = useState<InjuryDetailDto[]>([]);
   const [showQuickStatus, setShowQuickStatus] = useState(false);
-  const [selectedStatus, setSelectedStatus] = useState<PlayerStatus | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<PlayerStatus | null>(
+    null,
+  );
   const [submittingStatus, setSubmittingStatus] = useState(false);
 
   useEffect(() => {
@@ -32,12 +42,13 @@ export default function HomeScreen() {
       setLoading(true);
       // Fetch recent injuries
       const response = await injuryService.getAllInjuries({
-        playerId: user?.identityType === 'player' ? user.pseudonymId : undefined,
+        playerId:
+          user?.identityType === "player" ? user.pseudonymId : undefined,
         pageSize: 3,
       });
       setRecentInjuries(response.data);
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
+      console.error("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -51,7 +62,7 @@ export default function HomeScreen() {
 
   const handleQuickStatusSubmit = async () => {
     if (!selectedStatus || !user?.pseudonymId) return;
-    
+
     try {
       setSubmittingStatus(true);
       await statusService.updatePlayerStatus(user.pseudonymId, {
@@ -60,7 +71,7 @@ export default function HomeScreen() {
       setShowQuickStatus(false);
       setSelectedStatus(null);
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error("Error updating status:", error);
     } finally {
       setSubmittingStatus(false);
     }
@@ -68,11 +79,13 @@ export default function HomeScreen() {
 
   const getRoleColor = (identityType: string) => {
     switch (identityType) {
-      case 'admin':
+      case "admin":
         return theme.colors.error;
-      case 'coach':
+      case "coach":
         return theme.colors.primary;
-      case 'player':
+      case "parent":
+        return theme.colors.secondary;
+      case "player":
         return theme.colors.tertiary;
       default:
         return theme.colors.secondary;
@@ -87,20 +100,22 @@ export default function HomeScreen() {
     return <LoadingSpinner message="Loading dashboard..." />;
   }
 
-  const isPlayer = user?.identityType === 'player';
+  const isPlayer = user?.identityType === "player";
+  const canViewTeamDashboard =
+    user?.identityType === "coach" || user?.identityType === "admin";
 
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
       <View style={styles.header}>
-        <Avatar.Text 
-          size={80} 
-          label={user?.email?.substring(0, 2).toUpperCase() || 'U'} 
-          style={{ backgroundColor: getRoleColor(user?.identityType || '') }}
+        <Avatar.Text
+          size={80}
+          label={user?.email?.substring(0, 2).toUpperCase() || "U"}
+          style={{ backgroundColor: getRoleColor(user?.identityType || "") }}
         />
         <Text variant="headlineMedium" style={styles.welcomeText}>
           Welcome Back!
@@ -116,21 +131,28 @@ export default function HomeScreen() {
             User Information
           </Text>
           <Divider style={styles.divider} />
-          
+
           <View style={styles.infoRow}>
-            <Text variant="labelLarge" style={styles.label}>Role:</Text>
-            <Text 
-              variant="bodyLarge" 
-              style={[styles.value, { color: getRoleColor(user?.identityType || '') }]}
+            <Text variant="labelLarge" style={styles.label}>
+              Role:
+            </Text>
+            <Text
+              variant="bodyLarge"
+              style={[
+                styles.value,
+                { color: getRoleColor(user?.identityType || "") },
+              ]}
             >
-              {getRoleLabel(user?.identityType || 'Unknown')}
+              {getRoleLabel(user?.identityType || "Unknown")}
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text variant="labelLarge" style={styles.label}>User ID:</Text>
+            <Text variant="labelLarge" style={styles.label}>
+              User ID:
+            </Text>
             <Text variant="bodyMedium" style={styles.value}>
-              {user?.pseudonymId || 'N/A'}
+              {user?.pseudonymId || "N/A"}
             </Text>
           </View>
         </Card.Content>
@@ -145,12 +167,12 @@ export default function HomeScreen() {
                 Quick Status Update
               </Text>
               <IconButton
-                icon={showQuickStatus ? 'chevron-up' : 'chevron-down'}
+                icon={showQuickStatus ? "chevron-up" : "chevron-down"}
                 size={20}
                 onPress={() => setShowQuickStatus(!showQuickStatus)}
               />
             </View>
-            
+
             {showQuickStatus && (
               <>
                 <Divider style={styles.divider} />
@@ -180,16 +202,16 @@ export default function HomeScreen() {
             <Text variant="titleLarge" style={styles.cardTitle}>
               Recent Injuries
             </Text>
-            <Button 
-              mode="text" 
-              onPress={() => navigation.navigate('Injuries' as never)}
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate("Injuries" as never)}
               compact
             >
               View All
             </Button>
           </View>
           <Divider style={styles.divider} />
-          
+
           {recentInjuries.length === 0 ? (
             <Text variant="bodyMedium" style={styles.emptyText}>
               No injuries recorded
@@ -199,10 +221,15 @@ export default function HomeScreen() {
               <InjuryCard
                 key={injury.injuryId}
                 injury={injury}
-                onPress={() => navigation.navigate('Injuries' as never, {
-                  screen: 'InjuryDetail',
-                  params: { injuryId: injury.injuryId },
-                } as never)}
+                onPress={() =>
+                  navigation.navigate(
+                    "Injuries" as never,
+                    {
+                      screen: "InjuryDetail",
+                      params: { injuryId: injury.injuryId },
+                    } as never,
+                  )
+                }
               />
             ))
           )}
@@ -216,33 +243,33 @@ export default function HomeScreen() {
             Quick Actions
           </Text>
           <Divider style={styles.divider} />
-          
+
           <View style={styles.actionButtons}>
             {isPlayer && (
               <Button
                 mode="contained-tonal"
                 icon="heart-pulse"
-                onPress={() => navigation.navigate('Status' as never)}
+                onPress={() => navigation.navigate("Status" as never)}
                 style={styles.actionButton}
               >
                 Update Status
               </Button>
             )}
-            
+
             <Button
               mode="contained-tonal"
               icon="medical-bag"
-              onPress={() => navigation.navigate('Injuries' as never)}
+              onPress={() => navigation.navigate("Injuries" as never)}
               style={styles.actionButton}
             >
               View Injuries
             </Button>
-            
-            {!isPlayer && (
+
+            {canViewTeamDashboard && (
               <Button
                 mode="contained-tonal"
                 icon="account-group"
-                onPress={() => navigation.navigate('Team' as never)}
+                onPress={() => navigation.navigate("Team" as never)}
                 style={styles.actionButton}
               >
                 Team Dashboard
@@ -267,14 +294,14 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   header: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 24,
     backgroundColor: colors.background,
     marginBottom: 16,
   },
   welcomeText: {
     marginTop: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: colors.text,
   },
   emailText: {
@@ -286,38 +313,38 @@ const styles = StyleSheet.create({
     marginTop: 0,
   },
   cardTitle: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     label: {
       color: colors.textSecondary,
     },
-  divider: {
-    marginBottom: 16,
-  },
+    divider: {
+      marginBottom: 16,
+    },
     value: {
-      fontWeight: '600',
+      fontWeight: "600",
       color: colors.text,
     },
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 8,
   },
   label: {
     color: colors.muted,
   },
   value: {
-    fontWeight: '600',
+    fontWeight: "600",
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   submitStatusButton: {
     marginTop: 16,
   },
   emptyText: {
-    fontStyle: 'italic',
+    fontStyle: "italic",
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: "center",
     paddingVertical: 16,
   },
   actionButtons: {
@@ -327,7 +354,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   comingSoon: {
-    fontStyle: 'italic',
+    fontStyle: "italic",
     color: colors.textSecondary,
     marginBottom: 12,
   },
@@ -340,7 +367,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   footer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 24,
   },
   footerText: {

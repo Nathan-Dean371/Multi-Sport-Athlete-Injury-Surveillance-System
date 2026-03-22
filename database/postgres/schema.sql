@@ -191,6 +191,19 @@ CREATE TABLE IF NOT EXISTS parent_invitations (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
+-- Player Invitations (Migration 010)
+CREATE TABLE IF NOT EXISTS player_invitations (
+    invitation_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    parent_pseudonym_id VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    accepted BOOLEAN DEFAULT FALSE,
+    accepted_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+);
+
 -- ---------------------------------------------------------------------------
 -- User Activity (Migration 009)
 -- Records login attempts for audit and admin reporting
