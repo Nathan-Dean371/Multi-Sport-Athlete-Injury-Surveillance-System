@@ -20,6 +20,10 @@ import PlayerDetailScreen from "../screens/team/PlayerDetailScreen";
 import ParentDashboardScreen from "../screens/parents/ParentDashboardScreen";
 import InviteParentScreen from "../screens/team/InviteParentScreen";
 import InviteAthleteScreen from "../screens/parents/InviteAthleteScreen";
+import TrainingScheduleScreen from "../screens/training/TrainingScheduleScreen";
+import TrainingSessionFormScreen from "../screens/training/TrainingSessionFormScreen";
+import TrainingReportWizardScreen from "../screens/training/TrainingReportWizardScreen";
+import TrainingHistoryScreen from "../screens/training/TrainingHistoryScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -162,6 +166,33 @@ function ParentStack() {
   );
 }
 
+function TrainingStack() {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="TrainingSchedule"
+        component={TrainingScheduleScreen}
+        options={{ title: "Training" }}
+      />
+      <Stack.Screen
+        name="TrainingSessionForm"
+        component={TrainingSessionFormScreen}
+        options={{ title: "Session" }}
+      />
+      <Stack.Screen
+        name="TrainingReportWizard"
+        component={TrainingReportWizardScreen}
+        options={{ title: "Post-Session Report" }}
+      />
+      <Stack.Screen
+        name="TrainingHistory"
+        component={TrainingHistoryScreen}
+        options={{ title: "History" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function TabNavigator() {
   const { user } = useAuth();
   const isPlayer = user?.identityType === "player";
@@ -193,6 +224,18 @@ export default function TabNavigator() {
           options={{
             tabBarIcon: ({ color, size }) => (
               <Icon source="heart-pulse" size={size} color={color} />
+            ),
+          }}
+        />
+      )}
+
+      {isPlayer && (
+        <Tab.Screen
+          name="Training"
+          component={TrainingStack}
+          options={{
+            tabBarIcon: ({ color, size }) => (
+              <Icon source="calendar" size={size} color={color} />
             ),
           }}
         />

@@ -16,6 +16,7 @@
     "android": {
       "package": "com.yourorg.injurysurveillance",
       "usesCleartextTraffic": true
-    }
+    },
+    "plugins": ["expo-notifications"]
   }
 }

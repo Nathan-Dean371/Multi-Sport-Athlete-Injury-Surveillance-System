@@ -15,10 +15,18 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   Home: undefined;
   Status: undefined;
+  Training: undefined;
   Injuries: undefined;
   Team: undefined;
   Parent: undefined;
   Profile: undefined;
+};
+
+export type TrainingStackParamList = {
+  TrainingSchedule: undefined;
+  TrainingSessionForm: { sessionId?: string } | undefined;
+  TrainingReportWizard: { sessionId: string; occurrenceDate: string };
+  TrainingHistory: undefined;
 };
 
 export type ParentStackParamList = {
