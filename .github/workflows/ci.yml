@@ -66,21 +66,50 @@ jobs:
         working-directory: ./backend
         run: npm ci
 
-      - name: Set up test database schema
+      - name: Prepare migration directories
         run: |
-          sudo apt-get update && sudo apt-get install -y postgresql-client
-          # Recreate test database
-          psql -h localhost -U identity_admin -d postgres -c "DROP DATABASE IF EXISTS identity_service_test;"
-          psql -h localhost -U identity_admin -d postgres -f ./database/postgres/006-init-test-db.sql
+          mkdir -p ./database/postgres/migrations
+          mkdir -p ./database/neo4j/migrations
 
-          # Apply consolidated schema (already includes parent tables + parent in chk_identity_type)
-          psql -h localhost -U identity_admin -d identity_service_test -f ./database/postgres/schema.sql
+      - name: Run Flyway validate
+        run: |
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE/database/postgres/migrations:/flyway/sql:ro" \
+            flyway/flyway:10.17.1 \
+            -url=jdbc:postgresql://localhost:5432/identity_service_test \
+            -user=identity_admin \
+            -password=test-password \
+            -connectRetries=60 \
+            -locations=filesystem:/flyway/sql \
+            -ignoreMigrationPatterns='*:pending' \
+            validate
 
-          # Optional sanity check: ensure constraint includes parent
-          psql -h localhost -U identity_admin -d identity_service_test -c \
-          "SELECT conname, pg_get_constraintdef(c.oid) FROM pg_constraint c JOIN pg_class t ON c.conrelid=t.oid WHERE t.relname='user_accounts' AND c.contype='c';"
-        env:
-          PGPASSWORD: test-password
+      - name: Run Flyway migrate
+        run: |
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE/database/postgres/migrations:/flyway/sql:ro" \
+            flyway/flyway:10.17.1 \
+            -url=jdbc:postgresql://localhost:5432/identity_service_test \
+            -user=identity_admin \
+            -password=test-password \
+            -connectRetries=60 \
+            -locations=filesystem:/flyway/sql \
+            migrate
+
+      - name: Run neo4j-migrations apply
+        run: |
+          docker build \
+            -t injury-surveillance-neo4j-migrations-runner:3.3.1 \
+            ./tools/neo4j-migrations-runner
+
+          docker run --rm --network host \
+            -v "$GITHUB_WORKSPACE/database/neo4j/migrations:/migrations:ro" \
+            injury-surveillance-neo4j-migrations-runner:3.3.1 \
+            --address neo4j://localhost:7687 \
+            --username neo4j \
+            --password=test-password \
+            --location file:///migrations \
+            apply
 
       - name: Run linter
         working-directory: ./backend
@@ -217,17 +246,25 @@ jobs:
           POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
           POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          NEO4J_URI: ${{ secrets.NEO4J_URI }}
+          NEO4J_USERNAME: ${{ secrets.NEO4J_USERNAME }}
+          NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
         run: |
           # Save SSH key
           echo "$EC2_SSH_KEY" > ec2_key.pem
           chmod 600 ec2_key.pem
 
-          # Copy production-safe migration files to EC2
-          ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "mkdir -p /tmp/injury-surveillance-migrations"
-          scp -i ec2_key.pem -o StrictHostKeyChecking=no \
-            ./database/postgres/001-identity-service-schema.sql \
-            ./database/postgres/007-add-parent-and-invitations.sql \
-            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/
+          # Copy migration directories to EC2
+          ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "mkdir -p /tmp/injury-surveillance-migrations/postgres /tmp/injury-surveillance-migrations/neo4j /tmp/injury-surveillance-migrations/neo4j-migrations-runner"
+          scp -r -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ./database/postgres/migrations/. \
+            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/postgres/
+          scp -r -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ./database/neo4j/migrations/. \
+            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/neo4j/
+          scp -r -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ./tools/neo4j-migrations-runner/. \
+            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/neo4j-migrations-runner/
 
           # SSH into EC2 and deploy
           ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
@@ -238,38 +275,31 @@ jobs:
 
             MIGRATIONS_DIR="/tmp/injury-surveillance-migrations"
 
-            # Track applied migrations
+            # PostgreSQL schema migration (Flyway)
             docker run --rm --network host \
-              -e PGPASSWORD="$POSTGRES_PASSWORD" \
-              postgres:16-alpine \
-              psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "
-              CREATE TABLE IF NOT EXISTS schema_migrations (
-                filename TEXT PRIMARY KEY,
-                executed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-              );
-            "
+              -v "\$MIGRATIONS_DIR/postgres:/flyway/sql:ro" \
+              flyway/flyway:10.17.1 \
+              -url=jdbc:postgresql://$POSTGRES_HOST:$POSTGRES_PORT/$POSTGRES_DB \
+              -user=$POSTGRES_USER \
+              -password=$POSTGRES_PASSWORD \
+              -connectRetries=60 \
+              -baselineOnMigrate=true \
+              -locations=filesystem:/flyway/sql \
+              migrate
 
-            # Apply production-safe schema migrations only
-            for migration in 001-identity-service-schema.sql 007-add-parent-and-invitations.sql; do
-              if docker run --rm --network host \
-                -e PGPASSWORD="$POSTGRES_PASSWORD" \
-                postgres:16-alpine \
-                psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SELECT 1 FROM schema_migrations WHERE filename='\${migration}'" | grep -q 1; then
-                echo "Skipping already applied migration: \${migration}"
-              else
-                echo "Applying migration: \${migration}"
-                docker run --rm --network host \
-                  -e PGPASSWORD="$POSTGRES_PASSWORD" \
-                  -v "\$MIGRATIONS_DIR:/migrations:ro" \
-                  postgres:16-alpine \
-                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -f "/migrations/\${migration}"
+            # Neo4j schema migration (neo4j-migrations)
+              docker build \
+                -t injury-surveillance-neo4j-migrations-runner:3.3.1 \
+                "\$MIGRATIONS_DIR/neo4j-migrations-runner"
 
-                docker run --rm --network host \
-                  -e PGPASSWORD="$POSTGRES_PASSWORD" \
-                  postgres:16-alpine \
-                  psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB" -v ON_ERROR_STOP=1 -c "INSERT INTO schema_migrations (filename) VALUES ('\${migration}');"
-              fi
-            done
+              docker run --rm --network host \
+                -v "\$MIGRATIONS_DIR/neo4j:/migrations:ro" \
+                injury-surveillance-neo4j-migrations-runner:3.3.1 \
+                --address "$NEO4J_URI" \
+                --username "$NEO4J_USERNAME" \
+                --password="$NEO4J_PASSWORD" \
+                --location file:///migrations \
+                apply
 
             rm -rf "\$MIGRATIONS_DIR"
             

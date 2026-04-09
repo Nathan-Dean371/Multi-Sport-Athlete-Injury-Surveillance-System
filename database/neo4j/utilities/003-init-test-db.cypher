@@ -1,8 +1,6 @@
 // ============================================================================
-// Test Database Initialization - DESTRUCTIVE
+// Test Database Initialization Utility - DESTRUCTIVE
 // ============================================================================
-// DEPRECATION: This legacy location is retained temporarily.
-// Prefer running: database/neo4j/utilities/003-init-test-db.cypher
 // Purpose:     Clear all data and reinitialize test database with fresh schema
 // Created:     2026
 // Idempotent:  Yes (DESTRUCTIVE - clears all nodes first)
@@ -10,8 +8,10 @@
 // Dependencies: None
 // Usage:       docker exec -i injury-surveillance-neo4j-test cypher-shell \
 //                -u neo4j -p injury-surveillance-test-password -d neo4j \
-//                < database/neo4j/003-init-test-db.cypher
+//                < database/neo4j/utilities/003-init-test-db.cypher
 // WARNING:     Deletes ALL data! Only use on test databases!
+// NOTE:        This file is a utility script and is not part of the
+//              neo4j-migrations versioned schema chain.
 // ============================================================================
 
 // ----------------------------------------------------------------------------

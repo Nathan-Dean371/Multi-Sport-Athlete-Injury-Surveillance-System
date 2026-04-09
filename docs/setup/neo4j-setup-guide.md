@@ -3,6 +3,7 @@
 This guide will walk you through setting up Neo4j for your FYP project, from installation to schema creation.
 
 ## Table of Contents
+
 1. [Installation Options](#installation-options)
 2. [Initial Configuration](#initial-configuration)
 3. [Database Schema Setup](#database-schema-setup)
@@ -47,6 +48,7 @@ This guide will walk you through setting up Neo4j for your FYP project, from ins
    - Login with username: `neo4j`, password: (your password)
 
 **Connection Details:**
+
 - Bolt URL: `bolt://localhost:7687`
 - HTTP URL: `http://localhost:7474`
 - Username: `neo4j`
@@ -59,11 +61,13 @@ This guide will walk you through setting up Neo4j for your FYP project, from ins
 **Best for:** Consistent environment, CI/CD integration
 
 1. **Pull Neo4j Image**
+
    ```bash
    docker pull neo4j:5.26-community
    ```
 
 2. **Run Container**
+
    ```bash
    docker run \
      --name injury-surveillance-neo4j \
@@ -81,6 +85,7 @@ This guide will walk you through setting up Neo4j for your FYP project, from ins
    **Replace `your-password-here` with a strong password!**
 
 3. **Verify Running**
+
    ```bash
    docker ps | grep injury-surveillance-neo4j
    docker logs injury-surveillance-neo4j
@@ -91,6 +96,7 @@ This guide will walk you through setting up Neo4j for your FYP project, from ins
    - Login: `neo4j` / `your-password-here`
 
 **Docker Commands:**
+
 ```bash
 # Stop database
 docker stop injury-surveillance-neo4j
@@ -137,6 +143,7 @@ docker logs -f injury-surveillance-neo4j
 ### 1. Test Connection
 
 In Neo4j Browser, run:
+
 ```cypher
 RETURN "Hello from Neo4j!" AS message;
 ```
@@ -148,6 +155,7 @@ You should see a result table with your message.
 APOC provides additional procedures for Neo4j.
 
 **For Neo4j Desktop:**
+
 - In Desktop, select your database
 - Click on "Plugins" tab
 - Install "APOC"
@@ -157,6 +165,7 @@ APOC provides additional procedures for Neo4j.
 Already configured in the docker run command above with `--env NEO4J_PLUGINS='["apoc"]'`
 
 **Verify APOC:**
+
 ```cypher
 RETURN apoc.version() AS version;
 ```
@@ -164,6 +173,7 @@ RETURN apoc.version() AS version;
 ### 3. Configure Memory Settings (Optional but Recommended)
 
 **For Neo4j Desktop:**
+
 - Select your database
 - Click "..." → "Settings"
 - Add/modify:
@@ -252,7 +262,13 @@ SHOW INDEXES;
 
 ### Step 3: Create Sample Data (Optional)
 
-Run the `sample-data.cypher` script or see the separate file for comprehensive test data.
+Run the dev seed script after schema setup:
+
+```powershell
+.\scripts\seed-dev-data.ps1
+```
+
+This loads the current sample/fixture data into the dev databases.
 
 Here's a minimal example to verify everything works:
 
@@ -370,22 +386,22 @@ NEO4J_DATABASE=neo4j
 Create a quick test file `test-connection.js`:
 
 ```javascript
-const neo4j = require('neo4j-driver');
+const neo4j = require("neo4j-driver");
 
 const driver = neo4j.driver(
-  'bolt://localhost:7687',
-  neo4j.auth.basic('neo4j', 'your-password-here')
+  "bolt://localhost:7687",
+  neo4j.auth.basic("neo4j", "your-password-here"),
 );
 
 async function testConnection() {
   const session = driver.session();
   try {
     const result = await session.run(
-      'RETURN "Connection successful!" AS message'
+      'RETURN "Connection successful!" AS message',
     );
-    console.log(result.records[0].get('message'));
+    console.log(result.records[0].get("message"));
   } catch (error) {
-    console.error('Connection failed:', error);
+    console.error("Connection failed:", error);
   } finally {
     await session.close();
   }
@@ -396,6 +412,7 @@ testConnection();
 ```
 
 Run:
+
 ```bash
 npm install neo4j-driver
 node test-connection.js
@@ -406,21 +423,25 @@ node test-connection.js
 ## Troubleshooting
 
 ### "Connection refused" error
+
 - Verify database is running (check Neo4j Desktop or `docker ps`)
 - Check firewall isn't blocking ports 7474/7687
 - Verify connection URI is correct
 
 ### "Authentication failed" error
+
 - Double-check username (should be `neo4j`)
 - Verify password is correct
 - For new installations, default is `neo4j/neo4j` (will prompt for change)
 
 ### Slow queries
+
 - Verify indexes are created: `SHOW INDEXES`
 - Use `PROFILE` or `EXPLAIN` before queries to check query plan
 - Ensure constraints are in place
 
 ### Can't see Neo4j Browser
+
 - Check http://localhost:7474 is accessible
 - For Docker: ensure port 7474 is mapped correctly
 - For Desktop: click "Open" button next to database
@@ -453,11 +474,13 @@ node test-connection.js
 ### Start your development session:
 
 **Neo4j Desktop:**
+
 1. Open Neo4j Desktop
 2. Click "Start" on your database
 3. Click "Open" → "Neo4j Browser"
 
 **Docker:**
+
 ```bash
 docker start injury-surveillance-neo4j
 # Open browser to http://localhost:7474
@@ -466,9 +489,11 @@ docker start injury-surveillance-neo4j
 ### Stop at end of day:
 
 **Neo4j Desktop:**
+
 1. Click "Stop" on your database
 
 **Docker:**
+
 ```bash
 docker stop injury-surveillance-neo4j
 ```

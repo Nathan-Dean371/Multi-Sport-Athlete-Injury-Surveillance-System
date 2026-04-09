@@ -1,16 +1,24 @@
 # ============================================================================
 # Setup Test Databases
 # ============================================================================
-# This script initializes test databases for E2E testing.
-# It should be run once after setting up the project, or whenever you need
-# to reset the test environment.
+# DEPRECATED ENTRYPOINT:
+# This script remains as a compatibility wrapper and delegates schema work to
+# migration tooling through sync-test-schema.ps1.
 #
 # Usage: .\scripts\setup-test-databases.ps1
 # ============================================================================
 
+[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
+
 Write-Host "=====================================================================" -ForegroundColor Cyan
 Write-Host "  Test Database Setup" -ForegroundColor Cyan
 Write-Host "=====================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[DEPRECATION] This compatibility script will be removed soon." -ForegroundColor Yellow
+Write-Host "             Canonical process is migration-tool driven (Flyway + neo4j-migrations)." -ForegroundColor Yellow
 Write-Host ""
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
@@ -59,7 +67,7 @@ $syncScript = Join-Path $PSScriptRoot "sync-test-schema.ps1"
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "[ERROR] Schema synchronization failed!" -ForegroundColor Red
-    exit 1
+    exit $LASTEXITCODE
 }
 
 # ============================================================================
@@ -103,7 +111,7 @@ Write-Host ""
 Write-Host "Next Steps:" -ForegroundColor Cyan
 Write-Host "  1. Run E2E tests:  cd backend && npm run test:e2e" -ForegroundColor Gray
 Write-Host "  2. View coverage:  cd backend && npm run test:cov" -ForegroundColor Gray
-Write-Host "  3. Resync schema:  .\scripts\sync-test-schema.ps1" -ForegroundColor Gray
+Write-Host "  3. Use migration wrappers: .\scripts\sync-test-schema.ps1" -ForegroundColor Gray
 Write-Host ""
 Write-Host "Note: Test databases can be safely wiped - dev data is protected!" -ForegroundColor Green
 Write-Host ""

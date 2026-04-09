@@ -11,6 +11,34 @@
 -- ============================================================================
 
 -- ============================================================================
+-- PART 0: PARENT IDENTITIES (Ensure every player has a parent/guardian)
+-- ============================================================================
+
+-- Ensure parents exist first (idempotent)
+INSERT INTO parent_identities (
+    pseudonym_id,
+    neo4j_parent_id,
+    first_name,
+    last_name,
+    email,
+    phone_number
+) VALUES
+('PSY-PARENT-001', 'PARENT-001', 'Mary', 'Murphy', 'mary.murphy@example.com', '+353 87 1234567'),
+('PSY-PARENT-002', 'PARENT-002', 'John', 'O''Connor', 'john.oconnor@example.com', '+353 87 7654321'),
+('PSY-PARENT-003', 'PARENT-003', 'Anne', 'Kelly', 'anne.kelly@example.com', '+353 85 777 6666'),
+('PSY-PARENT-004', 'PARENT-004', 'Patrick', 'Walsh', 'patrick.walsh@example.com', '+353 87 666 5555'),
+('PSY-PARENT-005', 'PARENT-005', 'Siobhan', 'Ryan', 'siobhan.ryan@example.com', '+353 86 555 4444'),
+('PSY-PARENT-006', 'PARENT-006', 'Eileen', 'Brennan', 'eileen.brennan@example.com', '+353 85 444 3333'),
+('PSY-PARENT-007', 'PARENT-007', 'Michael', 'McCarthy', 'michael.mccarthy@example.com', '+353 87 333 2222')
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    neo4j_parent_id = EXCLUDED.neo4j_parent_id,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    email = EXCLUDED.email,
+    phone_number = EXCLUDED.phone_number,
+    updated_at = CURRENT_TIMESTAMP;
+
+-- ============================================================================
 -- PART 1: PLAYER IDENTITIES
 -- ============================================================================
 
@@ -31,6 +59,7 @@ INSERT INTO player_identities (
     emergency_contact_name,
     emergency_contact_relationship,
     emergency_contact_phone,
+    parent_id,
     gdpr_consent_given,
     gdpr_consent_date,
     data_processing_consent,
@@ -53,6 +82,7 @@ INSERT INTO player_identities (
     'Mary Murphy',
     'Mother',
     '+353 87 999 8888',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-001'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '30 days',
     true,
@@ -76,6 +106,7 @@ INSERT INTO player_identities (
     'John O''Brien',
     'Father',
     '+353 86 888 7777',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-002'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '25 days',
     true,
@@ -99,6 +130,7 @@ INSERT INTO player_identities (
     'Anne Kelly',
     'Mother',
     '+353 85 777 6666',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-003'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '20 days',
     true,
@@ -122,6 +154,7 @@ INSERT INTO player_identities (
     'Patrick Walsh',
     'Father',
     '+353 87 666 5555',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-004'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '45 days',
     true,
@@ -145,6 +178,7 @@ INSERT INTO player_identities (
     'Siobhan Ryan',
     'Mother',
     '+353 86 555 4444',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-005'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '15 days',
     true,
@@ -168,6 +202,7 @@ INSERT INTO player_identities (
     'Eileen Brennan',
     'Mother',
     '+353 85 444 3333',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-006'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '60 days',
     true,
@@ -191,57 +226,33 @@ INSERT INTO player_identities (
     'Michael McCarthy',
     'Father',
     '+353 87 333 2222',
+    (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-007'),
     true,
     CURRENT_TIMESTAMP - INTERVAL '90 days',
     true,
     true
-);
-ON CONFLICT (pseudonym_id) DO NOTHING;
-
--- ============================================================================
--- PART 0: PARENT IDENTITIES (Ensure every player has a parent/guardian)
--- ============================================================================
-
-INSERT INTO parent_identities (
-    pseudonym_id,
-    first_name,
-    last_name,
-    email,
-    phone
 )
-VALUES
-('PSY-PARENT-001', 'Mary', 'Murphy', 'mary.murphy@example.com', '+353 87 1234567'),
-('PSY-PARENT-002', 'John', 'O''Connor', 'john.oconnor@example.com', '+353 87 7654321'),
-('PSY-PARENT-003', 'Anne', 'Kelly', 'anne.kelly@example.com', '+353 85 777 6666'),
-('PSY-PARENT-004', 'Patrick', 'Walsh', 'patrick.walsh@example.com', '+353 87 666 5555'),
-('PSY-PARENT-005', 'Siobhan', 'Ryan', 'siobhan.ryan@example.com', '+353 86 555 4444'),
-('PSY-PARENT-006', 'Eileen', 'Brennan', 'eileen.brennan@example.com', '+353 85 444 3333'),
-('PSY-PARENT-007', 'Michael', 'McCarthy', 'michael.mccarthy@example.com', '+353 87 333 2222')
-ON CONFLICT (pseudonym_id) DO NOTHING;
-
--- Link each player to their parent by pseudonym mapping (idempotent)
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-001') WHERE pseudonym_id = 'PSY-PLAYER-A1B2C3D4' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-002') WHERE pseudonym_id = 'PSY-PLAYER-E5F6G7H8' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-003') WHERE pseudonym_id = 'PSY-PLAYER-I9J0K1L2' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-004') WHERE pseudonym_id = 'PSY-PLAYER-M3N4O5P6' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-005') WHERE pseudonym_id = 'PSY-PLAYER-Q7R8S9T0' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-006') WHERE pseudonym_id = 'PSY-PLAYER-U1V2W3X4' AND parent_id IS NULL;
-UPDATE player_identities SET parent_id = (SELECT parent_id FROM parent_identities WHERE pseudonym_id = 'PSY-PARENT-007') WHERE pseudonym_id = 'PSY-PLAYER-Y5Z6A7B8' AND parent_id IS NULL;
-
--- If any players were inserted without parent_id (new seed runs), enforce parent mapping by updating from emergency contact name
-UPDATE player_identities p
-SET parent_id = pi.parent_id
-FROM parent_identities pi
-WHERE p.parent_id IS NULL
-  AND pi.first_name || ' ' || pi.last_name = p.emergency_contact_name;
-
--- If all players now have parents, enforce NOT NULL constraint on parent_id
-DO $$
-BEGIN
-    IF (SELECT COUNT(*) FROM player_identities WHERE parent_id IS NULL) = 0 THEN
-        ALTER TABLE player_identities ALTER COLUMN parent_id SET NOT NULL;
-    END IF;
-END $$;
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    neo4j_player_id = EXCLUDED.neo4j_player_id,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    date_of_birth = EXCLUDED.date_of_birth,
+    email = EXCLUDED.email,
+    phone_number = EXCLUDED.phone_number,
+    address_line1 = EXCLUDED.address_line1,
+    city = EXCLUDED.city,
+    county = EXCLUDED.county,
+    postal_code = EXCLUDED.postal_code,
+    country = EXCLUDED.country,
+    emergency_contact_name = EXCLUDED.emergency_contact_name,
+    emergency_contact_relationship = EXCLUDED.emergency_contact_relationship,
+    emergency_contact_phone = EXCLUDED.emergency_contact_phone,
+    parent_id = EXCLUDED.parent_id,
+    gdpr_consent_given = EXCLUDED.gdpr_consent_given,
+    gdpr_consent_date = EXCLUDED.gdpr_consent_date,
+    data_processing_consent = EXCLUDED.data_processing_consent,
+    is_verified = EXCLUDED.is_verified,
+    updated_at = CURRENT_TIMESTAMP;
 
 
 -- ============================================================================
@@ -332,7 +343,26 @@ INSERT INTO coach_identities (
     true,
     CURRENT_TIMESTAMP - INTERVAL '100 days',
     true
-);
+)
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    neo4j_coach_id = EXCLUDED.neo4j_coach_id,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    date_of_birth = EXCLUDED.date_of_birth,
+    email = EXCLUDED.email,
+    phone_number = EXCLUDED.phone_number,
+    address_line1 = EXCLUDED.address_line1,
+    city = EXCLUDED.city,
+    county = EXCLUDED.county,
+    postal_code = EXCLUDED.postal_code,
+    country = EXCLUDED.country,
+    professional_registration_number = EXCLUDED.professional_registration_number,
+    insurance_provider = EXCLUDED.insurance_provider,
+    insurance_policy_number = EXCLUDED.insurance_policy_number,
+    gdpr_consent_given = EXCLUDED.gdpr_consent_given,
+    gdpr_consent_date = EXCLUDED.gdpr_consent_date,
+    is_verified = EXCLUDED.is_verified,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
 -- PART 3: ADMIN IDENTITIES
@@ -356,7 +386,15 @@ INSERT INTO admin_identities (
     'james.osullivan@admin.ie',
     '+353 91 567 8901',
     true
-);
+)
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    neo4j_admin_id = EXCLUDED.neo4j_admin_id,
+    first_name = EXCLUDED.first_name,
+    last_name = EXCLUDED.last_name,
+    email = EXCLUDED.email,
+    phone_number = EXCLUDED.phone_number,
+    is_verified = EXCLUDED.is_verified,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
 -- PART 4: USER ACCOUNTS (For Authentication)
@@ -384,7 +422,13 @@ SELECT
     'random_salt_' || pseudonym_id,
     is_active
 FROM player_identities
-WHERE deleted_at IS NULL;
+WHERE deleted_at IS NULL
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    identity_type = EXCLUDED.identity_type,
+    identity_id = EXCLUDED.identity_id,
+    email = EXCLUDED.email,
+    is_active = EXCLUDED.is_active,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- Link to coach identities
 INSERT INTO user_accounts (
@@ -405,7 +449,13 @@ SELECT
     'random_salt_' || pseudonym_id,
     is_active
 FROM coach_identities
-WHERE deleted_at IS NULL;
+WHERE deleted_at IS NULL
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    identity_type = EXCLUDED.identity_type,
+    identity_id = EXCLUDED.identity_id,
+    email = EXCLUDED.email,
+    is_active = EXCLUDED.is_active,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- Link to admin identities
 INSERT INTO user_accounts (
@@ -426,7 +476,13 @@ SELECT
     'random_salt_' || pseudonym_id,
     is_active
 FROM admin_identities
-WHERE deleted_at IS NULL;
+WHERE deleted_at IS NULL
+ON CONFLICT (pseudonym_id) DO UPDATE SET
+    identity_type = EXCLUDED.identity_type,
+    identity_id = EXCLUDED.identity_id,
+    email = EXCLUDED.email,
+    is_active = EXCLUDED.is_active,
+    updated_at = CURRENT_TIMESTAMP;
 
 -- ============================================================================
 -- PART 5: SAMPLE DATA ACCESS LOGS

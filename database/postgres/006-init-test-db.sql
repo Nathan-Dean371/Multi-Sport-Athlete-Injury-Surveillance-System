@@ -36,9 +36,9 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO identity_admin;
 GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO identity_admin;
 
 -- ============================================================================
--- Schema will be applied from identity-service-schema.sql
+-- Schema should now be applied via Flyway migrations
 -- This script only creates the database structure
--- Run: psql -U identity_admin -d identity_service_test -f identity-service-schema.sql
+-- Run migrations from: database/postgres/migrations
 -- ============================================================================
 
 SELECT 'Test database created successfully' AS status;

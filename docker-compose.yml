@@ -94,7 +94,6 @@ services:
 
     volumes:
       - postgres-data:/var/lib/postgresql/data
-      - ./database/postgres:/docker-entrypoint-initdb.d:ro
 
     networks:
       - injury-surveillance-network
@@ -105,6 +104,30 @@ services:
       timeout: 3s
       retries: 5
       start_period: 10s
+
+  # --------------------------------------------------------------------------
+  # Flyway Migrations (Development Bootstrap)
+  # --------------------------------------------------------------------------
+  flyway:
+    image: flyway/flyway:10.17.1
+    container_name: injury-surveillance-flyway
+    restart: "no"
+    command:
+      - -url=jdbc:postgresql://postgres:5432/identity_service
+      - -user=identity_admin
+      - -password=identity-service-dev-password
+      - -connectRetries=60
+      - -locations=filesystem:/flyway/sql
+      - -ignoreMigrationPatterns=*:pending
+      - validate
+      - migrate
+    volumes:
+      - ./database/postgres/migrations:/flyway/sql:ro
+    networks:
+      - injury-surveillance-network
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # --------------------------------------------------------------------------
   # pgAdmin (Optional)
@@ -179,6 +202,8 @@ services:
         condition: service_healthy
       neo4j:
         condition: service_healthy
+      flyway:
+        condition: service_completed_successfully
 
     # Start in dev mode with hot reload - healthchecks ensure DBs are ready
     command: npm run start:dev

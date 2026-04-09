@@ -1,135 +1,110 @@
 # ============================================================================
-# Sync Test Database Schema
+# Sync Test Database Schema (Migration Wrapper)
 # ============================================================================
-# This script synchronizes the database schema from development to test
-# environments. It ensures test databases mirror the production structure.
+# DEPRECATED ENTRYPOINT:
+# This script remains as a compatibility wrapper and now delegates all schema
+# operations to Flyway and neo4j-migrations. It no longer applies raw SQL or
+# raw Cypher schema files directly.
 #
-# Usage: .\scripts\sync-test-schema.ps1 [-WithData]
+# Usage: .\scripts\sync-test-schema.ps1
 # ============================================================================
 
-param(
-    [switch]$WithData = $false
-)
+[CmdletBinding()]
+param()
+
+$ErrorActionPreference = 'Stop'
 
 Write-Host "=====================================================================" -ForegroundColor Cyan
-Write-Host "  Test Database Schema Synchronization" -ForegroundColor Cyan
+Write-Host "  Test Database Schema Synchronization (Migration Wrapper)" -ForegroundColor Cyan
 Write-Host "=====================================================================" -ForegroundColor Cyan
+Write-Host ""
+Write-Host "[DEPRECATION] This compatibility script will be removed soon." -ForegroundColor Yellow
+Write-Host "             Use migration tooling directly in CI/local automation." -ForegroundColor Yellow
 Write-Host ""
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$DatabaseDir = Join-Path $ProjectRoot "database"
+$PostgresMigrations = Join-Path $ProjectRoot "database\postgres\migrations"
+$Neo4jMigrations = Join-Path $ProjectRoot "database\neo4j\migrations"
 
-# ============================================================================
-# Step 1: Sync PostgreSQL Test Database
-# ============================================================================
-Write-Host "[1/3] Synchronizing PostgreSQL Test Database..." -ForegroundColor Yellow
-Write-Host ""
-
-# Check if test database exists, if not create it
-Write-Host "  Creating test database (if not exists)..." -ForegroundColor Gray
-try {
-    $output = docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = 'identity_service_test';" 2>&1
-    $dbExists = (($output | Out-String).Trim() -eq "1")
-
-    if (-not $dbExists) {
-        Write-Host "  Test database doesn't exist, creating..." -ForegroundColor Yellow
-        Get-Content "$DatabaseDir\postgres\006-init-test-db.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d postgres
-        Write-Host "  [OK] Test database created" -ForegroundColor Green
-    } else {
-        Write-Host "  [OK] Test database already exists" -ForegroundColor Green
-    }
-} catch {
-    Write-Host "  [ERROR] Failed to check/create test database" -ForegroundColor Red
-    Write-Host "  $_" -ForegroundColor Red
+if (-not (Test-Path $PostgresMigrations)) {
+    Write-Host "[ERROR] Missing PostgreSQL migration directory: $PostgresMigrations" -ForegroundColor Red
     exit 1
 }
 
-# Apply schema
-Write-Host "  Applying schema to test database..." -ForegroundColor Gray
-try {
-    Get-Content "$DatabaseDir\postgres\schema.sql" | docker exec -i injury-surveillance-postgres psql -U identity_admin -d identity_service_test
-    Write-Host "  [OK] PostgreSQL schema synchronized" -ForegroundColor Green
-} catch {
-    Write-Host "  [ERROR] Failed to apply PostgreSQL schema" -ForegroundColor Red
-    Write-Host "  $_" -ForegroundColor Red
+if (-not (Test-Path $Neo4jMigrations)) {
+    Write-Host "[ERROR] Missing Neo4j migration directory: $Neo4jMigrations" -ForegroundColor Red
     exit 1
 }
 
-Write-Host ""
+$flyway = Get-Command flyway -ErrorAction SilentlyContinue
 
-# ============================================================================
-# Step 2: Sync Neo4j Test Database
-# ============================================================================
-Write-Host "[2/3] Synchronizing Neo4j Test Database..." -ForegroundColor Yellow
-Write-Host ""
+if (-not $flyway) {
+    Write-Host "[ERROR] Flyway CLI not found on PATH." -ForegroundColor Red
+    Write-Host "        Install Flyway before running this wrapper." -ForegroundColor Red
+    exit 1
+}
 
-# Wait for Neo4j test container to be ready
-Write-Host "  Checking Neo4j test container..." -ForegroundColor Gray
-$retries = 0
-$maxRetries = 10
-while ($retries -lt $maxRetries) {
-    try {
-        $status = docker exec injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password "RETURN 1" 2>&1
-        if ($LASTEXITCODE -eq 0) {
-            Write-Host "  [OK] Neo4j test container is ready" -ForegroundColor Green
-            break
-        }
-    } catch {
-        # Container not ready yet
-    }
-    
-    $retries++
-    if ($retries -eq $maxRetries) {
-        Write-Host "  [ERROR] Neo4j test container not responding" -ForegroundColor Red
+$pgHost = if ($env:TEST_POSTGRES_HOST) { $env:TEST_POSTGRES_HOST } else { "127.0.0.1" }
+$pgPort = if ($env:TEST_POSTGRES_PORT) { $env:TEST_POSTGRES_PORT } else { "5433" }
+$pgDb = if ($env:TEST_POSTGRES_DB) { $env:TEST_POSTGRES_DB } else { "identity_service_test" }
+$pgUser = if ($env:TEST_POSTGRES_USER) { $env:TEST_POSTGRES_USER } else { "identity_admin" }
+$pgPassword = if ($env:TEST_POSTGRES_PASSWORD) { $env:TEST_POSTGRES_PASSWORD } else { "identity-service-dev-password" }
+
+$neo4jUser = if ($env:TEST_NEO4J_USER) { $env:TEST_NEO4J_USER } else { "neo4j" }
+$neo4jPassword = if ($env:TEST_NEO4J_PASSWORD) { $env:TEST_NEO4J_PASSWORD } else { "injury-surveillance-test-password" }
+
+Write-Host "[1/2] PostgreSQL migration (Flyway validate + migrate)..." -ForegroundColor Yellow
+
+Write-Host "      Ensuring test database exists..." -ForegroundColor DarkGray
+$dbExists = docker exec -i injury-surveillance-postgres psql -U $pgUser -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname = '$pgDb';" 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] Unable to check PostgreSQL test database existence." -ForegroundColor Red
+    Write-Host "        $dbExists" -ForegroundColor Red
+    exit 1
+}
+
+if (($dbExists | Out-String).Trim() -ne "1") {
+    $createDbResult = docker exec -i injury-surveillance-postgres psql -U $pgUser -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $pgDb;" 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Unable to create PostgreSQL test database '$pgDb'." -ForegroundColor Red
+        Write-Host "        $createDbResult" -ForegroundColor Red
         exit 1
     }
-    
-    Write-Host "  Waiting for Neo4j test container... ($retries/$maxRetries)" -ForegroundColor Gray
-    Start-Sleep -Seconds 2
 }
 
-# Clear existing data and apply schema
-Write-Host "  Applying schema to test database..." -ForegroundColor Gray
-Write-Host "  [WARNING] This will delete all existing test data!" -ForegroundColor Yellow
+$env:FLYWAY_URL = "jdbc:postgresql://$pgHost`:$pgPort/$pgDb"
+$env:FLYWAY_USER = $pgUser
+$env:FLYWAY_PASSWORD = $pgPassword
+$env:FLYWAY_LOCATIONS = "filesystem:$PostgresMigrations"
+$env:FLYWAY_IGNORE_MIGRATION_PATTERNS = "*:pending"
 
-try {
-    Get-Content "$DatabaseDir\neo4j\init-test-db.cypher" | docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password -d neo4j
-    Write-Host "  [OK] Neo4j schema synchronized" -ForegroundColor Green
-} catch {
-    Write-Host "  [ERROR] Failed to apply Neo4j schema" -ForegroundColor Red
-    Write-Host "  $_" -ForegroundColor Red
-    exit 1
+& $flyway.Source validate
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] Flyway validate failed." -ForegroundColor Red
+    exit $LASTEXITCODE
 }
 
-Write-Host ""
-
-# ============================================================================
-# Step 3: Verify Synchronization
-# ============================================================================
-Write-Host "[3/3] Verifying Synchronization..." -ForegroundColor Yellow
-Write-Host ""
-
-# Verify PostgreSQL
-Write-Host "  PostgreSQL Tables:" -ForegroundColor Gray
-docker exec -i injury-surveillance-postgres psql -U identity_admin -d identity_service_test -c "\dt" 2>&1 | Select-String -Pattern "public \|" | ForEach-Object {
-    Write-Host "    $_" -ForegroundColor DarkGray
+& $flyway.Source migrate
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] Flyway migrate failed." -ForegroundColor Red
+    exit $LASTEXITCODE
 }
 
-Write-Host ""
+Write-Host "[2/2] Neo4j migration (neo4j-migrations apply)..." -ForegroundColor Yellow
+$applyScript = Join-Path $PSScriptRoot 'apply-neo4j-migrations.ps1'
+& $applyScript `
+    -Address 'neo4j://injury-surveillance-neo4j-test:7687' `
+    -Username $neo4jUser `
+    -PasswordSecureString (ConvertTo-SecureString $neo4jPassword -AsPlainText -Force) `
+    -MigrationsPath $Neo4jMigrations
 
-# Verify Neo4j
-Write-Host "  Neo4j Constraints:" -ForegroundColor Gray
-$constraints = docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password -d neo4j "SHOW CONSTRAINTS YIELD name RETURN count(name) AS total" 2>&1
-Write-Host "    Total constraints: $($constraints | Select-String -Pattern '\d+' | ForEach-Object { $_.Matches.Value })" -ForegroundColor DarkGray
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[ERROR] neo4j-migrations apply failed." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
 
-Write-Host ""
+Write-Host "" 
 Write-Host "=====================================================================" -ForegroundColor Green
-Write-Host "  Test Database Schema Synchronized Successfully" -ForegroundColor Green
+Write-Host "  Schema synchronization completed via migration tooling" -ForegroundColor Green
 Write-Host "=====================================================================" -ForegroundColor Green
-Write-Host ""
-Write-Host "Test databases are ready for E2E testing!" -ForegroundColor Cyan
-Write-Host ""
-Write-Host "Connection Details:" -ForegroundColor Yellow
-Write-Host "  PostgreSQL: 127.0.0.1:5433/identity_service_test" -ForegroundColor Gray
-Write-Host "  Neo4j:      bolt://localhost:7688" -ForegroundColor Gray
 Write-Host ""

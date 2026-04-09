@@ -1,5 +1,10 @@
 # Test Database Setup - Quick Reference
 
+> [!WARNING]
+> Deprecated: This document contains legacy setup details and compatibility wrapper usage.
+> The canonical schema lifecycle is now defined in `docs/architecture/schema-management-workflow.md`.
+> Use Flyway and neo4j-migrations as the primary schema mechanism for local, CI, and production.
+
 ## Overview
 
 The test environment now uses completely isolated databases:
@@ -46,11 +51,14 @@ This ensures E2E tests **never affect development data**.
 ### Start/Stop Containers
 
 ```powershell
-# Stop all containers
-docker-compose down
+# Start DB-only stack + apply migrations
+.\scripts\start-databases.ps1
 
-# Start all containers (including neo4j-test)
-docker-compose up -d
+# Stop DB-only stack (keep volumes)
+.\scripts\stop-databases.ps1
+
+# Clean reset + rebuild from migrations (deletes DB volumes)
+.\scripts\reset-databases.ps1
 
 # Check status
 docker ps
@@ -147,8 +155,8 @@ docker exec -it injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-s
 
 ### Database Initialization
 
-- `database/postgres/init-test-db.sql` - PostgreSQL test DB setup
-- `database/neo4j/init-test-db.cypher` - Neo4j test DB setup
+- `database/postgres/migrations/` - PostgreSQL Flyway migration source
+- `database/neo4j/utilities/003-init-test-db.cypher` - Neo4j test DB reset utility (destructive, test-only)
 
 ### Scripts
 
@@ -191,8 +199,9 @@ docker-compose restart neo4j-test
 # Re-run sync script
 .\scripts\sync-test-schema.ps1
 
-# Or manually apply schema
-Get-Content database\neo4j\schema-setup.cypher | docker exec -i injury-surveillance-neo4j-test cypher-shell -u neo4j -p injury-surveillance-test-password -d neo4j
+# Or run migration tooling directly (recommended)
+flyway -url=jdbc:postgresql://127.0.0.1:5433/identity_service_test -user=identity_admin -password=identity-service-dev-password -locations=filesystem:database/postgres/migrations validate migrate
+neo4j-migrations --address bolt://localhost:7688 --username neo4j --password=injury-surveillance-test-password --location file:///database/neo4j/migrations apply
 ```
 
 ### Tests failing with connection errors

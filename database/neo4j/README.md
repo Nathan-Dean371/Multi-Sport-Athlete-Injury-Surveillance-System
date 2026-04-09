@@ -1,5 +1,51 @@
 # Neo4j Cypher Scripts
 
+> [!WARNING]
+> Legacy guidance: this document contains historical/manual setup paths.
+> Canonical schema evolution is now migration-tool-first via neo4j-migrations
+> with versioned files in `database/neo4j/migrations`.
+> Destructive test reset scripts must be isolated in `database/neo4j/utilities`
+> and are not part of the normal migration apply path.
+
+## Canonical Workflow (Migration-First)
+
+### Local/Dev Schema Apply
+
+```powershell
+# Apply versioned Neo4j schema migrations
+neo4j-migrations `
+  --address neo4j://localhost:7687 `
+  --username neo4j `
+  --password injury-surveillance-dev-password `
+  --location file:///database/neo4j/migrations `
+  apply
+```
+
+### Test Schema Apply
+
+```powershell
+# Apply versioned Neo4j schema migrations to test container
+neo4j-migrations `
+  --address neo4j://localhost:7688 `
+  --username neo4j `
+  --password injury-surveillance-test-password `
+  --location file:///database/neo4j/migrations `
+  apply
+```
+
+### Test Reset Utility (Destructive, Test-Only)
+
+```powershell
+Get-Content database\neo4j\utilities\003-init-test-db.cypher | `
+  docker exec -i injury-surveillance-neo4j-test cypher-shell `
+  -u neo4j -p injury-surveillance-test-password -d neo4j
+```
+
+### Production Rule
+
+Schema/index/constraint changes are applied by neo4j-migrations in CI/CD before
+application deployment. Manual Browser schema updates are legacy fallback only.
+
 This directory contains Cypher migration and data scripts for the Multi-Sport Athlete Injury Surveillance System Neo4j graph database.
 
 ## 📋 Naming Conventions

@@ -19,6 +19,7 @@ The Multi-Sport Athlete Injury Surveillance System has reached a state where clo
 - 🔲 React web dashboard (admin panel — ADR-0007, planned)
 
 The system requires a cloud deployment strategy that:
+
 - Provides remote access for mobile app integration and testing
 - Maintains the privacy-by-design architecture established in ADR-0003
 - Keeps costs within a $100 AWS credit budget
@@ -26,6 +27,7 @@ The system requires a cloud deployment strategy that:
 - Supports secure handling of GDPR-sensitive PII in PostgreSQL
 
 **Key Questions:**
+
 1. Which cloud provider(s) should we use?
 2. Where should each component be hosted?
 3. Should the frontend be co-deployed with the backend or separately?
@@ -66,13 +68,13 @@ The system requires a cloud deployment strategy that:
 
 ### Component Decisions
 
-| Component | Platform | Rationale |
-|-----------|----------|-----------|
-| NestJS Backend | AWS EC2 (t3.micro) | Full control, Docker support, AWS ecosystem |
-| PostgreSQL (PII) | AWS RDS (db.t3.micro) | Managed, encrypted at rest, VPC isolated |
-| Neo4j (Analytics) | Neo4j Aura Free Tier | Free managed service, no AWS cost |
-| React Web Dashboard | Vercel | Free static hosting, Git-based CI/CD |
-| React Native Mobile | Expo (device) | No hosting needed, connects to backend API |
+| Component           | Platform              | Rationale                                   |
+| ------------------- | --------------------- | ------------------------------------------- |
+| NestJS Backend      | AWS EC2 (t3.micro)    | Full control, Docker support, AWS ecosystem |
+| PostgreSQL (PII)    | AWS RDS (db.t3.micro) | Managed, encrypted at rest, VPC isolated    |
+| Neo4j (Analytics)   | Neo4j Aura Free Tier  | Free managed service, no AWS cost           |
+| React Web Dashboard | Vercel                | Free static hosting, Git-based CI/CD        |
+| React Native Mobile | Expo (device)         | No hosting needed, connects to backend API  |
 
 ---
 
@@ -81,6 +83,7 @@ The system requires a cloud deployment strategy that:
 ### Why AWS for Backend and PostgreSQL?
 
 AWS was chosen as the primary cloud provider because:
+
 - $100 student credit is available, covering approximately 2–3 months of runtime
 - EC2 provides full control over the Docker containerised NestJS backend
 - RDS provides a managed, encrypted PostgreSQL instance appropriate for GDPR-sensitive PII
@@ -89,6 +92,7 @@ AWS was chosen as the primary cloud provider because:
 ### Why Neo4j Aura Free Tier (Not AWS)?
 
 Neo4j is not available as a native AWS managed service. Options were:
+
 1. **Self-host on EC2** — adds cost and operational burden
 2. **Neo4j Aura Free Tier** — fully managed by Neo4j, free, sufficient capacity for FYP scale (200k nodes / 400k relationships)
 
@@ -99,12 +103,14 @@ The Aura Free Tier was already referenced in the project's Neo4j setup documenta
 ### Why Vercel for the React Web Dashboard?
 
 The React web dashboard (ADR-0007) is a Vite + React + TypeScript single-page application. Its characteristics are:
+
 - No server-side rendering required
 - All data fetching happens client-side via the NestJS REST API
 - TypeScript/JavaScript business logic (aggregation, reporting, charting) runs in the browser
 - Output of `npm run build` is a folder of static assets
 
 Static frontends do not require compute infrastructure. Deploying to Vercel:
+
 - Is free with no resource limits for this scale
 - Provides automatic deployments on `git push` (CI/CD out of the box)
 - Serves assets via a global CDN for fast load times
@@ -113,6 +119,7 @@ Static frontends do not require compute infrastructure. Deploying to Vercel:
 ### Why Separate Frontend and Backend Deployments?
 
 Co-deploying the React dashboard as static files served by NestJS was considered and rejected. Keeping them separate:
+
 - Demonstrates deliberate architectural reasoning (presentation vs application layer)
 - Allows independent deployments — a frontend change does not require a backend redeploy
 - Reflects industry standard practice for SPA + API architectures
@@ -123,12 +130,12 @@ Co-deploying the React dashboard as static files served by NestJS was considered
 
 ## Estimated Monthly Cost (AWS)
 
-| Service | Spec | Est. Cost/month |
-|---------|------|-----------------|
-| EC2 | t3.micro (NestJS backend) | ~$8 |
-| RDS | db.t3.micro (PostgreSQL) | ~$15 |
-| Data transfer / misc | — | ~$5 |
-| **Total** | | **~$28/month** |
+| Service              | Spec                      | Est. Cost/month |
+| -------------------- | ------------------------- | --------------- |
+| EC2                  | t3.micro (NestJS backend) | ~$8             |
+| RDS                  | db.t3.micro (PostgreSQL)  | ~$15            |
+| Data transfer / misc | —                         | ~$5             |
+| **Total**            |                           | **~$28/month**  |
 
 At ~$28/month, the $100 AWS credit covers approximately **3.5 months** of runtime — sufficient for development, testing, FYP demonstration, and submission period.
 
@@ -176,12 +183,14 @@ Neo4j Aura and Vercel are both **free** with no credit consumption.
 ## Implementation Plan
 
 ### Phase 1 — Neo4j Aura Setup
+
 1. Create account at neo4j.com/cloud/aura-free (not AWS Marketplace)
 2. Create a free instance, download credentials
 3. Update `.env.production` with `neo4j+s://` connection URI
 4. Run E2E test suite against Aura instance to validate connection
 
 ### Phase 2 — AWS Setup
+
 1. Create VPC with public subnet (EC2) and private subnet (RDS)
 2. Launch RDS `db.t3.micro` PostgreSQL instance in private subnet
 3. Configure security groups: EC2 → RDS only, no public RDS access
@@ -190,11 +199,13 @@ Neo4j Aura and Vercel are both **free** with no credit consumption.
 6. Verify health check endpoint responds
 
 ### Phase 3 — Vercel Setup (when web dashboard is built)
+
 1. Connect GitHub repository to Vercel
 2. Set `VITE_API_URL` environment variable to EC2 backend URL
 3. Deploy — automatic on every `git push` to main
 
 ### Phase 4 — Mobile Integration
+
 1. Update React Native API base URL to EC2 backend
 2. Test full end-to-end flows: player injury reporting, coach dashboard
 3. Validate JWT authentication against production backend
@@ -208,7 +219,8 @@ Neo4j Aura and Vercel are both **free** with no credit consumption.
 - **[ADR-0006: JWT Authentication](./adr-0006-jwt-authentication.md)** — Authentication must function correctly in production environment
 - **[ADR-0007: React Web Dashboard](./adr-0007-react-web-dashboard.md)** — Frontend being deployed to Vercel
 - **[ADR-0008: Testing Before Deployment](./adr-0008-testing-before-deployment.md)** — E2E tests validate Neo4j Aura connection after config change
-- **[ADR-0011: Containerisation and Infrastructure as Code](./adr-0011-containerisation.md)** — Documents Docker setup for EC2 deployment (planned)
+- **Containerisation and Infrastructure as Code ADR (planned)** — Documents Docker setup for EC2 deployment (planned)
+- **[ADR-0011: Unified Database Schema Migration Governance](./adr-0011-schema-migration-governance.md)** — Defines migration-first gating and Flyway/neo4j-migrations as mandatory schema tooling
 
 ---
 

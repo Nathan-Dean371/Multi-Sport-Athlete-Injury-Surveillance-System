@@ -50,12 +50,8 @@ docker exec -i injury-surveillance-neo4j \
 ### Step 3: Load Sample Data (Optional)
 
 ```bash
-# Add test data
-docker exec -i injury-surveillance-neo4j \
-  cypher-shell -u neo4j -p injury-surveillance-dev-password \
-  < sample-data.cypher
-
-# Expected output: "Sample data creation complete!"
+# Seed dev data into PostgreSQL + Neo4j
+.\scripts\seed-dev-data.ps1
 ```
 
 ### Step 4: Verify Setup
@@ -120,6 +116,7 @@ node test-neo4j-connection.js
    ```cypher
    SHOW CONSTRAINTS;
    ```
+
    - Should show 12 constraints
 
 ### Step 3: Load Sample Data
@@ -135,10 +132,11 @@ Update connection details in test script:
 
 ```javascript
 // In test-neo4j-connection.js, update:
-password: 'your-actual-password-here'
+password: "your-actual-password-here";
 ```
 
 Run:
+
 ```bash
 npm install neo4j-driver
 node test-neo4j-connection.js
@@ -160,6 +158,7 @@ cp .env.example .env
 ```
 
 **Docker setup:**
+
 ```env
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
@@ -174,6 +173,7 @@ POSTGRES_PASSWORD=identity-service-dev-password
 ```
 
 **Neo4j Desktop setup:**
+
 ```env
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
@@ -211,8 +211,8 @@ SHOW INDEXES YIELD * WHERE type <> 'LOOKUP' RETURN count(*);
 
 ```cypher
 // Should show all node types with counts
-MATCH (n) 
-RETURN labels(n)[0] AS Type, count(*) AS Count 
+MATCH (n)
+RETURN labels(n)[0] AS Type, count(*) AS Count
 ORDER BY Count DESC;
 ```
 
@@ -234,6 +234,7 @@ RETURN t.name, o.name, s.name;
 **Problem:** Can't connect to Neo4j
 
 **Solutions:**
+
 1. Verify Neo4j is running:
    ```bash
    docker ps  # or check Neo4j Desktop
@@ -249,6 +250,7 @@ RETURN t.name, o.name, s.name;
 **Problem:** Wrong credentials
 
 **Solutions:**
+
 1. Double-check password
 2. For Docker: password is `injury-surveillance-dev-password`
 3. For Neo4j Desktop: use the password you set
@@ -259,6 +261,7 @@ RETURN t.name, o.name, s.name;
 **Problem:** Database name is incorrect
 
 **Solution:**
+
 - Use `neo4j` as the database name (default)
 - Or create a new database in Neo4j Browser:
   ```cypher
@@ -270,6 +273,7 @@ RETURN t.name, o.name, s.name;
 **Problem:** Queries taking too long
 
 **Solutions:**
+
 1. Verify indexes are created:
    ```cypher
    SHOW INDEXES;
@@ -278,6 +282,7 @@ RETURN t.name, o.name, s.name;
    ```cypher
    PROFILE MATCH (p:Player {playerId: 'PLAYER-001'}) RETURN p;
    ```
+
    - Look for "Index Seek" in plan
 3. Ensure constraints are in place
 
@@ -310,6 +315,7 @@ ORDER BY s.updateDate;
 ### 2. Set Up Your Backend
 
 Move to your backend setup:
+
 - [ ] Copy `.env.example` to `.env` and configure
 - [ ] Install dependencies: `npm install`
 - [ ] Create Neo4j service module
@@ -319,6 +325,7 @@ Move to your backend setup:
 ### 3. Learn Cypher
 
 Resources:
+
 - Neo4j Browser built-in guide: `:play start`
 - Cypher Manual: https://neo4j.com/docs/cypher-manual/
 - APOC Documentation: https://neo4j.com/labs/apoc/
@@ -326,6 +333,7 @@ Resources:
 ### 4. Set Up the Identity Service
 
 Initialize PostgreSQL schema for PII storage:
+
 - Create tables for user identity mapping
 - Set up encryption for sensitive data
 - Configure backup procedures
@@ -337,28 +345,33 @@ Initialize PostgreSQL schema for PII storage:
 ### Starting Your Day
 
 **Docker:**
+
 ```bash
 docker-compose up -d
 # Verify: docker-compose ps
 ```
 
 **Neo4j Desktop:**
+
 - Open Desktop
 - Click "Start" on your database
 
 ### Ending Your Day
 
 **Docker:**
+
 ```bash
 docker-compose stop
 ```
 
 **Neo4j Desktop:**
+
 - Click "Stop" on your database
 
 ### Resetting Data (Fresh Start)
 
 **Docker:**
+
 ```bash
 # Stop and remove volumes (DELETES ALL DATA!)
 docker-compose down -v
@@ -377,6 +390,7 @@ docker exec -i injury-surveillance-neo4j \
 ```
 
 **Neo4j Desktop:**
+
 ```cypher
 // In Neo4j Browser - DELETES ALL DATA!
 MATCH (n) DETACH DELETE n;
@@ -430,11 +444,13 @@ Before moving to backend development, verify:
 If you encounter issues:
 
 1. **Check logs:**
+
    ```bash
    docker-compose logs -f neo4j
    ```
 
 2. **Run verification script:**
+
    ```bash
    node test-neo4j-connection.js
    ```

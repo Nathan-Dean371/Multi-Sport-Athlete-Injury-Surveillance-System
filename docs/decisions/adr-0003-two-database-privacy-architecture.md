@@ -11,6 +11,7 @@
 ## Context
 
 The Multi-Sport Athlete Injury Surveillance System handles sensitive medical and personal data, requiring strict compliance with:
+
 - **GDPR** (General Data Protection Regulation)
 - **Medical data protection standards**
 - **Privacy-by-design principles**
@@ -19,6 +20,7 @@ The Multi-Sport Athlete Injury Surveillance System handles sensitive medical and
 ### Core Privacy Challenge
 
 The system must:
+
 1. Enable injury tracking and analysis (requires relationships between entities)
 2. Protect personal identifiable information (PII) (names, emails, phone numbers)
 3. Support pseudonymization for research and analytics
@@ -29,14 +31,17 @@ The system must:
 ### Options Considered
 
 #### Option 1: Single Database with PII
+
 Store all data including PII in Neo4j with access controls.
 
 **Pros:**
+
 - Simpler architecture
 - Single source of truth
 - Easier to implement
 
 **Cons:**
+
 - PII exposed in analytical queries
 - Risk of accidental data leakage
 - Difficult to anonymize for research
@@ -44,13 +49,16 @@ Store all data including PII in Neo4j with access controls.
 - Data breach affects all information
 
 #### Option 2: Encryption-Only Approach
+
 Store encrypted PII in Neo4j.
 
 **Pros:**
+
 - Single database
 - PII protected at rest
 
 **Cons:**
+
 - Encryption keys management complexity
 - Can't query encrypted fields effectively
 - Performance overhead
@@ -58,9 +66,11 @@ Store encrypted PII in Neo4j.
 - Key compromise exposes all data
 
 #### Option 3: Two-Database Architecture (Selected)
+
 Separate Neo4j for analytical data and PostgreSQL for identity management.
 
 **Pros:**
+
 - Clear separation of concerns
 - Reduced risk surface area
 - Can anonymize Neo4j data for research
@@ -69,6 +79,7 @@ Separate Neo4j for analytical data and PostgreSQL for identity management.
 - Audit trail doesn't expose PII
 
 **Cons:**
+
 - More complex architecture
 - Need to maintain two databases
 - Mapping layer required
@@ -98,7 +109,9 @@ We will implement a **two-database privacy architecture**:
 ### Database Responsibilities
 
 #### Neo4j (Analytical Data)
+
 Stores:
+
 - **Pseudonymous identifiers** (UUIDs)
 - **Relationships** between entities
 - **Coded injury data** (body part, type, severity)
@@ -107,6 +120,7 @@ Stores:
 - **Audit logs** (access patterns, no PII)
 
 Does NOT store:
+
 - Real names
 - Email addresses
 - Phone numbers
@@ -115,7 +129,9 @@ Does NOT store:
 - Free-text medical notes
 
 #### PostgreSQL (Identity Service)
+
 Stores:
+
 - **Mapping table**: `pseudo_id → real identity`
 - **Personal information**: names, emails, phones
 - **Emergency contacts**
@@ -125,6 +141,7 @@ Stores:
 ### Data Flow
 
 1. **User Registration**:
+
    ```
    POST /auth/register
    → Create identity in PostgreSQL (get pseudo_id)
@@ -133,6 +150,7 @@ Stores:
    ```
 
 2. **Data Access**:
+
    ```
    GET /players/:pseudo_id
    → Query Neo4j for player data (relationships, injuries)
@@ -141,6 +159,7 @@ Stores:
    ```
 
 3. **Injury Reporting**:
+
    ```
    POST /injuries
    → Validate user (PostgreSQL)
@@ -283,27 +302,33 @@ export class IdentityService {
   async resolvePseudoId(pseudoId: string): Promise<PersonalInfo | null> {
     // Query PostgreSQL
     const identity = await this.postgresDb.query(
-      'SELECT first_name, last_name, email FROM identities WHERE pseudo_id = $1',
-      [pseudoId]
+      "SELECT first_name, last_name, email FROM identities WHERE pseudo_id = $1",
+      [pseudoId],
     );
-    
+
     if (!identity.rows.length) return null;
-    
+
     return {
       firstName: identity.rows[0].first_name,
       lastName: identity.rows[0].last_name,
-      email: identity.rows[0].email
+      email: identity.rows[0].email,
     };
   }
 
   async createPseudoId(personalInfo: CreateUserDto): Promise<string> {
     const pseudoId = uuidv4();
-    
+
     await this.postgresDb.query(
-      'INSERT INTO identities (pseudo_id, email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4, $5)',
-      [pseudoId, personalInfo.email, hashedPassword, personalInfo.firstName, personalInfo.lastName]
+      "INSERT INTO identities (pseudo_id, email, password_hash, first_name, last_name) VALUES ($1, $2, $3, $4, $5)",
+      [
+        pseudoId,
+        personalInfo.email,
+        hashedPassword,
+        personalInfo.firstName,
+        personalInfo.lastName,
+      ],
     );
-    
+
     return pseudoId;
   }
 }
@@ -314,6 +339,7 @@ export class IdentityService {
 ## Privacy Guarantees
 
 ### What Neo4j Can Reveal
+
 - Pseudonymous user exists
 - Number of injuries
 - Injury types and patterns
@@ -321,13 +347,16 @@ export class IdentityService {
 - Temporal patterns
 
 ### What Neo4j Cannot Reveal
+
 - Who the person is (no name)
 - How to contact them (no email/phone)
 - Exact age (only age group)
 - Specific medical details (coded only)
 
 ### Identity Resolution Authorization
+
 Only authorized roles can resolve identities:
+
 - **Coaches**: Their own team's players
 - **Medical Staff**: Players under their care
 - **Admins**: Organization-level access
@@ -341,22 +370,23 @@ All identity resolutions are logged in AuditLog (Neo4j) for compliance.
 
 - ADR-0002: Neo4j graph database selection
 - ADR-0006: JWT authentication (includes role-based access control)
+- ADR-0011: Unified database schema migration governance
 - Future: ADR on data retention policies
 
 ---
 
 ## Compliance Mapping
 
-| GDPR Requirement | Implementation |
-|------------------|----------------|
-| Data Minimization | Only essential data in each database |
+| GDPR Requirement   | Implementation                           |
+| ------------------ | ---------------------------------------- |
+| Data Minimization  | Only essential data in each database     |
 | Purpose Limitation | Clear separation: analytics vs. identity |
-| Storage Limitation | Different retention policies possible |
-| Pseudonymization | UUID-based pseudonymous identifiers |
-| Right to Access | Query PostgreSQL for user's data |
-| Right to Erasure | Delete from PostgreSQL, anonymize Neo4j |
-| Data Portability | Export from PostgreSQL |
-| Audit Trail | AuditLog nodes in Neo4j |
+| Storage Limitation | Different retention policies possible    |
+| Pseudonymization   | UUID-based pseudonymous identifiers      |
+| Right to Access    | Query PostgreSQL for user's data         |
+| Right to Erasure   | Delete from PostgreSQL, anonymize Neo4j  |
+| Data Portability   | Export from PostgreSQL                   |
+| Audit Trail        | AuditLog nodes in Neo4j                  |
 
 ---
 

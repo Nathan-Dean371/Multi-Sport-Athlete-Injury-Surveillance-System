@@ -11,7 +11,7 @@ param(
     [string]$MobileMode = 'dev'
 )
 
-Write-Host "Starting Multi-Sport Injury Surveillance System Demo..." -ForegroundColor Cyan
+Write-Host "Starting Multi-Sport Injury Surveillance System (Dev)..." -ForegroundColor Cyan
 Write-Host ""
 
 # Get the script directory (project root)
@@ -56,6 +56,9 @@ Write-Host "Opening terminals..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-File", ".\scripts\start-docker.ps1"
 
 Write-Host "  [1] Docker terminal opened (databases + backend)" -ForegroundColor Green
+
+Write-Host "  NOTE: Dev seeding is manual." -ForegroundColor Yellow
+Write-Host "        Run: .\\scripts\\seed-dev-data.ps1 (optional)" -ForegroundColor DarkGray
 
 # Terminal 2 - Mobile App
 $mobileLauncherScript = ".\scripts\start-mobile-$MobileMode.ps1"
