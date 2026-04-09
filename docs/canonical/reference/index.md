@@ -9,6 +9,8 @@ canonical: true
 
 # Reference
 
+- [Docs Governance](docs-governance.md)
+
 ## Common Commands
 
 ```powershell

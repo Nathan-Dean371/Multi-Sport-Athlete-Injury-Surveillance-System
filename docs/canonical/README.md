@@ -20,7 +20,8 @@ Status: Active staging structure. Legacy pages remain in place for now and shoul
 - [Features](features/index.md)
 - [Testing](testing/index.md)
 - [Reference](reference/index.md)
-- [Architecture Decisions (ADRs)](../decisions/README.md)
+- [Architecture Decisions (ADRs)](decisions/index.md)
+- [Docs Governance](reference/docs-governance.md)
 
 ## Scope and Source of Truth
 

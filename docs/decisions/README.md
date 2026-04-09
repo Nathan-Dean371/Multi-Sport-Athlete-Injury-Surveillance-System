@@ -176,12 +176,13 @@ Review dates are included in each ADR where appropriate.
 
 ## Related Documentation
 
-- **[Neo4j Database Documentation](../../FYP-Documentation-Repo/neo4j_database_documentation.md)**: Comprehensive database schema and query examples
+- **[Canonical ADR Overview](../canonical/decisions/index.md)**: Discovery map for ADRs and recommended reading order
+- **[Neo4j Script Documentation](../../database/neo4j/README.md)**: Database schema workflow and script catalog
 - **[Sprint Planning](../sprints/)**: Sprint-by-sprint implementation plans
 - **[Architecture Diagrams](../architecture/)**: Visual representations of system architecture
 
 ---
 
-**Last Updated**: January 2025
-**Total ADRs**: 7
-**Status Summary**: 7 Accepted, 0 Proposed, 0 Deprecated, 0 Superseded
+**Last Updated**: April 2026
+**Total ADRs**: 11
+**Status Summary**: See `docs/canonical/decisions/index.md` for current ADR status mapping.
