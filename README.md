@@ -25,16 +25,16 @@ This opens two launcher terminals that start all demo services:
 
 **Demo Resources:**
 
-- **[docs/canonical/getting-started/demo.md](docs/canonical/getting-started/demo.md)** - Canonical demo startup guide
-- **[DEMO-CHEAT-SHEET.md](DEMO-CHEAT-SHEET.md)** - Legacy demo cheat sheet (deprecated)
-- **stop-demo.ps1** - Gracefully stop all services
+- [Canonical Demo Guide](docs/canonical/getting-started/demo.md) - Primary demo startup instructions
+- [Legacy Demo Cheat Sheet](DEMO-CHEAT-SHEET.md) - Deprecated reference page
+- [Demo Stop Script](stop-demo.ps1) - Gracefully stop all services
 
 ### Test Login
 
 - **Email**: `liam.murphy@email.com`
 - **Password**: `password123`
 
-See [docs/canonical/getting-started/demo.md](docs/canonical/getting-started/demo.md) for the current demo path.
+See [Canonical Demo Guide](docs/canonical/getting-started/demo.md) for the current demo path.
 
 ---
 

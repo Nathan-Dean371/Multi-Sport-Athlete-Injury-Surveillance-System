@@ -25,10 +25,10 @@ Status: Active staging structure. Legacy pages remain in place for now and shoul
 
 ## Scope and Source of Truth
 
-- Setup/onboarding guidance: `docs/canonical/getting-started/*`
-- Feature behavior and workflows: `docs/canonical/features/*`
-- Current backend and runtime behavior: source code in `backend/src/*`
-- Neo4j script workflow and script catalog: `database/neo4j/README.md`
+- Setup/onboarding guidance: [Getting Started Hub](getting-started/index.md)
+- Feature behavior and workflows: [Features Hub](features/index.md)
+- Current backend and runtime behavior: [Backend Source](../../backend/src)
+- Neo4j script workflow and script catalog: [Neo4j Scripts README](../../database/neo4j/README.md)
 
 ## Migration Notes
 
