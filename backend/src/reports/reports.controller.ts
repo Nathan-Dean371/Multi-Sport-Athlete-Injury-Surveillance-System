@@ -73,7 +73,7 @@ export class ReportsController {
 
     // If CSV format requested, convert to CSV
     if (config.exportFormat === "csv") {
-      const csvData = await this.reportsService.exportAsCSV(report);
+      const csvData = this.reportsService.exportAsCSV(report);
       return {
         ...report,
         data: csvData as any,
@@ -95,10 +95,7 @@ export class ReportsController {
     description: "Report configuration saved successfully",
   })
   @HttpCode(HttpStatus.CREATED)
-  async saveReport(
-    @Body() dto: SaveReportDto,
-    @Req() req: any,
-  ): Promise<SavedReportDto> {
+  saveReport(@Body() dto: SaveReportDto, @Req() req: any): SavedReportDto {
     const userId = req.user?.userId || "unknown";
     this.logger.log(`Saving report "${dto.reportName}" for user ${userId}`);
     return this.reportsService.saveReport(dto, userId);
@@ -115,7 +112,7 @@ export class ReportsController {
     description: "List of saved reports",
     type: [Object],
   })
-  async getSavedReports(): Promise<SavedReportDto[]> {
+  getSavedReports(): SavedReportDto[] {
     return this.reportsService.getSavedReports();
   }
 
@@ -138,9 +135,7 @@ export class ReportsController {
     status: 404,
     description: "Report not found",
   })
-  async getSavedReport(
-    @Param("reportId") reportId: string,
-  ): Promise<SavedReportDto | null> {
+  getSavedReport(@Param("reportId") reportId: string): SavedReportDto | null {
     return this.reportsService.getSavedReport(reportId);
   }
 
@@ -166,7 +161,7 @@ export class ReportsController {
   async generateFromSaved(
     @Param("reportId") reportId: string,
   ): Promise<ReportResponseDto> {
-    const savedReport = await this.reportsService.getSavedReport(reportId);
+    const savedReport = this.reportsService.getSavedReport(reportId);
 
     if (!savedReport) {
       throw new Error(`Report ${reportId} not found`);
@@ -204,10 +199,8 @@ export class ReportsController {
     description: "Report not found",
   })
   @HttpCode(HttpStatus.OK)
-  async deleteReport(
-    @Param("reportId") reportId: string,
-  ): Promise<{ deleted: boolean }> {
-    const deleted = await this.reportsService.deleteReport(reportId);
+  deleteReport(@Param("reportId") reportId: string): { deleted: boolean } {
+    const deleted = this.reportsService.deleteReport(reportId);
     return { deleted };
   }
 
@@ -222,7 +215,7 @@ export class ReportsController {
     status: 200,
     description: "Report exported successfully",
   })
-  async export(@Body() dto: ReportQueryDto) {
+  export(@Body() dto: ReportQueryDto) {
     return this.reportsService.generateReport(dto);
   }
 }

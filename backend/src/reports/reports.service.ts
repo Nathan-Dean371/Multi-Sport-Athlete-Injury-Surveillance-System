@@ -16,7 +16,7 @@ export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
 
   // In-memory storage for saved reports (in production, use a database)
-  private savedReports: Map<string, SavedReportDto> = new Map();
+  private savedReports = new Map<string, SavedReportDto>();
 
   constructor(@Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver) {}
 
@@ -228,7 +228,7 @@ export class ReportsService {
         query = `${baseQuery} AND i.severity = 'Critical' RETURN count(i) AS value`;
         break;
 
-      case ReportMetric.INJURIES_BY_BODY_PART:
+      case ReportMetric.INJURIES_BY_BODY_PART: {
         query = `
           ${baseQuery}
           RETURN i.bodyPart AS category, count(i) AS count
@@ -239,12 +239,13 @@ export class ReportsService {
         bodyPartResult.records.forEach((record) => {
           const category = record.get("category");
           const count = record.get("count").toNumber?.() || record.get("count");
-          if (category) breakdown![category] = count;
+          if (category) breakdown[category] = count;
         });
         value = Object.keys(breakdown).length;
         return { metric, value, breakdown };
+      }
 
-      case ReportMetric.INJURIES_BY_TYPE:
+      case ReportMetric.INJURIES_BY_TYPE: {
         query = `
           ${baseQuery}
           RETURN i.injuryType AS category, count(i) AS count
@@ -255,10 +256,11 @@ export class ReportsService {
         typeResult.records.forEach((record) => {
           const category = record.get("category");
           const count = record.get("count").toNumber?.() || record.get("count");
-          if (category) breakdown![category] = count;
+          if (category) breakdown[category] = count;
         });
         value = Object.keys(breakdown).length;
         return { metric, value, breakdown };
+      }
 
       case ReportMetric.PLAYERS_AFFECTED:
         query = `
@@ -393,7 +395,7 @@ export class ReportsService {
   /**
    * Format report data as CSV
    */
-  async exportAsCSV(report: ReportResponseDto): Promise<string> {
+  exportAsCSV(report: ReportResponseDto): string {
     let csv = "Metric,Value\n";
 
     report.data.forEach((item) => {
@@ -413,10 +415,7 @@ export class ReportsService {
   /**
    * Save a report configuration
    */
-  async saveReport(
-    dto: SaveReportDto,
-    userId: string,
-  ): Promise<SavedReportDto> {
+  saveReport(dto: SaveReportDto, userId: string): SavedReportDto {
     const reportId = `report-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
 
@@ -439,21 +438,21 @@ export class ReportsService {
   /**
    * Get all saved reports
    */
-  async getSavedReports(): Promise<SavedReportDto[]> {
+  getSavedReports(): SavedReportDto[] {
     return Array.from(this.savedReports.values());
   }
 
   /**
    * Get a specific saved report
    */
-  async getSavedReport(reportId: string): Promise<SavedReportDto | null> {
+  getSavedReport(reportId: string): SavedReportDto | null {
     return this.savedReports.get(reportId) || null;
   }
 
   /**
    * Delete a saved report
    */
-  async deleteReport(reportId: string): Promise<boolean> {
+  deleteReport(reportId: string): boolean {
     return this.savedReports.delete(reportId);
   }
 

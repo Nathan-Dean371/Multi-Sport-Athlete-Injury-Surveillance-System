@@ -196,12 +196,10 @@ export class AuthService {
       await client.query("BEGIN");
 
       // Insert into appropriate identity table
-      let identityTable: string;
       let identityResult;
 
       switch (identityType) {
         case "player":
-          identityTable = "player_identities";
           identityResult = await client.query(
             `INSERT INTO player_identities 
              (pseudonym_id, neo4j_player_id, first_name, last_name, date_of_birth, email, is_active, gdpr_consent_given, gdpr_consent_date)
@@ -218,7 +216,6 @@ export class AuthService {
           );
           break;
         case "coach":
-          identityTable = "coach_identities";
           identityResult = await client.query(
             `INSERT INTO coach_identities 
              (pseudonym_id, neo4j_coach_id, first_name, last_name, email, is_active)
@@ -234,7 +231,6 @@ export class AuthService {
           );
           break;
         case "admin":
-          identityTable = "admin_identities";
           identityResult = await client.query(
             `INSERT INTO admin_identities 
              (pseudonym_id, neo4j_admin_id, first_name, last_name, email, is_active)
@@ -250,7 +246,6 @@ export class AuthService {
           );
           break;
         case "parent":
-          identityTable = "parent_identities";
           identityResult = await client.query(
             `INSERT INTO parent_identities 
              (pseudonym_id, first_name, last_name, email, created_at, updated_at)

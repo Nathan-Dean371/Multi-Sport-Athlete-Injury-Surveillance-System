@@ -9,7 +9,6 @@ import {
   ResolveInjuryDto,
   QueryInjuriesDto,
 } from "./dto/injury.dto";
-import { int } from "neo4j-driver";
 
 describe("InjuriesService", () => {
   let service: InjuriesService;
