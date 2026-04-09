@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -65,6 +65,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
     control,
     handleSubmit,
     formState: { errors },
+    register,
     setValue,
     watch,
     trigger,
@@ -72,6 +73,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
   } = useForm<CreateInjuryDto>({
     resolver: yupResolver(schema) as any,
     mode: "onChange",
+    shouldUnregister: false,
     defaultValues: {
       playerId: routePlayerId || user?.pseudonymId || "",
       injuryType: undefined,
@@ -93,6 +95,15 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
   const side = watch("side");
   const severity = watch("severity");
 
+  // Ensure non-text-input fields are registered so their values persist across
+  // step unmounts and can be validated/triggered reliably.
+  useEffect(() => {
+    register("injuryType" as any);
+    register("bodyPart" as any);
+    register("side" as any);
+    register("injuryDate" as any);
+  }, [register]);
+
   console.log("Form values:", {
     injuryType,
     bodyPart,
@@ -109,10 +120,10 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
     // Validate current step before proceeding
     switch (currentStep) {
       case 1:
-        isValid = await trigger("injuryType");
+        isValid = await trigger(["bodyPart", "side"]);
         break;
       case 2:
-        isValid = await trigger(["bodyPart", "side"]);
+        isValid = await trigger("injuryType");
         break;
       case 3:
         isValid = await trigger("severity");
@@ -189,6 +200,52 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
     }
   };
 
+  const handleInvalidSubmit = (formErrors: typeof errors) => {
+    // If submission is blocked by validation, surface the error and move the
+    // user to the first step that needs attention.
+    if (formErrors.bodyPart || formErrors.side) {
+      setCurrentStep(1);
+      setSnackbarMessage(
+        formErrors.bodyPart?.message ||
+          formErrors.side?.message ||
+          "Please select a body part",
+      );
+      setSnackbarVisible(true);
+      return;
+    }
+
+    if (formErrors.injuryType) {
+      setCurrentStep(2);
+      setSnackbarMessage(
+        formErrors.injuryType.message || "Please select an injury type",
+      );
+      setSnackbarVisible(true);
+      return;
+    }
+
+    if (formErrors.severity) {
+      setCurrentStep(3);
+      setSnackbarMessage(
+        formErrors.severity.message || "Please select a severity",
+      );
+      setSnackbarVisible(true);
+      return;
+    }
+
+    if (formErrors.injuryDate) {
+      setCurrentStep(4);
+      setSnackbarMessage(
+        formErrors.injuryDate.message || "Please select an injury date",
+      );
+      setSnackbarVisible(true);
+      return;
+    }
+
+    // Fallback
+    setSnackbarMessage("Please review the form and try again");
+    setSnackbarVisible(true);
+  };
+
   const injuryTypes = Object.values(InjuryType);
   const bodyParts = Object.values(BodyPart);
   const sides = Object.values(Side);
@@ -197,50 +254,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
-        // Step 1: Injury Type (Muscle Type)
-        return (
-          <View style={styles.stepContainer}>
-            <Text variant="headlineMedium" style={styles.stepTitle}>
-              What type of injury?
-            </Text>
-            <Text variant="bodyLarge" style={styles.stepSubtitle}>
-              Select the muscle or injury type
-            </Text>
-
-            <Controller
-              control={control}
-              name="injuryType"
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.optionsGrid}>
-                  {injuryTypes.map((type) => (
-                    <Button
-                      key={type}
-                      mode={value === type ? "contained" : "outlined"}
-                      onPress={() => {
-                        console.log("Injury type selected:", type);
-                        onChange(type);
-                      }}
-                      style={styles.gridButton}
-                      contentStyle={styles.gridButtonContent}
-                      labelStyle={styles.gridButtonLabel}
-                      textColor={value === type ? undefined : "#000000"}
-                    >
-                      {type}
-                    </Button>
-                  ))}
-                </View>
-              )}
-            />
-            {errors.injuryType && (
-              <Text variant="bodySmall" style={styles.errorText}>
-                {errors.injuryType.message}
-              </Text>
-            )}
-          </View>
-        );
-
-      case 2:
-        // Step 2: Body Part + Side (Visual Diagram)
+        // Step 1: Body Part + Side (Visual Diagram)
         return (
           <View style={styles.stepContainer}>
             <Text variant="headlineMedium" style={styles.stepTitle}>
@@ -265,6 +279,45 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
             {errors.bodyPart && (
               <Text variant="bodySmall" style={styles.errorText}>
                 {errors.bodyPart.message}
+              </Text>
+            )}
+          </View>
+        );
+
+      case 2:
+        // Step 2: Injury Type
+        return (
+          <View style={styles.stepContainer}>
+            <Text variant="headlineMedium" style={styles.stepTitle}>
+              What type of injury?
+            </Text>
+            <Text variant="bodyLarge" style={styles.stepSubtitle}>
+              Select the muscle or injury type
+            </Text>
+
+            <View style={styles.optionsGrid}>
+              {injuryTypes.map((type) => (
+                <Button
+                  key={type}
+                  mode={injuryType === type ? "contained" : "outlined"}
+                  onPress={() => {
+                    console.log("Injury type selected:", type);
+                    setValue("injuryType", type as any, {
+                      shouldValidate: true,
+                    });
+                  }}
+                  style={styles.gridButton}
+                  contentStyle={styles.gridButtonContent}
+                  labelStyle={styles.gridButtonLabel}
+                  textColor={injuryType === type ? undefined : "#000000"}
+                >
+                  {type}
+                </Button>
+              ))}
+            </View>
+            {errors.injuryType && (
+              <Text variant="bodySmall" style={styles.errorText}>
+                {errors.injuryType.message}
               </Text>
             )}
           </View>
@@ -550,7 +603,7 @@ export default function ReportInjuryScreen({ navigation, route }: any) {
           ) : (
             <Button
               mode="contained"
-              onPress={handleSubmit(onSubmit)}
+              onPress={handleSubmit(onSubmit, handleInvalidSubmit)}
               loading={loading}
               disabled={loading}
               style={styles.submitButton}

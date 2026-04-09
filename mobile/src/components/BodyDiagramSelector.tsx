@@ -1,15 +1,16 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
+import React, { useCallback, useState } from "react";
+import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { Text } from "react-native-paper";
 import Svg, {
-  G,
   Circle,
-  Rect,
-  Path,
-  Line,
   Ellipse,
+  G,
+  Line,
+  Path,
+  Rect,
   Text as SvgText,
 } from "react-native-svg";
+
 import { BodyPart, Side } from "../types/injury.types";
 
 interface BodyDiagramSelectorProps {
@@ -183,101 +184,169 @@ export default function BodyDiagramSelector({
   onBodyPartSelect,
   onSideSelect,
 }: BodyDiagramSelectorProps) {
-  const handleZonePress = (zone: Zone) => {
-    onBodyPartSelect(zone.bodyPart);
-    onSideSelect(zone.side);
-  };
+  const [diagramSize, setDiagramSize] = useState({ width: 0, height: 0 });
 
-  const isZoneSelected = (zone: Zone) => {
-    return selectedBodyPart === zone.bodyPart && selectedSide === zone.side;
-  };
+  const handleZonePress = useCallback(
+    (zone: Zone) => {
+      onBodyPartSelect(zone.bodyPart);
+      onSideSelect(zone.side);
+    },
+    [onBodyPartSelect, onSideSelect],
+  );
+
+  const isZoneSelected = useCallback(
+    (zone: Zone) => {
+      return selectedBodyPart === zone.bodyPart && selectedSide === zone.side;
+    },
+    [selectedBodyPart, selectedSide],
+  );
+
+  const pickZoneAt = useCallback((x: number, y: number) => {
+    // Choose the closest zone whose ellipse contains the point.
+    let best: { zone: Zone; score: number } | null = null;
+
+    for (const zone of zones) {
+      const dx = x - zone.cx;
+      const dy = y - zone.cy;
+
+      // Un-rotate the point around the ellipse center.
+      const theta = (-zone.angle * Math.PI) / 180;
+      const cos = Math.cos(theta);
+      const sin = Math.sin(theta);
+      const rx = dx * cos - dy * sin;
+      const ry = dx * sin + dy * cos;
+
+      const nx = rx / zone.rx;
+      const ny = ry / zone.ry;
+      const score = nx * nx + ny * ny;
+
+      if (score <= 1) {
+        if (!best || score < best.score) best = { zone, score };
+      }
+    }
+
+    return best?.zone ?? null;
+  }, []);
+
+  const androidOverlayEnabled = Platform.OS === "android";
 
   return (
     <View style={styles.container}>
-      <Svg viewBox="0 0 300 500" style={styles.svg}>
-        {/* BASE BODY DRAWING (Segmented style) */}
-        <G fill="#9CA3AF" stroke="#9CA3AF">
-          {/* Head & Neck */}
-          <Circle cx="150" cy="45" r="22" />
-          <Rect x="142" y="65" width="16" height="20" strokeWidth="0" />
+      <View
+        style={styles.diagramWrapper}
+        onLayout={(e) => {
+          setDiagramSize({
+            width: e.nativeEvent.layout.width,
+            height: e.nativeEvent.layout.height,
+          });
+        }}
+      >
+        <Svg viewBox="0 0 300 500" style={styles.svg}>
+          {/* BASE BODY DRAWING (Segmented style) */}
+          <G fill="#9CA3AF" stroke="#9CA3AF">
+            {/* Head & Neck */}
+            <Circle cx="150" cy="45" r="22" />
+            <Rect x="142" y="65" width="16" height="20" strokeWidth="0" />
 
-          {/* Shoulders */}
-          <Circle cx="105" cy="95" r="16" />
-          <Circle cx="195" cy="95" r="16" />
+            {/* Shoulders */}
+            <Circle cx="105" cy="95" r="16" />
+            <Circle cx="195" cy="95" r="16" />
 
-          {/* Torso */}
-          <Rect x="120" y="90" width="60" height="45" strokeWidth="0" />
-          <Path
-            d="M 120 140 L 180 140 L 180 195 L 165 210 L 135 210 L 120 195 Z"
-            strokeWidth="0"
-          />
+            {/* Torso */}
+            <Rect x="120" y="90" width="60" height="45" strokeWidth="0" />
+            <Path
+              d="M 120 140 L 180 140 L 180 195 L 165 210 L 135 210 L 120 195 Z"
+              strokeWidth="0"
+            />
 
-          {/* Limbs (Using thick lines for crisp joints) */}
-          <G strokeWidth="26" strokeLinecap="butt">
-            <Line x1="100" y1="105" x2="70" y2="175" />
-            <Line x1="65" y1="185" x2="35" y2="260" />
+            {/* Limbs (Using thick lines for crisp joints) */}
+            <G strokeWidth="26" strokeLinecap="butt">
+              <Line x1="100" y1="105" x2="70" y2="175" />
+              <Line x1="65" y1="185" x2="35" y2="260" />
 
-            <Line x1="200" y1="105" x2="230" y2="175" />
-            <Line x1="235" y1="185" x2="265" y2="260" />
+              <Line x1="200" y1="105" x2="230" y2="175" />
+              <Line x1="235" y1="185" x2="265" y2="260" />
 
-            <Line x1="135" y1="215" x2="115" y2="335" />
-            <Line x1="110" y1="345" x2="90" y2="470" />
+              <Line x1="135" y1="215" x2="115" y2="335" />
+              <Line x1="110" y1="345" x2="90" y2="470" />
 
-            <Line x1="165" y1="215" x2="185" y2="335" />
-            <Line x1="190" y1="345" x2="210" y2="470" />
-          </G>
-        </G>
-
-        {/* Little red decorative dot */}
-        <Circle cx="50" cy="450" r="2" fill="red" />
-
-        {/* INTERACTIVE MAPPED ZONES */}
-        {zones.map((zone) => {
-          const isActive = isZoneSelected(zone);
-
-          return (
-            <G key={zone.id}>
-              <Ellipse
-                cx={zone.cx}
-                cy={zone.cy}
-                rx={zone.rx}
-                ry={zone.ry}
-                rotation={zone.angle}
-                origin={`${zone.cx}, ${zone.cy}`}
-                fill={isActive ? "rgba(192, 132, 252, 0.3)" : "transparent"}
-                stroke={isActive ? "#A855F7" : "#BAE6FD"}
-                strokeWidth={isActive ? 3 : 1.5}
-                strokeDasharray={isActive ? undefined : "5,5"}
-                onPress={() => handleZonePress(zone)}
-              />
-
-              {/* Attached Tooltip for Active Zone */}
-              {isActive && (
-                <G>
-                  <Rect
-                    x={zone.cx - 40}
-                    y={zone.cy - 14}
-                    width="80"
-                    height="28"
-                    fill="#374151"
-                    rx="6"
-                  />
-                  <SvgText
-                    x={zone.cx}
-                    y={zone.cy + 5}
-                    fill="white"
-                    fontSize="11"
-                    fontWeight="bold"
-                    textAnchor="middle"
-                  >
-                    {zone.label}
-                  </SvgText>
-                </G>
-              )}
+              <Line x1="165" y1="215" x2="185" y2="335" />
+              <Line x1="190" y1="345" x2="210" y2="470" />
             </G>
-          );
-        })}
-      </Svg>
+          </G>
+
+          {/* Little red decorative dot */}
+          <Circle cx="50" cy="450" r="2" fill="red" />
+
+          {/* INTERACTIVE MAPPED ZONES */}
+          {zones.map((zone) => {
+            const isActive = isZoneSelected(zone);
+
+            return (
+              <G key={zone.id}>
+                <Ellipse
+                  cx={zone.cx}
+                  cy={zone.cy}
+                  rx={zone.rx}
+                  ry={zone.ry}
+                  rotation={zone.angle}
+                  origin={`${zone.cx}, ${zone.cy}`}
+                  // NOTE: On Android, `fill="transparent"` can make the shape effectively untouchable
+                  // (only the stroke gets hit-tested). Use a near-transparent fill to keep taps reliable.
+                  fill={
+                    isActive
+                      ? "rgba(192, 132, 252, 0.3)"
+                      : "rgba(255, 255, 255, 0.01)"
+                  }
+                  stroke={isActive ? "#A855F7" : "#BAE6FD"}
+                  strokeWidth={isActive ? 3 : 1.5}
+                  strokeDasharray={isActive ? undefined : "5,5"}
+                  onPress={() => handleZonePress(zone)}
+                />
+
+                {/* Attached Tooltip for Active Zone */}
+                {isActive && (
+                  <G>
+                    <Rect
+                      x={zone.cx - 40}
+                      y={zone.cy - 14}
+                      width="80"
+                      height="28"
+                      fill="#374151"
+                      rx="6"
+                    />
+                    <SvgText
+                      x={zone.cx}
+                      y={zone.cy + 5}
+                      fill="white"
+                      fontSize="11"
+                      fontWeight="bold"
+                      textAnchor="middle"
+                    >
+                      {zone.label}
+                    </SvgText>
+                  </G>
+                )}
+              </G>
+            );
+          })}
+        </Svg>
+
+        {/* Android fallback: map taps to zones (avoids SVG hit-testing quirks) */}
+        {androidOverlayEnabled && (
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={(e) => {
+              if (!diagramSize.width || !diagramSize.height) return;
+
+              const x = (e.nativeEvent.locationX / diagramSize.width) * 300;
+              const y = (e.nativeEvent.locationY / diagramSize.height) * 500;
+              const zone = pickZoneAt(x, y);
+              if (zone) handleZonePress(zone);
+            }}
+          />
+        )}
+      </View>
 
       {selectedBodyPart && (
         <View style={styles.selectionInfo}>
@@ -295,6 +364,10 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     paddingVertical: 16,
+  },
+  diagramWrapper: {
+    width: "100%",
+    height: 400,
   },
   svg: {
     width: "100%",
