@@ -133,14 +133,16 @@ export class ParentsService {
       const pseudo =
         dto.pseudonymId || `parent-${randomBytes(6).toString("hex")}`;
       const parentIdentityResult = await client.query(
-        `INSERT INTO parent_identities (pseudonym_id, first_name, last_name, email, phone, created_at, updated_at)
-         VALUES ($1,$2,$3,$4,$5,NOW(),NOW())
+        `INSERT INTO parent_identities (pseudonym_id, neo4j_parent_id, first_name, last_name, email, phone, phone_number, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())
          RETURNING parent_id`,
         [
+          pseudo,
           pseudo,
           dto.firstName,
           dto.lastName,
           inv.parent_email || null,
+          inv.parent_phone || null,
           inv.parent_phone || null,
         ],
       );
@@ -257,7 +259,7 @@ export class ParentsService {
              pi.first_name,
              pi.last_name,
              pi.email,
-             pi.phone,
+             COALESCE(pi.phone, pi.phone_number) as phone,
              COALESCE(ua.is_active, true) as is_active
            FROM parent_identities pi
            LEFT JOIN user_accounts ua ON ua.pseudonym_id = pi.pseudonym_id AND ua.identity_type = 'parent'
