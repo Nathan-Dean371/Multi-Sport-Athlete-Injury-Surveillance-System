@@ -1,10 +1,8 @@
 # ============================================================================
 # Multi-Sport Athlete Injury Surveillance System
-# Demo Startup Script
+# Dev Startup Script
 # ============================================================================
-# This script opens two PowerShell terminals to run:
-#   1. Docker containers (databases + backend API)
-#   2. Mobile app (React Native/Expo)
+#
 # ============================================================================
 
 [CmdletBinding()]
