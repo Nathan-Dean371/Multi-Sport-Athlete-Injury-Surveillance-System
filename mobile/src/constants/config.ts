@@ -18,6 +18,13 @@ const getExpoHost = (): string | undefined => {
 };
 
 const getDevApiUrl = (): string => {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    const browserHost = window.location.hostname;
+    if (!isLocalhostHost(browserHost)) {
+      return `http://${browserHost}:3000`;
+    }
+  }
+
   const expoHost = getExpoHost();
   if (expoHost) {
     return `http://${expoHost}:3000`;
@@ -30,10 +37,46 @@ const getDevApiUrl = (): string => {
   return "http://localhost:3000";
 };
 
+const isLocalhostHost = (host: string): boolean => {
+  return ["localhost", "127.0.0.1", "::1"].includes(host.toLowerCase());
+};
+
+const rewriteLocalhostApiUrl = (urlValue: string): string => {
+  try {
+    const parsed = new URL(urlValue);
+    if (!isLocalhostHost(parsed.hostname)) {
+      return urlValue;
+    }
+
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const browserHost = window.location.hostname;
+      if (!isLocalhostHost(browserHost)) {
+        parsed.hostname = browserHost;
+        return parsed.toString().replace(/\/+$/, "");
+      }
+    }
+
+    const expoHost = getExpoHost();
+    if (expoHost) {
+      parsed.hostname = expoHost;
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    if (Platform.OS === "android") {
+      parsed.hostname = "10.0.2.2";
+      return parsed.toString().replace(/\/+$/, "");
+    }
+
+    return urlValue;
+  } catch {
+    return urlValue;
+  }
+};
+
 const getApiUrl = (): string => {
   const manualApiUrl = expoEnv.EXPO_PUBLIC_API_URL?.trim();
   if (manualApiUrl) {
-    return manualApiUrl;
+    return rewriteLocalhostApiUrl(manualApiUrl);
   }
 
   const appMode = (expoEnv.EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase();
