@@ -1,5 +1,8 @@
 # Test Database Setup - Quick Reference
 
+> Legacy page: this quick reference is deprecated.
+> Use `docs/canonical/testing/index.md` for canonical test setup guidance.
+
 ## Overview
 
 The test environment now uses completely isolated databases:

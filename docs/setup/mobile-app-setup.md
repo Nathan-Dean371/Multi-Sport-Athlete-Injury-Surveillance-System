@@ -1,5 +1,8 @@
 # Mobile App Setup Guide
 
+> Legacy page: this setup guide is deprecated.
+> Use `docs/canonical/getting-started/mobile.md` for the canonical mobile setup path.
+
 **Multi-Sport Athlete Injury Surveillance System - React Native Mobile App**
 
 This guide covers setting up and running the mobile app on physical devices, emulators, and simulators.

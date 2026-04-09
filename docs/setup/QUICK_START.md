@@ -1,5 +1,8 @@
 # Quick Start Guide - Local Neo4j Setup
 
+> Legacy page: this setup guide is deprecated.
+> Use `docs/canonical/getting-started/index.md` for canonical onboarding.
+
 **Multi-Sport Athlete Injury Surveillance System**
 
 This guide will get your local development environment up and running in ~15 minutes.

@@ -1,5 +1,8 @@
 # Enhanced Coach Injury Reporting Feature
 
+> Legacy page: this feature deep-dive is deprecated.
+> Use `docs/canonical/features/coach-injury-reporting.md` for the canonical feature summary.
+
 ## Overview
 The injury reporting system has been enhanced to provide coaches with a streamlined workflow for reporting injuries, including both quick pitch-side reports and detailed medical reports.
 

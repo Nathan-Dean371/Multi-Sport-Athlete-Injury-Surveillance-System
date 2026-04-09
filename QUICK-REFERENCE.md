@@ -1,5 +1,8 @@
 # DEMO QUICK REFERENCE CARD
 
+> Legacy page: this card is deprecated.
+> Use `docs/canonical/getting-started/demo.md` for current demo instructions.
+
 ## CREDENTIALS
 
 ### Neo4j (http://localhost:7474)
@@ -38,7 +41,7 @@ Password: password123
 | -------------- | ------------------------- |
 | Frontend       | http://localhost:3001     |
 | Backend API    | http://localhost:3000     |
-| Swagger Docs   | http://localhost:3000/api |
+| Swagger Docs   | http://localhost:3000/api/docs |
 | Neo4j Browser  | http://localhost:7474     |
 | pgAdmin        | http://localhost:5050     |
 | **Mobile App** | **Expo Go (scan QR)**     |

@@ -2,6 +2,8 @@
 
 NestJS REST API for injury tracking, user management, and analytics with Neo4j graph database integration.
 
+Canonical project docs are now in `docs/canonical/` from the repository root.
+
 ---
 
 ## Table of Contents
@@ -127,15 +129,13 @@ NEO4J_DATABASE=neo4j
 # PostgreSQL Configuration (Identity Database)
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your-postgres-password
-POSTGRES_DB=injury_surveillance_identity
+POSTGRES_USER=identity_admin
+POSTGRES_PASSWORD=identity-service-dev-password
+POSTGRES_DB=identity_service
 
 # JWT Configuration
 JWT_SECRET=your-super-secret-jwt-key-change-in-production
-JWT_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=your-super-secret-refresh-key-change-in-production
-JWT_REFRESH_EXPIRES_IN=7d
+JWT_EXPIRES_IN=1d
 
 # Firebase Cloud Messaging (Push Notifications)
 FIREBASE_PROJECT_ID=your-firebase-project-id
@@ -222,10 +222,11 @@ The Swagger UI provides:
 
 ### Additional Documentation
 
-Comprehensive API documentation is also available in the documentation repository:
+Project documentation is consolidated in this repository:
 
-- **[Interactive HTML Documentation](https://nathan-dean371.github.io/FYP-Documentation-Repo/Html%20Docs/api_endpoints.html)**
-- **[Neo4j Database Documentation](https://github.com/Nathan-Dean371/FYP-Documentation-Repo/blob/main/neo4j_database_documentation.md)**
+- `docs/canonical/getting-started/backend.md`
+- `docs/canonical/features/authentication.md`
+- `database/neo4j/README.md`
 
 ### Example: Using Swagger Decorators
 

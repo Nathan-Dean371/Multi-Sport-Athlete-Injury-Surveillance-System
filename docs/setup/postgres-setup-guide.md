@@ -1,5 +1,8 @@
 # PostgreSQL Identity Service Setup
 
+> Legacy page: this setup guide is deprecated.
+> Use `docs/canonical/getting-started/databases.md` for the canonical database setup flow.
+
 ## Overview
 
 The PostgreSQL database stores **real** personally identifiable information (PII) that maps to **pseudonymous IDs** used in Neo4j. This separation ensures GDPR compliance and privacy-by-design.

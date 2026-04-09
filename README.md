@@ -2,6 +2,8 @@
 
 This Repo contains all work for my FYP of my Bachelor of Science (Honours) in Computing in Software Development Y:4.
 
+Canonical docs now live in this repository under `docs/`.
+
 ## Quick Demo Start
 
 Perfect for in-person demonstrations! Start all services with one command:
@@ -16,15 +18,15 @@ Use AWS backend for mobile during demo startup:
 .\start-demo.ps1 -MobileMode prod
 ```
 
-This opens three terminals running:
+This opens two launcher terminals that start all demo services:
 
-- **Terminal 1**: Docker databases (Neo4j + PostgreSQL)
-- **Terminal 2**: Backend API (NestJS on port 3000)
-- **Terminal 3**: Mobile app (Expo, dev mode by default)
+- **Terminal 1**: Docker services (databases + backend startup workflow)
+- **Terminal 2**: Mobile app launcher (Expo)
 
 **Demo Resources:**
 
-- **[DEMO-CHEAT-SHEET.md](DEMO-CHEAT-SHEET.md)** - All credentials, queries, and commands for demos
+- **[docs/canonical/getting-started/demo.md](docs/canonical/getting-started/demo.md)** - Canonical demo startup guide
+- **[DEMO-CHEAT-SHEET.md](DEMO-CHEAT-SHEET.md)** - Legacy demo cheat sheet (deprecated)
 - **stop-demo.ps1** - Gracefully stop all services
 
 ### Test Login
@@ -32,7 +34,7 @@ This opens three terminals running:
 - **Email**: `liam.murphy@email.com`
 - **Password**: `password123`
 
-See [DEMO-CHEAT-SHEET.md](DEMO-CHEAT-SHEET.md) for Neo4j queries, API endpoints, and more!
+See [docs/canonical/getting-started/demo.md](docs/canonical/getting-started/demo.md) for the current demo path.
 
 ---
 
@@ -47,6 +49,7 @@ injury-surveillance-system/
 ├── database/            # Database schemas and sample data
 ├── shared/              # Shared TypeScript types/utils
 ├── docs/
+│   ├── canonical/      # Canonical docs tree (staging)
 │   ├── sprints/        # Sprint planning & reviews
 │   ├── decisions/      # Architecture Decision Records (ADRs)
 │   ├── setup/          # Setup guides
@@ -60,4 +63,7 @@ injury-surveillance-system/
 
 ## Documentation
 
-Project documentation has been split into a dedicated repository: [FYP Documentation Repo](https://github.com/Nathan-Dean371/FYP-Documentation-Repo). Use this source repo for code and the documentation repo for all design, decisions, and guides.
+- **Primary index:** [docs/README.md](docs/README.md)
+- **Canonical staging tree:** [docs/canonical/README.md](docs/canonical/README.md)
+
+The external `FYP-Documentation-Repo-main/` folder is retained only as migration source material during consolidation.

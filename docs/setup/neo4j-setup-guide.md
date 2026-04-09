@@ -1,5 +1,8 @@
 # Neo4j Setup Guide for Multi-Sport Athlete Injury Surveillance System
 
+> Legacy page: this setup guide is deprecated.
+> Use `docs/canonical/getting-started/databases.md` and `database/neo4j/README.md` for canonical Neo4j workflow guidance.
+
 This guide will walk you through setting up Neo4j for your FYP project, from installation to schema creation.
 
 ## Table of Contents

@@ -1,5 +1,8 @@
 # Database Connection Tests Documentation
 
+> Legacy page: this testing guide is deprecated.
+> Use `docs/canonical/testing/index.md` for canonical testing guidance.
+
 This document provides a comprehensive breakdown of all database connection tests, their scope, and the functionality they validate.
 
 ## Overview

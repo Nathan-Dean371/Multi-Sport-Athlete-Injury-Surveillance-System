@@ -1,5 +1,12 @@
-# web
+# Web Workspace
 
-React admin dashboard for coaches and administrators.
+Legacy module README restored during documentation migration.
 
-This folder will contain the React (or Next.js) admin dashboard code.
+The admin dashboard currently lives under:
+
+- `web/admin-dashboard/`
+
+Canonical project documentation is in:
+
+- `docs/canonical/README.md`
+- `docs/canonical/features/report-builder.md`

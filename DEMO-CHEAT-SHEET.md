@@ -1,5 +1,8 @@
 # Demo Cheat Sheet
 
+> Legacy page: this guide is deprecated.
+> Use `docs/canonical/getting-started/demo.md` as the canonical demo path.
+
 Quick reference for in-person demonstrations of the Multi-Sport Athlete Injury Surveillance System.
 
 ---
@@ -10,7 +13,7 @@ Quick reference for in-person demonstrations of the Multi-Sport Athlete Injury S
 ```powershell
 .\start-demo.ps1
 ```
-This will open three terminals for databases, backend, and frontend.
+This launches the demo startup workflow. See the canonical guide for the current terminal breakdown.
 
 ### Option 2: Manual Start
 ```powershell
@@ -60,7 +63,7 @@ All test accounts use password: **`password123`**
 
 ### API Access
 - **Backend URL**: http://localhost:3000
-- **Swagger API Docs**: http://localhost:3000/api
+- **Swagger API Docs**: http://localhost:3000/api/docs
 - **Frontend URL**: http://localhost:3001
 
 ---
@@ -282,7 +285,7 @@ Authorization: Bearer <token>
    - Show relationship patterns
 
 3. **API Testing**
-   - Open Swagger UI (http://localhost:3000/api)
+   - Open Swagger UI (http://localhost:3000/api/docs)
    - Test authentication endpoint
    - Show protected endpoints with JWT
 
@@ -332,7 +335,7 @@ taskkill /PID <pid> /F
 - Full Setup Guide: `docs/setup/QUICK_START.md`
 - Architecture Decisions: `docs/decisions/`
 - Database Schemas: `database/`
-- API Documentation: http://localhost:3000/api (when running)
+- API Documentation: http://localhost:3000/api/docs (when running)
 
 ---
 

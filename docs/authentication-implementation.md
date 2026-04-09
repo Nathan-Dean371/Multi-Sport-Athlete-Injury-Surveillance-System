@@ -1,5 +1,8 @@
 # Authentication Module Implementation
 
+> Legacy page: this implementation write-up is deprecated.
+> Use `docs/canonical/features/authentication.md` for current canonical behavior.
+
 **Status:** ✅ Complete  
 **Date:** January 14, 2026  
 **Author:** Development Team
@@ -174,14 +177,14 @@ Authenticates existing user and returns JWT token.
   "identityType": "player",
   "pseudonymId": "PSY-PLAYER-A1B2C3D4",
   "iat": 1736881234,    // Issued at
-  "exp": 1736967634     // Expiry (24 hours)
+  "exp": 1736967634     // Expiry (1 day)
 }
 ```
 
 ### Token Configuration
 
 - **Algorithm:** HS256 (HMAC-SHA256)
-- **Expiration:** 24 hours
+- **Expiration:** 1 day
 - **Secret:** Configurable via environment variable
 - **Header:** `Authorization: Bearer <token>`
 
@@ -209,7 +212,7 @@ const isValid = await bcrypt.compare(plainPassword, storedHash);
 - **Brute Force Prevention:** Lock account after 5 failed attempts
 - **Status Checks:** Validates `is_active` and `is_locked` flags
 - **Session Tracking:** Records login timestamps and IP addresses
-- **Token Expiry:** 24-hour JWT expiration enforced
+- **Token Expiry:** 1-day JWT expiration enforced
 
 ### Route Protection
 

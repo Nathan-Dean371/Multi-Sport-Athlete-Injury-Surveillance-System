@@ -1,29 +1,23 @@
 # Documentation
 
-Project documentation including setup guides, sprint notes, ADRs, and architecture diagrams.
+This is the documentation root for the project.
 
-## Quick Links
+## Canonical Navigation (Use This First)
 
-### Setup Guides
-- **[Quick Start Guide](setup/QUICK_START.md)** - Get the backend and databases running
-- **[Mobile App Setup](setup/mobile-app-setup.md)** - ✨ Run the mobile app on your device
-- [Neo4j Setup Guide](setup/neo4j-setup-guide.md)
-- [PostgreSQL Setup Guide](setup/postgres-setup-guide.md)
-- [Swagger Setup Guide](setup/SWAGGER-SETUP-GUIDE.md)
-- [Docker Troubleshooting](setup/docker-troubleshooting.md)
+- [Canonical Docs Landing](canonical/README.md)
+- [Getting Started](canonical/getting-started/index.md)
+- [Architecture](canonical/architecture/index.md)
+- [Features](canonical/features/index.md)
+- [Testing](canonical/testing/index.md)
+- [Reference](canonical/reference/index.md)
+- [ADRs](decisions/README.md)
 
-### Architecture & Decisions
-- [Architecture Overview](architecture/README.md)
-- [Architecture Decision Records (ADRs)](decisions/README.md)
-- [Authentication Implementation](authentication-implementation.md)
+## Legacy Areas (Deprecated During Migration)
 
-### Project Management
-- [Sprint Documentation](sprints/README.md)
-- [Database Tests](tests/database-tests.md)
+The following folders remain available for backwards compatibility while migration is in progress:
 
-## Subfolders
-- `setup/` - Installation and configuration guides
-- `sprints/` - Sprint planning and retrospectives
-- `decisions/` - Architecture Decision Records (ADRs)
-- `architecture/` - System architecture documentation
-- `tests/` - Testing documentation and guides
+- `setup/`
+- `tests/`
+- top-level feature pages in `docs/`
+
+When guidance conflicts, the `docs/canonical/` tree is the source of truth.

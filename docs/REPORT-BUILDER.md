@@ -1,5 +1,8 @@
 # Report Builder Feature
 
+> Legacy page: this feature deep-dive is deprecated.
+> Use `docs/canonical/features/report-builder.md` for canonical feature guidance.
+
 ## Overview
 
 The Report Builder is an MVP implementation inspired by the Ventrata reporting system. It provides a flexible, dynamic reporting interface for analyzing injury data in the Multi-Sport Athlete Injury Surveillance System.
