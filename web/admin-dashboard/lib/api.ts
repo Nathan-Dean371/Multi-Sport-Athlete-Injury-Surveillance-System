@@ -1,4 +1,6 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+import { getApiBaseUrl } from "./runtime-config";
+
+const API_URL = getApiBaseUrl();
 
 console.log("[API Client] Initialized with URL:", API_URL);
 
@@ -467,7 +469,7 @@ class ApiClient {
     data: AcceptCoachInvitationRequest,
   ): Promise<AcceptCoachInvitationResponse> {
     // This is a public endpoint, no auth required
-    const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    const API_BASE = getApiBaseUrl();
     const response = await fetch(`${API_BASE}/coaches/accept-invitation`, {
       method: "POST",
       headers: {

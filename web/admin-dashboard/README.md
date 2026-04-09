@@ -24,7 +24,7 @@ Run the development server from the admin-dashboard directory:
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser to see the result.
+Open [http://localhost:3001](http://localhost:3001) in your browser to see the result.
 
 ## Authentication
 
@@ -50,7 +50,7 @@ SELECT email FROM user_accounts WHERE identity_type = 'admin' LIMIT 5;
 The `.env.local` file contains:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 ```
 
 Update this if your backend runs on a different port/URL.
