@@ -20,25 +20,52 @@ async function bootstrap() {
     }),
   );
 
-  // Enable CORS for development (allow all local network origins)
+  // Enable CORS
+  // - Supports explicit allowlist via env (recommended for production)
+  // - Also permits localhost/private-network origins for local development
+  const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, "");
+  const parseOrigins = (value?: string) =>
+    (value ?? "")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean)
+      .map(normalizeOrigin);
+
+  const configuredOrigins = new Set([
+    ...parseOrigins(process.env.CORS_ORIGIN),
+    ...parseOrigins(process.env.CORS_ORIGINS),
+  ]);
+
+  const isProduction = process.env.NODE_ENV === "production";
+
+  const isLocalDevOrigin = (origin: string) => {
+    const normalized = normalizeOrigin(origin);
+    return (
+      normalized.includes("localhost") ||
+      normalized.includes("127.0.0.1") ||
+      /^http:\/\/192\.168\.\d+\.\d+(?::\d+)?$/.test(normalized) ||
+      /^http:\/\/10\.\d+\.\d+\.\d+(?::\d+)?$/.test(normalized) ||
+      /^http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+(?::\d+)?$/.test(normalized)
+    );
+  };
+
   app.enableCors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or Postman)
+      // Allow requests with no origin (mobile apps, curl, Postman)
       if (!origin) return callback(null, true);
 
-      // Allow localhost and local network IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x)
-      if (
-        origin.includes("localhost") ||
-        origin.includes("127.0.0.1") ||
-        origin.match(/http:\/\/192\.168\.\d+\.\d+/) ||
-        origin.match(/http:\/\/10\.\d+\.\d+\.\d+/) ||
-        origin.match(/http:\/\/172\.(1[6-9]|2\d|3[01])\.\d+\.\d+/)
-      ) {
-        callback(null, true);
-      } else {
-        console.warn("[CORS] Blocked origin:", origin);
-        callback(new Error("Not allowed by CORS"));
+      const normalized = normalizeOrigin(origin);
+
+      if (configuredOrigins.size > 0 && configuredOrigins.has(normalized)) {
+        return callback(null, true);
       }
+
+      if (!isProduction && isLocalDevOrigin(normalized)) {
+        return callback(null, true);
+      }
+
+      console.warn("[CORS] Blocked origin:", origin);
+      return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
