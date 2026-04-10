@@ -24,6 +24,15 @@ const replaceLocalhostHost = (apiUrl: string, host: string): string => {
   }
 };
 
+const inferApiHostFromAdminHost = (host: string): string | null => {
+  const normalizedHost = host.trim().toLowerCase();
+  if (normalizedHost.startsWith("admin.")) {
+    return `api.${host.trim().slice("admin.".length)}`;
+  }
+
+  return null;
+};
+
 export const getApiBaseUrl = (): string => {
   const configuredUrl =
     process.env.NEXT_PUBLIC_API_URL?.trim() || DEFAULT_API_URL;
@@ -35,6 +44,21 @@ export const getApiBaseUrl = (): string => {
   const browserHost = window.location.hostname;
   if (isLocalhostHost(browserHost)) {
     return normalizeBaseUrl(configuredUrl);
+  }
+
+  try {
+    const parsedConfiguredUrl = new URL(configuredUrl);
+    if (isLocalhostHost(parsedConfiguredUrl.hostname)) {
+      const inferredApiHost = inferApiHostFromAdminHost(browserHost);
+      if (inferredApiHost) {
+        parsedConfiguredUrl.protocol = window.location.protocol;
+        parsedConfiguredUrl.hostname = inferredApiHost;
+        parsedConfiguredUrl.port = "";
+        return normalizeBaseUrl(parsedConfiguredUrl.toString());
+      }
+    }
+  } catch {
+    // fall through
   }
 
   return replaceLocalhostHost(configuredUrl, browserHost);

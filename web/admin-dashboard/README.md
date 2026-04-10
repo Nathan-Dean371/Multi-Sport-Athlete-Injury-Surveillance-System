@@ -55,6 +55,22 @@ NEXT_PUBLIC_API_URL=http://localhost:3000
 
 Update this if your backend runs on a different port/URL.
 
+## CI/CD and Docker
+
+The admin dashboard is included in the GitHub Actions workflow at `.github/workflows/ci.yml`:
+
+- **PRs**: runs `npm ci`, `npm run lint`, and `npm run build` for `web/admin-dashboard`
+- **main / manual**: builds and pushes a Docker image to ECR (`injury-surveillance-admin`)
+- **deploy**: pulls and runs the container on EC2 as `injury-surveillance-admin` and exposes it on port **3001**
+
+The Dockerfile is in `web/admin-dashboard/Dockerfile`.
+
+### API Base URL in production
+
+This dashboard uses `NEXT_PUBLIC_API_URL` (default: `http://localhost:3000`).
+
+In production, `lib/runtime-config.ts` rewrites a `localhost` API host to the current browser hostname (e.g. `http://<EC2_HOST>:3000`), which avoids hard-coding an environment-specific API domain.
+
 ## Project Structure
 
 - `app/` - Next.js App Router pages
@@ -108,7 +124,7 @@ try {
 
 **Backend connection issues:**
 
-- Check that backend is running on `http://localhost:3001`
+- Check that backend is running on `http://localhost:3000`
 - Verify `NEXT_PUBLIC_API_URL` in `.env.local`
 - Check browser console for CORS or network errors
 

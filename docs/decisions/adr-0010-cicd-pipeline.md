@@ -4,7 +4,7 @@
 
 **Date:** February 19, 2026
 
-**Last Updated:** February 19, 2026 (Docker/ECR implementation completed)
+**Last Updated:** April 10, 2026 (Admin dashboard added to CI/CD)
 
 **Deciders:** Nathan Dean
 
@@ -15,29 +15,40 @@
 With cloud deployment planned (ADR-0009), a decision is needed on how code changes move from local development to the live EC2 environment. The system is developed across multiple machines (desktop and laptop), making a consistent, automated deployment process essential.
 
 The key requirements are:
+
 - Code changes should be reflected in the cloud environment without manual intervention
 - The live environment should never be left in a broken state after a deployment
 - Both databases (PostgreSQL on RDS, Neo4j on Aura) should be verified as reachable after every deployment
 - The local development workflow should remain unchanged — develop locally against Docker, push to GitHub, automation handles the rest
 - The test suite from ADR-0008 should be a mandatory gate before any deployment proceeds
 
-**Key Question:** How do we automate building, testing, and deploying the NestJS backend to EC2 in a reliable, verifiable way?
+**Key Question:** How do we automate building, testing, and deploying the backend (and admin dashboard) to EC2 in a reliable, verifiable way?
 
 ---
 
 ## Decision
 
-**Implement a GitHub Actions CI/CD pipeline that runs tests, builds a Docker image, pushes to AWS ECR, deploys to EC2, and verifies the deployment via an automated health check.**
+**Implement a GitHub Actions CI/CD pipeline that runs tests, builds Docker images, pushes to AWS ECR, deploys to EC2, and verifies the deployment via an automated health check.**
+
+### Admin Dashboard (Next.js)
+
+The pipeline includes the admin dashboard (`web/admin-dashboard`) alongside the backend:
+
+- **CI (PRs and branch pushes):** `npm ci`, `npm run lint`, `npm run build` for the dashboard.
+- **Release (main / manual):** build and push a Docker image to ECR: `injury-surveillance-admin`.
+- **Deploy:** the `deploy-to-ec2` job pulls and runs the dashboard container as `injury-surveillance-admin`, exposed on port **3001**.
 
 ### Container-Based Deployment
 
 The backend is containerized using Docker with a multi-stage build:
+
 - **Builder stage**: Compiles TypeScript with all dependencies
 - **Production stage**: Minimal Alpine Linux image with only production dependencies and compiled code
 - **Result**: ~150MB production image (vs ~500MB with dev dependencies)
 - **Security**: Non-root user, health checks built-in
 
 Docker images are stored in **AWS Elastic Container Registry (ECR)**, enabling:
+
 - Version-tagged deployments
 - Rollback capability
 - Consistent environments (dev → test → production)
@@ -45,7 +56,8 @@ Docker images are stored in **AWS Elastic Container Registry (ECR)**, enabling:
 
 ### Local Development Workflow (Unchanged)
 
-       ↓
+```
+  ↓
 Stage 1: Unit Tests
   └── Run 81 unit tests (Jest)
        ↓
@@ -73,10 +85,12 @@ Stage 5: Health Check
       └── Neo4j (Aura) ✅
        ↓
 Deployment marked successful ✅
+
 ```
 
-**Automatic**: Stages 1-3 run on every push to main
-**Manual**: Stage 4 deployment triggered via workflow_dispatch for controlled releases
+```
+Automatic: Stages 1-3 run on every push to main
+Manual: Stage 4 deployment triggered via workflow_dispatch for controlled releases
        ↓
 Stage 4: Deploy
   └── SSH into EC2, pull new image, restart container
@@ -97,12 +111,14 @@ If any stage fails, the pipeline stops and the previous Docker container continu
 The pipeline validates databases at two distinct stages:
 
 **Stage 2 — Logic validation (throwaway containers on GitHub's servers):**
+
 - Throwaway PostgreSQL and Neo4j Docker containers, identical to local test setup
 - Validates that the application code and queries are correct
 - Free, runs on GitHub's infrastructure, destroyed after every run
 - Does not touch production databases
 
 **Stage 5 — Connection validation (real cloud databases on EC2):**
+
 - Smoke test hits the live `/health` endpoint after deployment
 - NestJS Terminus health indicators actively ping RDS and Aura
 - Validates that production credentials and network connectivity are working
@@ -141,6 +157,7 @@ GitHub Actions reads this response after deployment. If either database reports 
 ### Why Not Deploy Manually?
 
 Manual SSH deployment was considered and rejected:
+
 - Error-prone — easy to forget steps or deploy wrong branch
 - Not reproducible across machines — laptop vs desktop inconsistency
 - No automatic test gate — could deploy broken code
@@ -150,6 +167,7 @@ Manual SSH deployment was considered and rejected:
 ### Why Throwaway Containers for E2E Tests?
 
 Running E2E tests against Aura directly during CI was considered and rejected:
+
 - Would require Aura credentials stored in GitHub secrets for every test run
 - Risk of polluting production data during test runs
 - Aura free tier has rate limits that could be hit by frequent CI runs
@@ -158,6 +176,7 @@ Running E2E tests against Aura directly during CI was considered and rejected:
 ### Why Develop Locally Against Docker?
 
 Developing directly against cloud databases (Aura + RDS) was considered:
+
 - Appealing for multi-machine consistency
 - Rejected because mid-feature development risks pushing bad data or schema changes to production databases
 - Local Docker provides fast feedback, safe to break things, no cost implications
@@ -172,17 +191,19 @@ Developing directly against cloud databases (Aura + RDS) was considered:
 - **Never manually deploy again** — every push to main triggers the full pipeline
 - **Tests are a hard gate** — broken code cannot reach EC2
 - **Multi-machine friendly** — laptop or desktop, workflow is identical
-- **Live environmeStatus
+- \*\*Live environmeStatus
 
 ### ✅ Completed (February 19, 2026)
 
 **Phase 1 — Containerization**
+
 - ✅ Multi-stage Dockerfile created (`backend/Dockerfile`)
 - ✅ `.dockerignore` for optimized builds
 - ✅ Docker Compose updated with backend service
 - ✅ Local testing script (`build-docker.ps1`)
 
 **Phase 2 — CI/CD Pipeline**
+
 - ✅ GitHub Actions workflow (`.github/workflows/ci.yml`)
 - ✅ Unit test stage with database service containers
 - ✅ E2E test stage with PostgreSQL and Neo4j containers
@@ -205,7 +226,8 @@ Developing directly against cloud databases (Aura + RDS) was considered:
 - `EC2_SSH_KEY` — Private SSH key for EC2 access
 
 See `docs/setup/AWS-DEPLOYMENT-GUIDE.md` for detailed setup instructions.
-- ✅ AWS Dep09: Deployment Strategy](./adr-0009-deployment-strategy.md)** — Defines the EC2, RDS, and Aura infrastructure this pipeline deploys to
+
+- ✅ AWS Dep09: Deployment Strategy](./adr-0009-deployment-strategy.md)\*\* — Defines the EC2, RDS, and Aura infrastructure this pipeline deploys to
 - **[ADR-0011: Containerisation and Infrastructure as Code](./adr-0011-containerisation.md)** — Docker setup that the pipeline builds and deploys
 
 ---
@@ -213,6 +235,7 @@ See `docs/setup/AWS-DEPLOYMENT-GUIDE.md` for detailed setup instructions.
 ## Quick Start
 
 ### Local Docker Testing
+
 ```powershell
 # Build and test locally
 .\build-docker.ps1 -Build -Test
@@ -222,6 +245,7 @@ docker compose up -d --build backend
 ```
 
 ### Trigger CI/CD Pipeline
+
 ```bash
 # Push to main triggers automatic build + push to ECR
 git push origin main
@@ -229,7 +253,9 @@ git push origin main
 # Manual deployment to EC2
 # GitHub → Actions → CI/CD Pipeline → Run workflow
 ```
+
 AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
+
 - [Docker Multi-Stage Builds](https://docs.docker.com/build/building/multi-stage/)
 - [AWS Deployment Guide](../setup/AWS-DEPLOYMENT-GUIDE.md)
 - [Docker Quick Reference](../setup/DOCKER-REFERENCE.md)
@@ -241,7 +267,8 @@ AWS ECR Documentation](https://docs.aws.amazon.com/ecr/)
 **Status:** Implemented — Infrastructure setup in progress
 ssh -i key.pem ec2-user@<EC2_IP>
 docker logs -f injury-surveillance-backend
-```
+
+````
 - ✅ Docker Quick Reference (`docs/setup/DOCKER-REFERENCE.md`)
 - ✅ Environment variable template (`.env.production.example`)
 
@@ -288,9 +315,10 @@ COPY --from=builder /app/dist ./dist
 USER nestjs  # Non-root for security
 EXPOSE 3000
 CMD ["node", "dist/main"]
-```
+````
 
 Benefits:
+
 - Smaller images (~150MB vs ~500MB)
 - Faster deployments
 - No dev dependencies in production
@@ -299,6 +327,7 @@ Benefits:
 ### AWS ECR Integration
 
 Images are tagged with multiple identifiers:
+
 ```
 <account>.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend:latest
 <account>.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend:main-abc1234
@@ -306,6 +335,7 @@ Images are tagged with multiple identifiers:
 ```
 
 This enables:
+
 - `latest`: Always points to most recent main build
 - `<branch>-<sha>`: Specific commit for rollback
 - `<branch>`: Latest on that branch
@@ -313,11 +343,13 @@ This enables:
 ### GitHub Actions Workflow
 
 **Triggers**:
+
 - `push` to main/develop: Run tests + build + push to ECR
 - `pull_request`: Run tests only
 - `workflow_dispatch`: Manual deployment to EC2
 
 **Service Containers**:
+
 ```yaml
 services:
   postgres:
@@ -326,7 +358,7 @@ services:
       POSTGRES_DB: identity_service
       POSTGRES_USER: identity_admin
       POSTGRES_PASSWORD: test-password
-    
+
   neo4j:
     image: neo4j:5.25-community
     env:
@@ -334,13 +366,15 @@ services:
 ```
 
 **Build Optimization**:
+
 - GitHub Actions cache for Docker layers
 - Buildx for multi-platform support
 - Metadata action for automated tagging
 
 ---
 
-## Implementation nt always stable** — failed deployments don't break production
+## Implementation nt always stable\*\* — failed deployments don't break production
+
 - **Full SDLC demonstrated** — code → test → build → deploy → verify, documented for thesis
 - **Free** — GitHub Actions free tier is sufficient for this project scale
 
@@ -363,11 +397,13 @@ services:
 ## Implementation Plan
 
 ### Phase 1 — Health Check Extension
-1. Install `@nestjs/terminus` 
+
+1. Install `@nestjs/terminus`
 2. Extend existing health check endpoint with PostgreSQL and Neo4j indicators
 3. Verify response format locally
 
 ### Phase 2 — GitHub Actions Workflow
+
 1. Create `.github/workflows/deploy.yml`
 2. Configure unit test stage
 3. Configure E2E test stage with PostgreSQL and Neo4j service containers
@@ -376,12 +412,15 @@ services:
 6. Configure smoke test stage hitting `/health`
 
 ### Phase 3 — GitHub Secrets
+
 Store the following as encrypted GitHub repository secrets:
+
 - `EC2_HOST` — EC2 public IP or domain
 - `EC2_SSH_KEY` — private SSH key for EC2 access
 - `EC2_USER` — EC2 username (typically `ec2-user`)
 
 ### Phase 4 — Validation
+
 1. Push a test change to main
 2. Observe pipeline stages in GitHub Actions UI
 3. Confirm smoke test passes

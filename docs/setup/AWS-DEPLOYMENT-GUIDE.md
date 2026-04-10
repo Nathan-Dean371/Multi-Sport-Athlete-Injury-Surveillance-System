@@ -2,32 +2,31 @@
 
 ## Overview
 
-This guide walks you through deploying the Multi-Sport Athlete Injury Surveillance System backend to AWS using containerization and CI/CD automation.
+This guide walks you through deploying the Multi-Sport Athlete Injury Surveillance System to AWS using containerization and CI/CD automation.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    GitHub Actions CI/CD                     │
-│  1. Run tests  2. Build Docker image  3. Push to ECR       │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-┌────────────────────────────▼────────────────────────────────┐
-│                   Amazon ECR (Registry)                     │
-│            injury-surveillance-backend:latest               │
-└────────────────────────────┬────────────────────────────────┘
-                             │
-┌────────────────────────────▼────────────────────────────────┐
-│                      EC2 Instance (t3.micro)                │
-│              Docker Container: NestJS Backend               │
-│                        Port 3000                            │
-└─────────┬───────────────────────────────────┬───────────────┘
-          │                                   │
-┌─────────▼─────────────┐        ┌───────────▼───────────────┐
-│  RDS PostgreSQL       │        │  Neo4j Aura               │
-│  (db.t3.micro)        │        │  (Free Tier)              │
-│  VPC Isolated         │        │  External Service         │
-└───────────────────────┘        └───────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                      GitHub Actions CI/CD                        │
+│  1. Run tests  2. Build Docker images  3. Push to ECR  4. Deploy │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌───────────────────────────────▼─────────────────────────────────┐
+│                     Amazon ECR (Registry)                        │
+│   injury-surveillance-backend:*   injury-surveillance-admin:*     │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │
+┌───────────────────────────────▼─────────────────────────────────┐
+│                        EC2 Instance (t3.micro)                   │
+│   Docker: NestJS Backend (3000) + Admin Dashboard (3001→3000)     │
+└───────────┬──────────────────────────────────────┬───────────────┘
+            │                                      │
+┌───────────▼──────────────┐         ┌────────────▼───────────────┐
+│  RDS PostgreSQL           │         │  Neo4j Aura                │
+│  (db.t3.micro)            │         │  (Free Tier)               │
+│  VPC Isolated             │         │  External Service          │
+└───────────────────────────┘         └────────────────────────────┘
 ```
 
 ---
@@ -41,7 +40,7 @@ This guide walks you through deploying the Multi-Sport Athlete Injury Surveillan
 
 ---
 
-## Step 1: Create AWS ECR Repository
+## Step 1: Create AWS ECR Repositories
 
 Amazon Elastic Container Registry (ECR) stores your Docker images.
 
@@ -49,8 +48,9 @@ Amazon Elastic Container Registry (ECR) stores your Docker images.
 
 1. Go to **AWS Console** → **ECR**
 2. Click **Create repository**
-3. Settings:
+3. Create two repositories:
    - **Repository name**: `injury-surveillance-backend`
+   - **Repository name**: `injury-surveillance-admin`
    - **Visibility**: Private
    - **Tag immutability**: Disabled (for development)
    - **Scan on push**: Enabled (optional, for security scanning)
@@ -61,11 +61,16 @@ Amazon Elastic Container Registry (ECR) stores your Docker images.
 ```bash
 aws ecr create-repository \
   --repository-name injury-surveillance-backend \
-  --region us-east-1 \
+   --region eu-west-1 \
   --image-scanning-configuration scanOnPush=true
+
+aws ecr create-repository \
+   --repository-name injury-surveillance-admin \
+   --region eu-west-1 \
+   --image-scanning-configuration scanOnPush=true
 ```
 
-**Note the repository URI** (e.g., `123456789012.dkr.ecr.us-east-1.amazonaws.com/injury-surveillance-backend`)
+**Note the repository URI** (e.g., `123456789012.dkr.ecr.eu-west-1.amazonaws.com/injury-surveillance-backend`)
 
 ---
 
@@ -81,7 +86,7 @@ Amazon RDS hosts the identity/PII database.
    - **Templates**: Free tier
    - **DB instance identifier**: `injury-surveillance-postgres`
    - **Master username**: `identity_admin`
-   - **Master password**: *Generate strong password*
+   - **Master password**: _Generate strong password_
    - **DB instance class**: `db.t3.micro`
    - **Storage**: 20 GB SSD
    - **VPC**: Default (or create a new VPC)
@@ -89,7 +94,7 @@ Amazon RDS hosts the identity/PII database.
    - **Database name**: `identity_service`
 3. Click **Create database**
 4. **Wait 5-10 minutes** for instance to be available
-5. **Note the endpoint** (e.g., `injury-surveillance-postgres.abc123.us-east-1.rds.amazonaws.com`)
+5. **Note the endpoint** (e.g., `injury-surveillance-postgres.abc123.eu-west-1.rds.amazonaws.com`)
 
 ### Security Group Configuration
 
@@ -179,22 +184,22 @@ GitHub Actions needs AWS credentials and database connection strings.
 
 Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
 
-| Secret Name | Value | Example |
-|-------------|-------|---------|
-| `AWS_ACCESS_KEY_ID` | Your AWS access key | `AKIAIOSFODNN7EXAMPLE` |
-| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY` |
-| `JWT_SECRET` | Random 64-byte base64 string | Run: `node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"` |
-| `POSTGRES_HOST` | RDS endpoint | `injury-surveillance-postgres.abc123.us-east-1.rds.amazonaws.com` |
-| `POSTGRES_PORT` | PostgreSQL port | `5432` |
-| `POSTGRES_DB` | Database name | `identity_service` |
-| `POSTGRES_USER` | Database username | `identity_admin` |
-| `POSTGRES_PASSWORD` | Database password | *Your RDS password* |
-| `NEO4J_URI` | Neo4j Aura URI | `neo4j+s://abc123.databases.neo4j.io` |
-| `NEO4J_USERNAME` | Neo4j username | `neo4j` |
-| `NEO4J_PASSWORD` | Neo4j password | *Your Aura password* |
-| `EC2_HOST` | EC2 public IP | `3.84.123.45` |
-| `EC2_USER` | EC2 username | `ec2-user` |
-| `EC2_SSH_KEY` | EC2 private key | *Contents of your .pem file* |
+| Secret Name             | Value                        | Example                                                                            |
+| ----------------------- | ---------------------------- | ---------------------------------------------------------------------------------- |
+| `AWS_ACCESS_KEY_ID`     | Your AWS access key          | `AKIAIOSFODNN7EXAMPLE`                                                             |
+| `AWS_SECRET_ACCESS_KEY` | Your AWS secret key          | `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`                                         |
+| `JWT_SECRET`            | Random 64-byte base64 string | Run: `node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"` |
+| `POSTGRES_HOST`         | RDS endpoint                 | `injury-surveillance-postgres.abc123.eu-west-1.rds.amazonaws.com`                  |
+| `POSTGRES_PORT`         | PostgreSQL port              | `5432`                                                                             |
+| `POSTGRES_DB`           | Database name                | `identity_service`                                                                 |
+| `POSTGRES_USER`         | Database username            | `identity_admin`                                                                   |
+| `POSTGRES_PASSWORD`     | Database password            | _Your RDS password_                                                                |
+| `NEO4J_URI`             | Neo4j Aura URI               | `neo4j+s://abc123.databases.neo4j.io`                                              |
+| `NEO4J_USERNAME`        | Neo4j username               | `neo4j`                                                                            |
+| `NEO4J_PASSWORD`        | Neo4j password               | _Your Aura password_                                                               |
+| `EC2_HOST`              | EC2 public IP                | `3.84.123.45`                                                                      |
+| `EC2_USER`              | EC2 username                 | `ec2-user`                                                                         |
+| `EC2_SSH_KEY`           | EC2 private key              | _Contents of your .pem file_                                                       |
 
 ### Creating AWS Access Keys
 
@@ -205,6 +210,7 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 5. Copy both the **Access Key ID** and **Secret Access Key**
 
 ⚠️ **Important**: These credentials should have permissions for:
+
 - ECR (push/pull images)
 - EC2 (if using automated deployment)
 
@@ -214,7 +220,7 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 
 ### Automatic Build (on push to main)
 
-1. Make a change to the backend code
+1. Make a change to either the backend or admin dashboard
 2. Commit and push to the `main` branch:
    ```bash
    git add .
@@ -224,13 +230,15 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 3. Go to **GitHub** → **Actions** tab
 4. Watch the pipeline run:
    - ✅ Test Backend (unit + E2E tests)
-   - ✅ Build and Push Docker Image (to ECR)
+   - ✅ Test Admin Dashboard (lint + build)
+   - ✅ Build and Push Docker Image (backend → ECR)
+   - ✅ Build and Push Admin Docker Image (dashboard → ECR)
 
 ### Manual Deployment (workflow_dispatch)
 
 1. Go to **GitHub** → **Actions** → **CI/CD Pipeline**
 2. Click **Run workflow** → **Run workflow**
-3. This will deploy the latest image to EC2
+3. This will deploy the latest backend + admin dashboard images to EC2
 
 ---
 
@@ -252,6 +260,7 @@ psql -h <RDS_ENDPOINT> -U identity_admin -d identity_service
 ```
 
 **Or** run setup via backend API endpoint:
+
 ```bash
 curl -X POST http://<EC2_IP>:3000/database/setup
 ```
@@ -267,6 +276,7 @@ curl http://<EC2_IP>:3000/status
 ```
 
 Expected response:
+
 ```json
 {
   "status": "ok",
@@ -301,7 +311,7 @@ Update the mobile app to point to the EC2 backend:
 
 ```typescript
 // mobile/src/config/api.ts
-export const API_BASE_URL = 'http://<EC2_PUBLIC_IP>:3000';
+export const API_BASE_URL = "http://<EC2_PUBLIC_IP>:3000";
 ```
 
 ⚠️ **For production**: Use HTTPS with a domain name and SSL certificate (e.g., via AWS Certificate Manager + Application Load Balancer)
@@ -312,14 +322,14 @@ export const API_BASE_URL = 'http://<EC2_PUBLIC_IP>:3000';
 
 ### Estimated Monthly Costs (within $100 credit)
 
-| Service | Instance | Est. Cost/Month |
-|---------|----------|-----------------|
-| EC2 | t3.micro | ~$7.50 |
-| RDS | db.t3.micro | ~$15.00 |
-| ECR | Storage | ~$1.00 |
-| Data Transfer | | ~$5.00 |
-| Neo4j Aura | Free tier | $0.00 |
-| **Total** | | **~$28.50** |
+| Service       | Instance    | Est. Cost/Month |
+| ------------- | ----------- | --------------- |
+| EC2           | t3.micro    | ~$7.50          |
+| RDS           | db.t3.micro | ~$15.00         |
+| ECR           | Storage     | ~$1.00          |
+| Data Transfer |             | ~$5.00          |
+| Neo4j Aura    | Free tier   | $0.00           |
+| **Total**     |             | **~$28.50**     |
 
 **Your $100 credit will last approximately 3-4 months** with this setup.
 
@@ -334,10 +344,12 @@ export const API_BASE_URL = 'http://<EC2_PUBLIC_IP>:3000';
 ## Troubleshooting
 
 ### Pipeline fails at "Login to Amazon ECR"
+
 - Check AWS credentials in GitHub Secrets
 - Verify IAM user has ECR permissions
 
 ### Container won't start
+
 ```bash
 # Check logs
 docker logs injury-surveillance-backend
@@ -349,11 +361,13 @@ docker logs injury-surveillance-backend
 ```
 
 ### Can't connect to RDS from EC2
+
 - Check security group rules
 - Verify EC2 and RDS are in same VPC
 - Test with: `telnet <RDS_ENDPOINT> 5432`
 
 ### Neo4j connection fails
+
 - Verify URI format: `neo4j+s://` (note the `+s` for secure)
 - Check username/password from Aura download
 - Ensure Aura database is running

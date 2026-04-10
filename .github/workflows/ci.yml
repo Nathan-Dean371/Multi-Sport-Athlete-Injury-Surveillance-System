@@ -152,6 +152,29 @@ jobs:
           fail_ci_if_error: false
 
   # --------------------------------------------------------------------------
+  # Job 1b: Test Admin Dashboard
+  # --------------------------------------------------------------------------
+  test-admin-dashboard:
+    name: Test Admin Dashboard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/admin-dashboard/package-lock.json
+      - name: Install dependencies
+        working-directory: ./web/admin-dashboard
+        run: npm ci
+      - name: Run linter
+        working-directory: ./web/admin-dashboard
+        run: npm run lint
+      - name: Build test
+        working-directory: ./web/admin-dashboard
+        run: npm run build
+
+  # --------------------------------------------------------------------------
   # Job 2: Build and Push Docker Image
   # --------------------------------------------------------------------------
   build-and-push:
@@ -215,6 +238,72 @@ jobs:
           echo "uri=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:main" >> $GITHUB_OUTPUT
 
   # --------------------------------------------------------------------------
+  # Job 2b: Build and Push Admin Docker Image
+  # --------------------------------------------------------------------------
+  build-and-push-admin:
+    name: Build and Push Admin Docker Image
+    runs-on: ubuntu-latest
+    needs: test-backend
+    # Run on push to main or manual trigger
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+
+    env:
+      ECR_REPOSITORY: injury-surveillance-admin
+
+    outputs:
+      image-uri: ${{ steps.image-uri.outputs.uri }}
+      ecr-registry: ${{ steps.login-ecr.outputs.registry }}
+      image-digest: ${{ steps.build.outputs.digest }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web/admin-dashboard
+          file: ./web/admin-dashboard/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+      - name: Image digest
+        run: echo "Image pushed with digest ${{ steps.build.outputs.digest }}"
+
+      - name: Set image URI output
+        id: image-uri
+        run: |
+          echo "uri=${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:main" >> $GITHUB_OUTPUT
+
+  # --------------------------------------------------------------------------
   # Job 3: Deploy to EC2 (Optional - Manual Trigger)
   # --------------------------------------------------------------------------
   deploy-to-ec2:
@@ -255,7 +344,7 @@ jobs:
           chmod 600 ec2_key.pem
 
           # Copy migration directories to EC2
-          ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "mkdir -p /tmp/injury-surveillance-migrations/postgres /tmp/injury-surveillance-migrations/neo4j /tmp/injury-surveillance-migrations/neo4j-migrations-runner"
+          ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST "mkdir -p /tmp/injury-surveillance-migrations/postgres /tmp/injury-surveillance-migrations/neo4j /tmp/injury-surveillance-migrations/neo4j-migrations-runner /tmp/injury-surveillance-nginx"
           scp -r -i ec2_key.pem -o StrictHostKeyChecking=no \
             ./database/postgres/migrations/. \
             $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/postgres/
@@ -265,6 +354,11 @@ jobs:
           scp -r -i ec2_key.pem -o StrictHostKeyChecking=no \
             ./tools/neo4j-migrations-runner/. \
             $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-migrations/neo4j-migrations-runner/
+
+          # Copy NGINX reverse-proxy template to EC2 (install manually under /etc/nginx/)
+          scp -i ec2_key.pem -o StrictHostKeyChecking=no \
+            ./ops/nginx/injury-surveillance-reverse-proxy.conf \
+            $EC2_USER@$EC2_HOST:/tmp/injury-surveillance-nginx/injury-surveillance-reverse-proxy.conf
 
           # SSH into EC2 and deploy
           ssh -T -i ec2_key.pem -o StrictHostKeyChecking=no $EC2_USER@$EC2_HOST << EOF
@@ -327,6 +421,22 @@ jobs:
               -e NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} \
               -e POSTGRES_SSL=${{ secrets.POSTGRES_SSL }} \
               $IMAGE_URI
+
+            # Pull frontend image
+            docker pull $ECR_REGISTRY/injury-surveillance-admin:main
+
+            # Stop existing frontend container
+            docker stop injury-surveillance-admin || true
+            docker rm injury-surveillance-admin || true
+
+            # Run new frontend container
+            docker run -d \
+              --name injury-surveillance-admin \
+              --restart unless-stopped \
+              -p 3001:3000 \
+              -e NODE_ENV=production \
+              -e NEXT_PUBLIC_API_URL=http://localhost:3000 \
+              $ECR_REGISTRY/injury-surveillance-admin:main
             
             # Clean up old images
             docker image prune -f

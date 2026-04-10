@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-    } catch (err) {
+    } catch {
       // Error is already handled by the store
       setLocalError(error || "Login failed. Please check your credentials.");
     }

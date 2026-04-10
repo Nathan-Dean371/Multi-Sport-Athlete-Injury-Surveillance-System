@@ -31,7 +31,7 @@ export default function ReportBuilderPage() {
   const [fromDate, setFromDate] = useState<string>("");
   const [toDate, setToDate] = useState<string>("");
   const [includeTestData, setIncludeTestData] = useState(false);
-  const [exportFormat, _setExportFormat] = useState<"json" | "csv">("json");
+  const [exportFormat] = useState<"json" | "csv">("json");
 
   // Available options
   const availableMetrics: ReportMetric[] = [
