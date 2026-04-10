@@ -264,8 +264,8 @@ function ParentAcceptContent() {
 
             <div className="p-8">
               <p className="text-gray-300 mb-6">
-                The Injury Surveillance mobile app is where you&apos;ll manage your
-                athletes and view updates.
+                The Injury Surveillance mobile app is where you&apos;ll manage
+                your athletes and view updates.
               </p>
 
               <div className="bg-blue-900/30 border border-blue-700 rounded-lg p-6 mb-6">

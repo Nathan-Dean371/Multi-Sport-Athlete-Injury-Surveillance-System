@@ -192,8 +192,8 @@ function WelcomeContent() {
           {/* Content */}
           <div className="p-8">
             <p className="text-gray-300 mb-6">
-              The Injury Surveillance mobile app is where you&apos;ll manage your
-              teams, report injuries, and track athlete safety.
+              The Injury Surveillance mobile app is where you&apos;ll manage
+              your teams, report injuries, and track athlete safety.
             </p>
 
             {/* Development Mode Notice */}
