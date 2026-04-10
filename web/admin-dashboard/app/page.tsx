@@ -89,20 +89,6 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Info Box */}
-            <div className="p-3 bg-blue-900/30 border border-blue-700 rounded-lg text-blue-400 text-sm">
-              <p className="font-semibold text-blue-300 mb-2">
-                Test Credentials:
-              </p>
-              <p className="text-xs">
-                Password:{" "}
-                <code className="bg-blue-900/50 px-1 rounded">password123</code>
-              </p>
-              <p className="text-xs mt-1">
-                Contact your admin for email addresses
-              </p>
-            </div>
-
             {/* Submit Button */}
             <button
               type="submit"
