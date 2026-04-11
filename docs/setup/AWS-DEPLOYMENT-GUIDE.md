@@ -197,7 +197,7 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 | `NEO4J_URI`             | Neo4j Aura URI               | `neo4j+s://abc123.databases.neo4j.io`                                              |
 | `NEO4J_USERNAME`        | Neo4j username               | `neo4j`                                                                            |
 | `NEO4J_PASSWORD`        | Neo4j password               | _Your Aura password_                                                               |
-| `CORS_ORIGIN`           | Allowed web origins (CORS)   | `http://<EC2_IP>:3001,https://your-domain.com`                                     |
+| `CORS_ORIGIN`           | Allowed web origins (CORS)   | `http://<EC2_IP>:3001,http://localhost:8081,https://your-domain.com`               |
 | `EC2_HOST`              | EC2 public IP                | `3.84.123.45`                                                                      |
 | `EC2_USER`              | EC2 username                 | `ec2-user`                                                                         |
 | `EC2_SSH_KEY`           | EC2 private key              | _Contents of your .pem file_                                                       |

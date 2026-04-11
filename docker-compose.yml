@@ -186,7 +186,10 @@ services:
       - NEO4J_PASSWORD=injury-surveillance-dev-password
 
       # CORS
-      - CORS_ORIGIN=http://localhost:3001,http://localhost:19006
+      - CORS_ORIGIN=http://localhost:3001,http://localhost:19006,http://localhost:8081
+
+      # Public Web URL (Invitation Links)
+      - PUBLIC_WEB_URL=http://localhost:3001
 
     volumes:
       # Mount source code for hot reload

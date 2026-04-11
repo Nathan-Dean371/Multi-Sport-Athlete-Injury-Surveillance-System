@@ -143,7 +143,15 @@ FIREBASE_CLIENT_EMAIL=your-firebase-client-email
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
 
 # CORS
-CORS_ORIGIN=http://localhost:19006,http://localhost:3001
+CORS_ORIGIN=http://localhost:19006,http://localhost:8081,http://localhost:3001
+
+# Public Web URL (Invitation Links)
+# Used to generate `/accept-invitation/*` links for coach/parent/athlete invitations.
+# Production should set this to the externally reachable web app origin (HTTP for now until you add a domain/HTTPS).
+PUBLIC_WEB_URL=http://54.194.7.2:3001
+
+# Backwards compatible fallback (legacy)
+# FRONTEND_URL=http://54.194.7.2:3001
 
 # Logging
 LOG_LEVEL=debug
@@ -154,6 +162,11 @@ LOG_LEVEL=debug
 - **Development:** Uses local Neo4j and PostgreSQL via Docker
 - **Testing:** Separate test databases (configured in `test/jest-e2e.json`)
 - **Production:** Neo4j Aura + managed PostgreSQL (e.g., AWS RDS)
+
+For production invitations to work end-to-end, ensure:
+
+- `PUBLIC_WEB_URL` points at the externally reachable web app origin.
+- `CORS_ORIGIN` (or `CORS_ORIGINS`) includes that same origin.
 
 ---
 
@@ -215,6 +228,7 @@ Interactive API documentation is automatically generated from code decorators an
 **Local:** `http://localhost:3000/api/docs`
 
 The Swagger UI provides:
+
 - Complete endpoint reference with request/response schemas
 - Interactive "Try it out" functionality
 - Authentication token input for testing protected endpoints
@@ -230,26 +244,32 @@ Comprehensive API documentation is also available in the documentation repositor
 ### Example: Using Swagger Decorators
 
 ```typescript
-import { Controller, Post, Body } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
-import { CreateInjuryDto } from './dto/create-injury.dto';
-import { InjuryResponseDto } from './dto/injury-response.dto';
+import { Controller, Post, Body } from "@nestjs/common";
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from "@nestjs/swagger";
+import { CreateInjuryDto } from "./dto/create-injury.dto";
+import { InjuryResponseDto } from "./dto/injury-response.dto";
 
-@ApiTags('injuries')
+@ApiTags("injuries")
 @ApiBearerAuth()
-@Controller('injuries')
+@Controller("injuries")
 export class InjuryController {
-  
   @Post()
-  @ApiOperation({ summary: 'Report a new injury' })
-  @ApiResponse({ 
-    status: 201, 
-    description: 'Injury successfully created',
-    type: InjuryResponseDto 
+  @ApiOperation({ summary: "Report a new injury" })
+  @ApiResponse({
+    status: 201,
+    description: "Injury successfully created",
+    type: InjuryResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Invalid input data' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async create(@Body() createInjuryDto: CreateInjuryDto): Promise<InjuryResponseDto> {
+  @ApiResponse({ status: 400, description: "Invalid input data" })
+  @ApiResponse({ status: 401, description: "Unauthorized" })
+  async create(
+    @Body() createInjuryDto: CreateInjuryDto,
+  ): Promise<InjuryResponseDto> {
     return this.injuryService.create(createInjuryDto);
   }
 }
@@ -262,9 +282,11 @@ export class InjuryController {
 ### Core Modules
 
 #### 1. Authentication Module (`/auth`)
+
 Handles user authentication and JWT token management.
 
 **Key Features:**
+
 - User registration and login
 - JWT access token generation (15min expiry)
 - Refresh token rotation (7-day expiry)
@@ -272,29 +294,35 @@ Handles user authentication and JWT token management.
 - Token blacklisting on logout
 
 **Endpoints:**
+
 - `POST /auth/register` - Create new user account
 - `POST /auth/login` - Authenticate and receive tokens
 - `POST /auth/refresh` - Refresh access token
 - `POST /auth/logout` - Invalidate tokens
 
 #### 2. Users Module (`/users`)
+
 Manages user profiles and role assignments.
 
 **Key Features:**
+
 - CRUD operations for user profiles
 - Role management (player, coach, medical_staff, admin)
 - Device token registration for push notifications
 - User preferences
 
 **Endpoints:**
+
 - `GET /users/me` - Get current user profile
 - `PATCH /users/me` - Update current user
 - `POST /users/device-token` - Register FCM token
 
 #### 3. Injuries Module (`/injuries`)
+
 Core domain logic for injury tracking and management.
 
 **Key Features:**
+
 - Injury creation with validation
 - Update injury status and severity
 - Link injuries to treatments and assessments
@@ -302,6 +330,7 @@ Core domain logic for injury tracking and management.
 - Privacy-preserving queries
 
 **Endpoints:**
+
 - `POST /injuries` - Report new injury
 - `GET /injuries` - List injuries (filtered by role/permissions)
 - `GET /injuries/:id` - Get injury details
@@ -309,27 +338,33 @@ Core domain logic for injury tracking and management.
 - `POST /injuries/:id/resolve` - Mark injury as resolved
 
 #### 4. Players Module (`/players`)
+
 Player profile management with pseudonymization.
 
 **Key Features:**
+
 - Player registration
 - Sport and team associations
 - Injury history aggregation
 - Privacy-preserving queries
 
 #### 5. Teams Module (`/teams`)
+
 Team and organization management.
 
 **Key Features:**
+
 - Team creation and management
 - Coach/staff assignments
 - Player roster management
 - Organization hierarchy
 
 #### 6. Audit Module (`/audit`)
+
 Tracks all data access for compliance.
 
 **Key Features:**
+
 - Log all database queries
 - Track who accessed what data and when
 - Research purpose documentation
@@ -347,27 +382,27 @@ The application uses the official Neo4j JavaScript driver for graph database ope
 
 ```typescript
 // src/database/database.module.ts
-import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import neo4j from 'neo4j-driver';
+import { Module } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import neo4j from "neo4j-driver";
 
 @Module({
   providers: [
     {
-      provide: 'NEO4J_DRIVER',
+      provide: "NEO4J_DRIVER",
       useFactory: (configService: ConfigService) => {
         return neo4j.driver(
-          configService.get('NEO4J_URI'),
+          configService.get("NEO4J_URI"),
           neo4j.auth.basic(
-            configService.get('NEO4J_USER'),
-            configService.get('NEO4J_PASSWORD')
-          )
+            configService.get("NEO4J_USER"),
+            configService.get("NEO4J_PASSWORD"),
+          ),
         );
       },
       inject: [ConfigService],
     },
   ],
-  exports: ['NEO4J_DRIVER'],
+  exports: ["NEO4J_DRIVER"],
 })
 export class DatabaseModule {}
 ```
@@ -375,18 +410,16 @@ export class DatabaseModule {}
 **Service Usage:**
 
 ```typescript
-import { Injectable, Inject } from '@nestjs/common';
-import { Driver, Session } from 'neo4j-driver';
+import { Injectable, Inject } from "@nestjs/common";
+import { Driver, Session } from "neo4j-driver";
 
 @Injectable()
 export class InjuryService {
-  constructor(
-    @Inject('NEO4J_DRIVER') private neo4jDriver: Driver
-  ) {}
+  constructor(@Inject("NEO4J_DRIVER") private neo4jDriver: Driver) {}
 
   async createInjury(data: CreateInjuryDto): Promise<Injury> {
     const session: Session = this.neo4jDriver.session();
-    
+
     try {
       const result = await session.run(
         `
@@ -399,10 +432,10 @@ export class InjuryService {
         })
         RETURN i
         `,
-        data
+        data,
       );
-      
-      return result.records[0].get('i').properties;
+
+      return result.records[0].get("i").properties;
     } finally {
       await session.close();
     }
@@ -418,23 +451,23 @@ Uses TypeORM for relational data management.
 
 ```typescript
 // src/database/identity.module.ts
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Identity } from './entities/identity.entity';
+import { Module } from "@nestjs/common";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { ConfigService } from "@nestjs/config";
+import { Identity } from "./entities/identity.entity";
 
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get('POSTGRES_HOST'),
-        port: configService.get('POSTGRES_PORT'),
-        username: configService.get('POSTGRES_USER'),
-        password: configService.get('POSTGRES_PASSWORD'),
-        database: configService.get('POSTGRES_DB'),
+        type: "postgres",
+        host: configService.get("POSTGRES_HOST"),
+        port: configService.get("POSTGRES_PORT"),
+        username: configService.get("POSTGRES_USER"),
+        password: configService.get("POSTGRES_PASSWORD"),
+        database: configService.get("POSTGRES_DB"),
         entities: [Identity],
-        synchronize: configService.get('NODE_ENV') === 'development',
+        synchronize: configService.get("NODE_ENV") === "development",
       }),
       inject: [ConfigService],
     }),
@@ -472,10 +505,10 @@ npm run test:cov
 
 ```typescript
 // injuries.service.spec.ts
-import { Test, TestingModule } from '@nestjs/testing';
-import { InjuryService } from './injury.service';
+import { Test, TestingModule } from "@nestjs/testing";
+import { InjuryService } from "./injury.service";
 
-describe('InjuryService', () => {
+describe("InjuryService", () => {
   let service: InjuryService;
   let mockNeo4jDriver: any;
 
@@ -491,7 +524,7 @@ describe('InjuryService', () => {
       providers: [
         InjuryService,
         {
-          provide: 'NEO4J_DRIVER',
+          provide: "NEO4J_DRIVER",
           useValue: mockNeo4jDriver,
         },
       ],
@@ -500,11 +533,11 @@ describe('InjuryService', () => {
     service = module.get<InjuryService>(InjuryService);
   });
 
-  it('should be defined', () => {
+  it("should be defined", () => {
     expect(service).toBeDefined();
   });
 
-  it('should create an injury', async () => {
+  it("should create an injury", async () => {
     // Test implementation
   });
 });
@@ -581,12 +614,14 @@ docker run -d \
 The backend is deployed to AWS using a fully automated CI/CD pipeline:
 
 **Architecture:**
+
 - **EC2**: Hosts Docker container (t3.micro)
 - **ECR**: Docker image registry
 - **RDS**: PostgreSQL database (db.t3.micro)
 - **Neo4j Aura**: Graph database (free tier)
 
 **Automated Pipeline** (GitHub Actions):
+
 1. ✅ Run unit and E2E tests
 2. ✅ Build Docker image (multi-stage)
 3. ✅ Push to AWS ECR with version tags
@@ -597,6 +632,7 @@ The backend is deployed to AWS using a fully automated CI/CD pipeline:
 See [`docs/setup/AWS-DEPLOYMENT-GUIDE.md`](../docs/setup/AWS-DEPLOYMENT-GUIDE.md) for complete setup instructions.
 
 **Quick Deploy:**
+
 ```bash
 # Push to main triggers automatic build + ECR push
 git push origin main
@@ -606,6 +642,7 @@ git push origin main
 ```
 
 **Monitor Deployment:**
+
 ```bash
 # Check health
 curl http://<EC2_IP>:3000/status
@@ -632,6 +669,7 @@ docker logs -f injury-surveillance-backend
 - [ ] Set all required GitHub Secrets (14 secrets)
 
 **Related Documentation:**
+
 - [AWS Deployment Guide](../docs/setup/AWS-DEPLOYMENT-GUIDE.md)
 - [Docker Reference](../docs/setup/DOCKER-REFERENCE.md)
 - [Implementation Summary](../docs/setup/IMPLEMENTATION-SUMMARY.md)
@@ -644,6 +682,7 @@ docker logs -f injury-surveillance-backend
 ### Common Issues
 
 **Neo4j Connection Errors:**
+
 ```bash
 # Check if Neo4j is running
 docker ps | grep neo4j
@@ -656,6 +695,7 @@ docker logs injury-surveillance-neo4j
 ```
 
 **TypeORM Connection Issues:**
+
 ```bash
 # Verify PostgreSQL is running
 psql -h localhost -U postgres -d injury_surveillance_identity
@@ -665,6 +705,7 @@ psql -h localhost -U postgres -c "\l"
 ```
 
 **Port Already in Use:**
+
 ```bash
 # Find process using port 3000
 lsof -i :3000
@@ -674,6 +715,7 @@ kill -9 <PID>
 ```
 
 **Module Not Found Errors:**
+
 ```bash
 # Clear node_modules and reinstall
 rm -rf node_modules package-lock.json
@@ -696,6 +738,7 @@ npm install
 ### Code Style
 
 This project follows the [NestJS Style Guide](https://docs.nestjs.com/):
+
 - Use dependency injection for all services
 - Follow module/service/controller separation
 - Use DTOs for all request/response validation

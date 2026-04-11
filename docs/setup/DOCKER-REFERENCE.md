@@ -269,20 +269,20 @@ docker compose exec postgres pg_dump -U identity_admin identity_service > backup
 
 ### Required for Backend Container
 
-| Variable            | Description          | Example                             |
-| ------------------- | -------------------- | ----------------------------------- |
-| `NODE_ENV`          | Environment mode     | `production`                        |
-| `PORT`              | Application port     | `3000`                              |
-| `JWT_SECRET`        | JWT signing secret   | `base64-encoded-secret`             |
-| `POSTGRES_HOST`     | PostgreSQL host      | `postgres` (Docker) or RDS endpoint |
-| `POSTGRES_PORT`     | PostgreSQL port      | `5432`                              |
-| `POSTGRES_DB`       | Database name        | `identity_service`                  |
-| `POSTGRES_USER`     | Database user        | `identity_admin`                    |
-| `POSTGRES_PASSWORD` | Database password    | _secure-password_                   |
-| `NEO4J_URI`         | Neo4j connection URI | `bolt://neo4j:7687` or Aura URI     |
-| `NEO4J_USERNAME`    | Neo4j username       | `neo4j`                             |
-| `NEO4J_PASSWORD`    | Neo4j password       | _secure-password_                   |
-| `CORS_ORIGIN`       | Allowed CORS origins | `http://localhost:3001`             |
+| Variable            | Description          | Example                                       |
+| ------------------- | -------------------- | --------------------------------------------- |
+| `NODE_ENV`          | Environment mode     | `production`                                  |
+| `PORT`              | Application port     | `3000`                                        |
+| `JWT_SECRET`        | JWT signing secret   | `base64-encoded-secret`                       |
+| `POSTGRES_HOST`     | PostgreSQL host      | `postgres` (Docker) or RDS endpoint           |
+| `POSTGRES_PORT`     | PostgreSQL port      | `5432`                                        |
+| `POSTGRES_DB`       | Database name        | `identity_service`                            |
+| `POSTGRES_USER`     | Database user        | `identity_admin`                              |
+| `POSTGRES_PASSWORD` | Database password    | _secure-password_                             |
+| `NEO4J_URI`         | Neo4j connection URI | `bolt://neo4j:7687` or Aura URI               |
+| `NEO4J_USERNAME`    | Neo4j username       | `neo4j`                                       |
+| `NEO4J_PASSWORD`    | Neo4j password       | _secure-password_                             |
+| `CORS_ORIGIN`       | Allowed CORS origins | `http://localhost:3001,http://localhost:8081` |
 
 ---
 

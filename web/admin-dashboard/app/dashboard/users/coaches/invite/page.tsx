@@ -201,7 +201,7 @@ export default function InviteCoachPage() {
                     </p>
                     <div className="mt-3 p-3 bg-gray-900/50 rounded border border-gray-700">
                       <p className="text-xs text-gray-400 mb-1">
-                        Invitation Link (for development):
+                        Invitation Link:
                       </p>
                       <p className="text-xs text-blue-400 font-mono break-all">
                         {success.invitationLink}

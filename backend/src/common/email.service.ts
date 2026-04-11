@@ -1,4 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { buildInvitationLink } from "./invitation-links";
 
 /**
  * Email service for sending various types of emails
@@ -8,6 +10,8 @@ import { Injectable, Logger } from "@nestjs/common";
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
+
+  constructor(private readonly configService: ConfigService) {}
 
   /**
    * Send a coach invitation email
@@ -22,7 +26,13 @@ export class EmailService {
     firstName?: string,
     lastName?: string,
   ): Promise<void> {
-    const invitationLink = `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/coach?token=${token}`;
+    const publicWebUrl =
+      this.configService.get<string>("publicWebUrl") || "http://localhost:3001";
+    const invitationLink = buildInvitationLink(
+      publicWebUrl,
+      "/accept-invitation/coach",
+      token,
+    );
 
     const greeting =
       firstName && lastName
@@ -100,7 +110,13 @@ If you did not expect this invitation, you can safely ignore this email.
     token: string,
     coachName?: string,
   ): Promise<void> {
-    const invitationLink = `${process.env.FRONTEND_URL || "http://localhost:3000"}/accept-invitation/parent?token=${token}`;
+    const publicWebUrl =
+      this.configService.get<string>("publicWebUrl") || "http://localhost:3001";
+    const invitationLink = buildInvitationLink(
+      publicWebUrl,
+      "/accept-invitation/parent",
+      token,
+    );
 
     const invitedBy = coachName
       ? `You have been invited by ${coachName} to`

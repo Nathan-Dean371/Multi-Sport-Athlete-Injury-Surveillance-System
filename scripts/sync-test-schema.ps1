@@ -37,11 +37,10 @@ if (-not (Test-Path $Neo4jMigrations)) {
 }
 
 $flyway = Get-Command flyway -ErrorAction SilentlyContinue
+$useDockerFlyway = -not $flyway
 
-if (-not $flyway) {
-    Write-Host "[ERROR] Flyway CLI not found on PATH." -ForegroundColor Red
-    Write-Host "        Install Flyway before running this wrapper." -ForegroundColor Red
-    exit 1
+if ($useDockerFlyway) {
+    Write-Host "[INFO] Flyway CLI not found on PATH; using Flyway Docker image instead." -ForegroundColor Yellow
 }
 
 $pgHost = if ($env:TEST_POSTGRES_HOST) { $env:TEST_POSTGRES_HOST } else { "127.0.0.1" }
@@ -78,16 +77,64 @@ $env:FLYWAY_PASSWORD = $pgPassword
 $env:FLYWAY_LOCATIONS = "filesystem:$PostgresMigrations"
 $env:FLYWAY_IGNORE_MIGRATION_PATTERNS = "*:pending"
 
-& $flyway.Source validate
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Flyway validate failed." -ForegroundColor Red
-    exit $LASTEXITCODE
-}
+if (-not $useDockerFlyway) {
+    & $flyway.Source validate
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Flyway validate failed." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
 
-& $flyway.Source migrate
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "[ERROR] Flyway migrate failed." -ForegroundColor Red
-    exit $LASTEXITCODE
+    & $flyway.Source migrate
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Flyway migrate failed." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+} else {
+    $flywayImage = if ($env:FLYWAY_DOCKER_IMAGE) { $env:FLYWAY_DOCKER_IMAGE } else { "flyway/flyway:10.17.1" }
+    $networkName = if ($env:INJURY_SURVEILLANCE_DOCKER_NETWORK) { $env:INJURY_SURVEILLANCE_DOCKER_NETWORK } else { "injury-surveillance-network" }
+    $pgContainerHost = if ($env:TEST_POSTGRES_CONTAINER_HOST) { $env:TEST_POSTGRES_CONTAINER_HOST } else { "injury-surveillance-postgres" }
+
+    $dockerFlywayUrl = "jdbc:postgresql://$pgContainerHost`:$([int]5432)/$pgDb"
+
+    $validateArgs = @(
+        "run", "--rm",
+        "--network", $networkName,
+        "-v", "${PostgresMigrations}:/flyway/sql:ro",
+        $flywayImage,
+        "-url=$dockerFlywayUrl",
+        "-user=$pgUser",
+        "-password=$pgPassword",
+        "-connectRetries=60",
+        "-locations=filesystem:/flyway/sql",
+        "-ignoreMigrationPatterns=*:pending",
+        "validate"
+    )
+
+    $migrateArgs = @(
+        "run", "--rm",
+        "--network", $networkName,
+        "-v", "${PostgresMigrations}:/flyway/sql:ro",
+        $flywayImage,
+        "-url=$dockerFlywayUrl",
+        "-user=$pgUser",
+        "-password=$pgPassword",
+        "-connectRetries=60",
+        "-locations=filesystem:/flyway/sql",
+        "-ignoreMigrationPatterns=*:pending",
+        "migrate"
+    )
+
+    docker @validateArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Flyway (Docker) validate failed." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+
+    docker @migrateArgs
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "[ERROR] Flyway (Docker) migrate failed." -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
 }
 
 Write-Host "[2/2] Neo4j migration (neo4j-migrations apply)..." -ForegroundColor Yellow

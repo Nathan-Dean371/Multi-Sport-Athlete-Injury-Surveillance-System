@@ -12,6 +12,8 @@ import { AcceptCoachInvitationDto } from "./dto/accept-coach-invitation.dto";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcryptjs";
 import { EmailService } from "../common/email.service";
+import { ConfigService } from "@nestjs/config";
+import { buildInvitationLink } from "../common/invitation-links";
 
 @Injectable()
 export class CoachesService {
@@ -19,6 +21,7 @@ export class CoachesService {
     @Inject("NEO4J_DRIVER") private neo4jDriver: Driver,
     @Inject("POSTGRES_POOL") private readonly pool: Pool,
     private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -230,11 +233,17 @@ export class CoachesService {
 
     // In production, we'd send an email with the token
     // For now, return the token for development/testing purposes
+    const publicWebUrl =
+      this.configService.get<string>("publicWebUrl") || "http://localhost:3001";
     return {
       token,
       message:
         "Invitation created successfully. An email has been sent to the coach.",
-      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/coach?token=${token}`,
+      invitationLink: buildInvitationLink(
+        publicWebUrl,
+        "/accept-invitation/coach",
+        token,
+      ),
     };
   }
 

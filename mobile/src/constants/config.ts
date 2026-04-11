@@ -2,7 +2,15 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 const PROD_API_URL = "http://54.194.7.2:3000";
-const expoEnv = (globalThis as any).process?.env ?? {};
+const EXPO_PUBLIC_API_URL: string | undefined =
+  (typeof process !== "undefined"
+    ? (process.env.EXPO_PUBLIC_API_URL as string | undefined)
+    : undefined) ?? (globalThis as any).process?.env?.EXPO_PUBLIC_API_URL;
+
+const EXPO_PUBLIC_APP_MODE: string | undefined =
+  (typeof process !== "undefined"
+    ? (process.env.EXPO_PUBLIC_APP_MODE as string | undefined)
+    : undefined) ?? (globalThis as any).process?.env?.EXPO_PUBLIC_APP_MODE;
 
 const getExpoHost = (): string | undefined => {
   const hostUri =
@@ -74,12 +82,12 @@ const rewriteLocalhostApiUrl = (urlValue: string): string => {
 };
 
 const getApiUrl = (): string => {
-  const manualApiUrl = expoEnv.EXPO_PUBLIC_API_URL?.trim();
+  const manualApiUrl = EXPO_PUBLIC_API_URL?.trim();
   if (manualApiUrl) {
     return rewriteLocalhostApiUrl(manualApiUrl);
   }
 
-  const appMode = (expoEnv.EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase();
+  const appMode = (EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase();
   if (appMode === "prod") {
     return PROD_API_URL;
   }
@@ -88,7 +96,7 @@ const getApiUrl = (): string => {
 };
 
 const ENV = {
-  appMode: (expoEnv.EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase(),
+  appMode: (EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase(),
   apiUrl: getApiUrl(),
 };
 

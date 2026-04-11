@@ -12,12 +12,15 @@ import { AcceptParentInvitationDto } from "./dto/accept-parent-invitation.dto";
 import { ParentDto, ParentListDto } from "./dto/parent.dto";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcryptjs";
+import { ConfigService } from "@nestjs/config";
+import { buildInvitationLink } from "../common/invitation-links";
 
 @Injectable()
 export class ParentsService {
   constructor(
     @Inject("POSTGRES_POOL") private readonly pool: Pool,
     @Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver,
+    private readonly configService: ConfigService,
   ) {}
 
   async createAthleteInvitation(
@@ -40,10 +43,16 @@ export class ParentsService {
     }
 
     // In production we'd send email; for now return token and a direct link so tests/dev can use it
+    const publicWebUrl =
+      this.configService.get<string>("publicWebUrl") || "http://localhost:3001";
     return {
       token,
       message: "Athlete invitation created",
-      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/athlete?token=${token}`,
+      invitationLink: buildInvitationLink(
+        publicWebUrl,
+        "/accept-invitation/athlete",
+        token,
+      ),
     };
   }
 
@@ -81,10 +90,16 @@ export class ParentsService {
     }
 
     // In production we'd send email; for now return token and a direct link so tests/dev can use it
+    const publicWebUrl =
+      this.configService.get<string>("publicWebUrl") || "http://localhost:3001";
     return {
       token,
       message: "Parent invitation created",
-      invitationLink: `${process.env.FRONTEND_URL || "http://localhost:3001"}/accept-invitation/parent?token=${token}`,
+      invitationLink: buildInvitationLink(
+        publicWebUrl,
+        "/accept-invitation/parent",
+        token,
+      ),
     };
   }
 

@@ -132,7 +132,7 @@ function Test-DockerImage {
         -e NEO4J_URI=bolt://neo4j:7687 `
         -e NEO4J_USERNAME=neo4j `
         -e NEO4J_PASSWORD=injury-surveillance-dev-password `
-        -e CORS_ORIGIN=http://localhost:3001,http://localhost:19006 `
+        -e CORS_ORIGIN=http://localhost:3001,http://localhost:19006,http://localhost:8081 `
         $FULL_IMAGE_NAME
     
     if ($LASTEXITCODE -ne 0) {
