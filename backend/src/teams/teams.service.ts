@@ -3,12 +3,15 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { Driver, Session } from "neo4j-driver";
 import { Pool } from "pg";
 import { TeamRosterDto, RosterPlayerDto } from "./dto/team-roster.dto";
 import { TeamDetailsDto, CoachInfoDto } from "./dto/team-details.dto";
 import { PlayerStatus } from "../status/dto/update-status.dto";
+import { CreateTeamAdminDto } from "./dto/create-team-admin.dto";
+import { randomBytes } from "crypto";
 
 @Injectable()
 export class TeamsService {
@@ -34,7 +37,7 @@ export class TeamsService {
         WITH t, sp, p, s, count(i) as activeInjuries
         RETURN t.teamId as teamId,
                t.name as teamName,
-               sp.name as sport,
+           coalesce(sp.name, t.sport) as sport,
                collect({
                  playerId: p.playerId,
                  pseudonymId: p.pseudonymId,
@@ -167,7 +170,7 @@ export class TeamsService {
         OPTIONAL MATCH (t)<-[:PLAYS_FOR]-(p:Player)
         RETURN t.teamId as teamId,
                t.name as name,
-               sp.name as sport,
+               coalesce(sp.name, t.sport) as sport,
                t.ageGroup as ageGroup,
                t.gender as gender,
                o.orgId as organizationId,
@@ -268,7 +271,7 @@ export class TeamsService {
         ORDER BY t.name
         RETURN t.teamId as teamId,
                t.name as name,
-               sp.name as sport,
+               coalesce(sp.name, t.sport) as sport,
                t.ageGroup as ageGroup,
                t.gender as gender,
                o.orgId as organizationId,
@@ -297,6 +300,105 @@ export class TeamsService {
       throw new BadRequestException(
         `Failed to retrieve coach teams: ${error.message}`,
       );
+    } finally {
+      await session.close();
+    }
+  }
+
+  async getCoachTeamsForAdmin(
+    coachPseudonymId: string,
+  ): Promise<TeamDetailsDto[]> {
+    // Same data shape as getCoachTeams, but callable by admin workflows.
+    return this.getCoachTeams(coachPseudonymId);
+  }
+
+  async createTeamForAdmin(dto: CreateTeamAdminDto): Promise<TeamDetailsDto> {
+    const session: Session = this.neo4jDriver.session();
+
+    const teamId =
+      dto.teamId || `TEAM-${randomBytes(4).toString("hex").toUpperCase()}`;
+
+    try {
+      const orgCheck = await session.run(
+        `MATCH (o:Organization {orgId: $orgId}) RETURN o.orgId as orgId LIMIT 1`,
+        { orgId: dto.organizationId },
+      );
+      if (orgCheck.records.length === 0) {
+        throw new NotFoundException(
+          `Organization ${dto.organizationId} not found in Neo4j`,
+        );
+      }
+
+      const existingTeam = await session.run(
+        `MATCH (t:Team {teamId: $teamId}) RETURN t.teamId as teamId LIMIT 1`,
+        { teamId },
+      );
+      if (existingTeam.records.length > 0) {
+        throw new ConflictException(`Team ${teamId} already exists`);
+      }
+
+      const result = await session.run(
+        `MERGE (c:Coach {pseudonymId: $coachPseudonymId})
+         ON CREATE SET c.createdAt = datetime()
+         SET c.updatedAt = datetime()
+         WITH c
+         MATCH (o:Organization {orgId: $orgId})
+         CREATE (t:Team {teamId: $teamId})
+         SET t.name = $name,
+             t.sport = $sport,
+             t.ageGroup = $ageGroup,
+             t.gender = $gender,
+             t.seasonStart = $seasonStart,
+             t.seasonEnd = $seasonEnd,
+             t.isActive = true,
+             t.createdAt = datetime(),
+             t.updatedAt = datetime()
+         MERGE (c)-[:MANAGES]->(t)
+         MERGE (t)-[:BELONGS_TO]->(o)
+         RETURN t.teamId as teamId,
+                t.name as name,
+                t.sport as sport,
+                t.ageGroup as ageGroup,
+                t.gender as gender,
+                o.orgId as organizationId,
+                o.name as organizationName,
+                t.seasonStart as seasonStart,
+                t.seasonEnd as seasonEnd`,
+        {
+          coachPseudonymId: dto.coachPseudonymId,
+          orgId: dto.organizationId,
+          teamId,
+          name: dto.name,
+          sport: dto.sport,
+          ageGroup: dto.ageGroup ?? null,
+          gender: dto.gender ?? null,
+          seasonStart: dto.seasonStart ?? null,
+          seasonEnd: dto.seasonEnd ?? null,
+        },
+      );
+
+      const record = result.records[0];
+      return {
+        teamId: record.get("teamId"),
+        name: record.get("name"),
+        sport: record.get("sport"),
+        ageGroup: record.get("ageGroup"),
+        gender: record.get("gender"),
+        organizationId: record.get("organizationId"),
+        organizationName: record.get("organizationName"),
+        coaches: [],
+        playerCount: 0,
+        seasonStart: record.get("seasonStart"),
+        seasonEnd: record.get("seasonEnd"),
+      };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ConflictException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(`Failed to create team: ${error.message}`);
     } finally {
       await session.close();
     }

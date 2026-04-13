@@ -24,6 +24,7 @@ import { PlayerAdminListDto } from "./dto/player-admin.dto";
 import { PlayerInjuriesDto } from "./dto/injury.dto";
 import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
 import { UpdatePlayerAdminDto } from "./dto/update-player-admin.dto";
+import { CreatePlayerAdminDto } from "./dto/create-player-admin.dto";
 
 @ApiTags("players")
 @ApiBearerAuth("JWT-auth")
@@ -58,6 +59,13 @@ export class PlayersController {
   @ApiResponse({ status: 403, description: "Forbidden - Admin role required" })
   async findAllForAdmin(): Promise<PlayerAdminListDto> {
     return this.playersService.findAllForAdmin();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @Post("admin")
+  async createPlayerForAdmin(@Body() dto: CreatePlayerAdminDto) {
+    return this.playersService.createAdminPlayer(dto);
   }
 
   @UseGuards(RolesGuard)

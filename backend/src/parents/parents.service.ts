@@ -15,6 +15,7 @@ import * as bcrypt from "bcryptjs";
 import { ConfigService } from "@nestjs/config";
 import { buildInvitationLink } from "../common/invitation-links";
 import { UpdateParentAdminDto } from "./dto/update-parent-admin.dto";
+import { CreateParentAdminDto } from "./dto/create-parent-admin.dto";
 
 @Injectable()
 export class ParentsService {
@@ -55,6 +56,90 @@ export class ParentsService {
         token,
       ),
     };
+  }
+
+  async createAdminParent(dto: CreateParentAdminDto) {
+    const client = await this.pool.connect();
+    const neo4jSession: Session = this.neo4jDriver.session();
+
+    const pseudo =
+      dto.pseudonymId ||
+      `PSY-PARENT-${randomBytes(4).toString("hex").toUpperCase()}`;
+
+    try {
+      await client.query("BEGIN");
+
+      const existingAccount = await client.query(
+        `SELECT 1 FROM user_accounts WHERE email=$1 LIMIT 1`,
+        [dto.email],
+      );
+      if (existingAccount.rows.length > 0) {
+        throw new ConflictException(
+          "An account with this email already exists",
+        );
+      }
+
+      const existingParentIdentity = await client.query(
+        `SELECT 1 FROM parent_identities WHERE pseudonym_id=$1 LIMIT 1`,
+        [pseudo],
+      );
+      if (existingParentIdentity.rows.length > 0) {
+        throw new ConflictException(
+          "A parent identity with this pseudonym already exists",
+        );
+      }
+
+      const parentIdentityResult = await client.query(
+        `INSERT INTO parent_identities (pseudonym_id, neo4j_parent_id, first_name, last_name, email, phone, phone_number, created_at, updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,NOW(),NOW())
+         RETURNING parent_id`,
+        [
+          pseudo,
+          pseudo,
+          dto.firstName,
+          dto.lastName,
+          dto.email,
+          dto.phone ?? null,
+          dto.phone ?? null,
+        ],
+      );
+
+      const parentId = parentIdentityResult.rows[0].parent_id;
+
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+      await client.query(
+        `INSERT INTO user_accounts (email, password_hash, password_salt, identity_type, pseudonym_id, identity_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, true)`,
+        [dto.email, passwordHash, "bcrypt", "parent", pseudo, parentId],
+      );
+
+      await client.query("COMMIT");
+
+      await neo4jSession.run(
+        `MERGE (p:Parent {pseudonymId: $pseudonymId})
+         ON CREATE SET p.createdAt = datetime()
+         SET p.parentId = $parentId,
+             p.isActive = true,
+             p.updatedAt = datetime()`,
+        { parentId, pseudonymId: pseudo },
+      );
+
+      return {
+        parentId,
+        pseudonymId: pseudo,
+        firstName: dto.firstName,
+        lastName: dto.lastName,
+        email: dto.email,
+        phone: dto.phone ?? null,
+        isActive: true,
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+      await neo4jSession.close();
+    }
   }
 
   async createInvitation(

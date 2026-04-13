@@ -23,12 +23,20 @@ import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { Roles } from "../auth/roles.decorator";
 import { RolesGuard } from "../auth/roles.guard";
 import { UpdateParentAdminDto } from "./dto/update-parent-admin.dto";
+import { CreateParentAdminDto } from "./dto/create-parent-admin.dto";
 
 @ApiTags("parents")
 @ApiBearerAuth("JWT-auth")
 @Controller("parents")
 export class ParentsController {
   constructor(private readonly parentsService: ParentsService) {}
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @Post("admin")
+  async createParentForAdmin(@Body() dto: CreateParentAdminDto) {
+    return this.parentsService.createAdminParent(dto);
+  }
 
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles("admin")

@@ -14,12 +14,16 @@ import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcryptjs";
 import { UpdatePlayerAdminDto } from "./dto/update-player-admin.dto";
+import { CreatePlayerAdminDto } from "./dto/create-player-admin.dto";
+import { ParentsService } from "../parents/parents.service";
+import { CreateParentAdminDto } from "../parents/dto/create-parent-admin.dto";
 
 @Injectable()
 export class PlayersService {
   constructor(
     @Inject("NEO4J_DRIVER") private readonly neo4jDriver: Driver,
     @Inject("POSTGRES_POOL") private readonly pool: Pool,
+    private readonly parentsService: ParentsService,
   ) {}
 
   async acceptInvite(dto: AcceptPlayerInvitationDto) {
@@ -193,6 +197,195 @@ export class PlayersService {
       };
     } finally {
       await session.close();
+    }
+  }
+
+  async createAdminPlayer(dto: CreatePlayerAdminDto) {
+    if (!!dto.parentPseudonymId === !!dto.parent) {
+      throw new BadRequestException(
+        "Provide exactly one of parentPseudonymId or parent details",
+      );
+    }
+
+    let parentPseudonymId = dto.parentPseudonymId;
+
+    if (dto.parent) {
+      const created = await this.parentsService.createAdminParent({
+        firstName: dto.parent.firstName,
+        lastName: dto.parent.lastName,
+        email: dto.parent.email,
+        password: dto.parent.password,
+        phone: dto.parent.phone,
+        pseudonymId: dto.parent.pseudonymId,
+      } satisfies CreateParentAdminDto);
+      parentPseudonymId = created.pseudonymId;
+    }
+
+    if (!parentPseudonymId) {
+      throw new BadRequestException("Parent pseudonym is required");
+    }
+
+    const client = await this.pool.connect();
+    const neo4jSession: Session = this.neo4jDriver.session();
+
+    const pseudonymId =
+      dto.pseudonymId ||
+      `PSY-PLAYER-${randomBytes(4).toString("hex").toUpperCase()}`;
+    const neo4jPlayerId = `PLAYER-${randomBytes(4).toString("hex").toUpperCase()}`;
+
+    try {
+      // Validate the team exists and the coach manages it.
+      const coachTeamCheck = await neo4jSession.run(
+        `MATCH (c:Coach {pseudonymId: $coachPseudonymId})-[:MANAGES]->(t:Team {teamId: $teamId})
+         RETURN t.teamId as teamId LIMIT 1`,
+        { coachPseudonymId: dto.coachPseudonymId, teamId: dto.teamId },
+      );
+      if (coachTeamCheck.records.length === 0) {
+        throw new BadRequestException(
+          "Coach does not manage the selected team (or team does not exist)",
+        );
+      }
+
+      const existingNeo4jPlayer = await neo4jSession.run(
+        `MATCH (pl:Player {pseudonymId: $pseudonymId}) RETURN pl.pseudonymId as pseudonymId LIMIT 1`,
+        { pseudonymId },
+      );
+      if (existingNeo4jPlayer.records.length > 0) {
+        throw new ConflictException(
+          `Player ${pseudonymId} already exists in Neo4j`,
+        );
+      }
+
+      await client.query("BEGIN");
+
+      const existingAccount = await client.query(
+        `SELECT 1 FROM user_accounts WHERE email=$1 LIMIT 1`,
+        [dto.email],
+      );
+      if (existingAccount.rows.length > 0) {
+        throw new ConflictException(
+          "An account with this email already exists",
+        );
+      }
+
+      const parentRes = await client.query(
+        `SELECT parent_id FROM parent_identities WHERE pseudonym_id=$1 LIMIT 1`,
+        [parentPseudonymId],
+      );
+      if (parentRes.rows.length === 0) {
+        throw new NotFoundException(
+          `Parent identity ${parentPseudonymId} not found`,
+        );
+      }
+      const parentId = parentRes.rows[0].parent_id;
+
+      const parentAccountRes = await client.query(
+        `SELECT 1 FROM user_accounts WHERE pseudonym_id=$1 AND identity_type='parent' LIMIT 1`,
+        [parentPseudonymId],
+      );
+      if (parentAccountRes.rows.length === 0) {
+        throw new BadRequestException(
+          "Parent identity exists but has no user account; create the parent account first",
+        );
+      }
+
+      const existingPlayerIdentity = await client.query(
+        `SELECT 1 FROM player_identities WHERE pseudonym_id=$1 LIMIT 1`,
+        [pseudonymId],
+      );
+      if (existingPlayerIdentity.rows.length > 0) {
+        throw new ConflictException(
+          `A player identity with pseudonym ${pseudonymId} already exists`,
+        );
+      }
+
+      const playerIdentityResult = await client.query(
+        `INSERT INTO player_identities
+         (pseudonym_id, neo4j_player_id, first_name, last_name, date_of_birth, email, parent_id, is_active, gdpr_consent_given, gdpr_consent_date, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, true, true, CURRENT_TIMESTAMP, NOW(), NOW())
+         RETURNING id`,
+        [
+          pseudonymId,
+          neo4jPlayerId,
+          dto.firstName,
+          dto.lastName,
+          dto.dateOfBirth,
+          dto.email,
+          parentId,
+        ],
+      );
+
+      const playerIdentityId = playerIdentityResult.rows[0].id;
+      const passwordHash = await bcrypt.hash(dto.password, 10);
+
+      await client.query(
+        `INSERT INTO user_accounts
+         (email, password_hash, password_salt, identity_type, pseudonym_id, identity_id, is_active)
+         VALUES ($1, $2, $3, $4, $5, $6, true)`,
+        [
+          dto.email,
+          passwordHash,
+          "bcrypt",
+          "player",
+          pseudonymId,
+          playerIdentityId,
+        ],
+      );
+
+      // Neo4j domain graph
+      await neo4jSession.run(
+        `MERGE (p:Parent {pseudonymId: $parentPseudonymId})
+         ON CREATE SET p.createdAt = datetime()
+         SET p.updatedAt = datetime()`,
+        { parentPseudonymId },
+      );
+
+      await neo4jSession.run(
+        `MATCH (t:Team {teamId: $teamId})
+         CREATE (pl:Player {
+           playerId: $playerId,
+           pseudonymId: $pseudonymId,
+           name: $name,
+           dateOfBirth: date($dateOfBirth),
+           isActive: true,
+           createdAt: datetime(),
+           updatedAt: datetime()
+         })
+         WITH pl, t
+         MATCH (p:Parent {pseudonymId: $parentPseudonymId})
+         MERGE (p)-[:PARENT_OF {createdAt: datetime()}]->(pl)
+         MERGE (pl)-[:PLAYS_FOR {createdAt: datetime()}]->(t)`,
+        {
+          teamId: dto.teamId,
+          playerId: neo4jPlayerId,
+          pseudonymId,
+          name: `${dto.firstName} ${dto.lastName}`,
+          dateOfBirth: dto.dateOfBirth,
+          parentPseudonymId,
+        },
+      );
+
+      await client.query("COMMIT");
+
+      return {
+        message: "Player created successfully",
+        player: {
+          playerId: neo4jPlayerId,
+          pseudonymId,
+          email: dto.email,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          parentPseudonymId,
+          teamId: dto.teamId,
+          coachPseudonymId: dto.coachPseudonymId,
+        },
+      };
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+      await neo4jSession.close();
     }
   }
 

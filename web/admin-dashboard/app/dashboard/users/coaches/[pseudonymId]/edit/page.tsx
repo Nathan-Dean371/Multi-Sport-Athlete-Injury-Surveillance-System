@@ -310,6 +310,17 @@ export default function EditCoachPage() {
                 </button>
                 <button
                   type="button"
+                  onClick={() =>
+                    router.push(
+                      `/dashboard/users/coaches/${encodeURIComponent(pseudonymId)}/teams/create`,
+                    )
+                  }
+                  className="px-6 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-gray-800"
+                >
+                  Create Team
+                </button>
+                <button
+                  type="button"
                   disabled={resettingPassword}
                   onClick={handleResetPassword}
                   className="px-6 py-2.5 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-gray-800"

@@ -14,6 +14,7 @@ import { SessionsModule } from "./sessions/sessions.module";
 import { ReportsModule } from "./reports/reports.module";
 import { CoachesModule } from "./coaches/coaches.module";
 import { TrainingModule } from "./training/training.module";
+import { ReferenceModule } from "./reference/reference.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -35,6 +36,7 @@ import configuration from "./config/configuration";
     ReportsModule,
     CoachesModule,
     TrainingModule,
+    ReferenceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

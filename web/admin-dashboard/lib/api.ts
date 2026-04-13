@@ -143,6 +143,15 @@ export interface UpdateParentAdminRequest {
   isActive?: boolean;
 }
 
+export interface CreateParentAdminRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  pseudonymId?: string;
+}
+
 export interface PlayerAdminProfile {
   playerId: string;
   pseudonymId: string;
@@ -158,6 +167,63 @@ export interface UpdatePlayerAdminRequest {
   lastName?: string;
   email?: string;
   isActive?: boolean;
+}
+
+export interface Organization {
+  organizationId: string;
+  organizationName: string;
+}
+
+export interface OrganizationListResponse {
+  organizations: Organization[];
+  total: number;
+}
+
+export interface TeamDetails {
+  teamId: string;
+  name: string;
+  sport: string | null;
+  ageGroup: string | null;
+  gender: string | null;
+  organizationId: string | null;
+  organizationName: string | null;
+  playerCount: number;
+  seasonStart: string | null;
+  seasonEnd: string | null;
+}
+
+export interface CreateTeamAdminRequest {
+  name: string;
+  sport: string;
+  organizationId: string;
+  coachPseudonymId: string;
+  ageGroup?: string;
+  gender?: string;
+  seasonStart?: string;
+  seasonEnd?: string;
+  teamId?: string;
+}
+
+export interface CreatePlayerAdminParent {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  phone?: string;
+  pseudonymId?: string;
+}
+
+export interface CreatePlayerAdminRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  dateOfBirth: string;
+  coachPseudonymId: string;
+  teamId: string;
+  parentPseudonymId?: string;
+  parent?: CreatePlayerAdminParent;
+  pseudonymId?: string;
 }
 
 export interface AdminResetPasswordResponse {
@@ -489,6 +555,44 @@ class ApiClient {
   async getPlayers(): Promise<PlayerListResponse> {
     return this.request("/players/admin", {
       method: "GET",
+    });
+  }
+
+  async getOrganizations(): Promise<OrganizationListResponse> {
+    return this.request("/reference/organizations", { method: "GET" });
+  }
+
+  async createParent(
+    data: CreateParentAdminRequest,
+  ): Promise<ParentAdminProfile> {
+    return this.request("/parents/admin", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async createTeam(data: CreateTeamAdminRequest): Promise<TeamDetails> {
+    return this.request("/teams/admin", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getCoachTeamsForAdmin(
+    coachPseudonymId: string,
+  ): Promise<TeamDetails[]> {
+    return this.request(
+      `/teams/admin/coach/${encodeURIComponent(coachPseudonymId)}`,
+      {
+        method: "GET",
+      },
+    );
+  }
+
+  async createPlayer(data: CreatePlayerAdminRequest): Promise<any> {
+    return this.request("/players/admin", {
+      method: "POST",
+      body: JSON.stringify(data),
     });
   }
 
