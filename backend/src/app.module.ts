@@ -13,6 +13,7 @@ import { ParentsModule } from "./parents/parents.module";
 import { SessionsModule } from "./sessions/sessions.module";
 import { ReportsModule } from "./reports/reports.module";
 import { CoachesModule } from "./coaches/coaches.module";
+import { TrainingModule } from "./training/training.module";
 import configuration from "./config/configuration";
 
 @Module({
@@ -33,6 +34,7 @@ import configuration from "./config/configuration";
     SessionsModule,
     ReportsModule,
     CoachesModule,
+    TrainingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
