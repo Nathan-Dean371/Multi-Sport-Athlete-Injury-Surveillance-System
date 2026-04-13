@@ -412,6 +412,7 @@ jobs:
               -p 3000:3000 \
               -e NODE_ENV=production \
               -e CORS_ORIGIN=${{ secrets.CORS_ORIGIN }} \
+              -e PUBLIC_WEB_URL=${{ vars.PUBLIC_WEB_URL }} \
               -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
               -e POSTGRES_HOST=${{ secrets.POSTGRES_HOST }} \
               -e POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
