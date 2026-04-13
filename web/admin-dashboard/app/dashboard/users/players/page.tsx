@@ -121,6 +121,21 @@ export default function PlayersPage() {
       className: "text-center",
     },
     {
+      header: "Edit",
+      accessor: (player) =>
+        player.pseudonymId ? (
+          <Link
+            href={`/dashboard/users/players/${encodeURIComponent(player.pseudonymId)}/edit`}
+            className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+          >
+            Edit
+          </Link>
+        ) : (
+          <span className="text-gray-500 text-sm">-</span>
+        ),
+      className: "text-center",
+    },
+    {
       header: "Activity",
       accessor: () => (
         <Link

@@ -1,4 +1,12 @@
-import { Controller, Get, Param, UseGuards, Post, Body } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  UseGuards,
+  Post,
+  Body,
+  Patch,
+} from "@nestjs/common";
 import {
   ApiTags,
   ApiOperation,
@@ -15,6 +23,7 @@ import { PlayerDto, PlayerListDto } from "./dto/player.dto";
 import { PlayerAdminListDto } from "./dto/player-admin.dto";
 import { PlayerInjuriesDto } from "./dto/injury.dto";
 import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
+import { UpdatePlayerAdminDto } from "./dto/update-player-admin.dto";
 
 @ApiTags("players")
 @ApiBearerAuth("JWT-auth")
@@ -49,6 +58,23 @@ export class PlayersController {
   @ApiResponse({ status: 403, description: "Forbidden - Admin role required" })
   async findAllForAdmin(): Promise<PlayerAdminListDto> {
     return this.playersService.findAllForAdmin();
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @Get("admin/:pseudonymId")
+  async getPlayerAdminProfile(@Param("pseudonymId") pseudonymId: string) {
+    return this.playersService.getAdminProfile(pseudonymId);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @Patch("admin/:pseudonymId")
+  async updatePlayerAdminProfile(
+    @Param("pseudonymId") pseudonymId: string,
+    @Body() dto: UpdatePlayerAdminDto,
+  ) {
+    return this.playersService.updateAdminProfile(pseudonymId, dto);
   }
 
   @Get()

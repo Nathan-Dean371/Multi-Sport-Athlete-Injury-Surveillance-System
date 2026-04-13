@@ -1,7 +1,13 @@
-import { Injectable, UnauthorizedException, Inject } from "@nestjs/common";
+import {
+  Injectable,
+  UnauthorizedException,
+  Inject,
+  NotFoundException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Pool } from "pg";
 import * as bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { LoginDto, RegisterDto, AuthResponseDto } from "./dto/auth.dto";
 
 @Injectable()
@@ -301,6 +307,42 @@ export class AuthService {
     } finally {
       client.release();
     }
+  }
+
+  async adminResetPassword(pseudonymId: string) {
+    const accountRes = await this.pool.query(
+      `SELECT id, email FROM user_accounts WHERE pseudonym_id = $1 LIMIT 1`,
+      [pseudonymId],
+    );
+
+    if (accountRes.rows.length === 0) {
+      throw new NotFoundException(`User account ${pseudonymId} not found`);
+    }
+
+    const account = accountRes.rows[0];
+
+    // 24-ish chars, URL-safe, high entropy
+    const temporaryPassword = randomBytes(18).toString("base64url");
+    const passwordHash = await bcrypt.hash(temporaryPassword, 10);
+
+    await this.pool.query(
+      `UPDATE user_accounts
+       SET password_hash = $1,
+           password_salt = $2,
+           password_changed_at = CURRENT_TIMESTAMP,
+           is_locked = false,
+           lock_reason = NULL,
+           failed_login_attempts = 0,
+           last_failed_login = NULL,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3`,
+      [passwordHash, "bcrypt", account.id],
+    );
+
+    return {
+      message: `Temporary password generated for ${account.email}`,
+      temporaryPassword,
+    };
   }
 
   async validateUser(userId: string): Promise<any> {

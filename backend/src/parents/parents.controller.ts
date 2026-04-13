@@ -1,4 +1,13 @@
-import { Controller, Post, Body, UseGuards, Req, Get } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Get,
+  Patch,
+  Param,
+} from "@nestjs/common";
 import {
   ApiTags,
   ApiBearerAuth,
@@ -13,6 +22,7 @@ import { ParentListDto } from "./dto/parent.dto";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { Roles } from "../auth/roles.decorator";
 import { RolesGuard } from "../auth/roles.guard";
+import { UpdateParentAdminDto } from "./dto/update-parent-admin.dto";
 
 @ApiTags("parents")
 @ApiBearerAuth("JWT-auth")
@@ -40,6 +50,23 @@ export class ParentsController {
   @ApiResponse({ status: 403, description: "Forbidden - Admin role required" })
   async findAllForAdmin(): Promise<ParentListDto> {
     return this.parentsService.findAllForAdmin();
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @Get("admin/:pseudonymId")
+  async getParentAdminProfile(@Param("pseudonymId") pseudonymId: string) {
+    return this.parentsService.getAdminProfile(pseudonymId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @Patch("admin/:pseudonymId")
+  async updateParentAdminProfile(
+    @Param("pseudonymId") pseudonymId: string,
+    @Body() dto: UpdateParentAdminDto,
+  ) {
+    return this.parentsService.updateAdminProfile(pseudonymId, dto);
   }
 
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -104,4 +104,16 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
+
+  @Post("admin/users/:pseudonymId/reset-password")
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Reset a user's password (Admin only)",
+    description:
+      "Generates a temporary password for the user identified by pseudonymId and updates their stored password hash.",
+  })
+  async adminResetPassword(@Param("pseudonymId") pseudonymId: string) {
+    return this.authService.adminResetPassword(pseudonymId);
+  }
 }

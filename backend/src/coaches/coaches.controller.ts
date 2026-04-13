@@ -7,6 +7,7 @@ import {
   Body,
   Req,
   Delete,
+  Patch,
 } from "@nestjs/common";
 import {
   ApiTags,
@@ -23,6 +24,7 @@ import { RolesGuard } from "../auth/roles.guard";
 import { Public } from "../auth/public.decorator";
 import { CreateCoachInvitationDto } from "./dto/create-coach-invitation.dto";
 import { AcceptCoachInvitationDto } from "./dto/accept-coach-invitation.dto";
+import { UpdateCoachAdminDto } from "./dto/update-coach-admin.dto";
 
 @ApiTags("coaches")
 @ApiBearerAuth("JWT-auth")
@@ -54,6 +56,43 @@ export class CoachesController {
   })
   async findAll(): Promise<CoachListDto> {
     return this.coachesService.findAll();
+  }
+
+  @Get("admin/:pseudonymId")
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Get coach admin profile (Admin only)",
+    description:
+      "Retrieve editable coach identity/account fields for admin user management.",
+  })
+  @ApiParam({
+    name: "pseudonymId",
+    description: "Coach pseudonym ID (e.g., PSY-COACH-8F2A9D1B)",
+    example: "PSY-COACH-8F2A9D1B",
+  })
+  async getCoachAdminProfile(@Param("pseudonymId") pseudonymId: string) {
+    return this.coachesService.getAdminProfile(pseudonymId);
+  }
+
+  @Patch("admin/:pseudonymId")
+  @UseGuards(RolesGuard)
+  @Roles("admin")
+  @ApiOperation({
+    summary: "Update coach admin profile (Admin only)",
+    description:
+      "Update coach identity/account fields (name/email/active status) for admin user management.",
+  })
+  @ApiParam({
+    name: "pseudonymId",
+    description: "Coach pseudonym ID (e.g., PSY-COACH-8F2A9D1B)",
+    example: "PSY-COACH-8F2A9D1B",
+  })
+  async updateCoachAdminProfile(
+    @Param("pseudonymId") pseudonymId: string,
+    @Body() dto: UpdateCoachAdminDto,
+  ) {
+    return this.coachesService.updateAdminProfile(pseudonymId, dto);
   }
 
   @Get(":id")

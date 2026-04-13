@@ -3,6 +3,7 @@ import {
   Inject,
   NotFoundException,
   BadRequestException,
+  ConflictException,
 } from "@nestjs/common";
 import { Driver, Session } from "neo4j-driver";
 import { Pool } from "pg";
@@ -12,6 +13,7 @@ import { PlayerInjuriesDto, InjuryDto } from "./dto/injury.dto";
 import { AcceptPlayerInvitationDto } from "./dto/accept-player-invitation.dto";
 import { randomBytes } from "crypto";
 import * as bcrypt from "bcryptjs";
+import { UpdatePlayerAdminDto } from "./dto/update-player-admin.dto";
 
 @Injectable()
 export class PlayersService {
@@ -383,6 +385,140 @@ export class PlayersService {
       }
     } finally {
       await session.close();
+    }
+  }
+
+  async getAdminProfile(pseudonymId: string) {
+    const client = await this.pool.connect();
+    const session = this.neo4jDriver.session();
+
+    try {
+      const res = await client.query(
+        `SELECT
+           pi.id as player_id,
+           pi.pseudonym_id,
+           pi.first_name,
+           pi.last_name,
+           pi.email,
+           pi.date_of_birth,
+           COALESCE(pi.is_active, true) as identity_is_active,
+           ua.id as user_account_id,
+           ua.email as account_email,
+           COALESCE(ua.is_active, pi.is_active, true) as is_active
+         FROM player_identities pi
+         LEFT JOIN user_accounts ua
+           ON ua.pseudonym_id = pi.pseudonym_id AND ua.identity_type = 'player'
+         WHERE pi.pseudonym_id = $1
+         LIMIT 1`,
+        [pseudonymId],
+      );
+
+      if (res.rows.length === 0) {
+        throw new NotFoundException(`Player identity ${pseudonymId} not found`);
+      }
+
+      const row = res.rows[0];
+      return {
+        playerId: row.player_id,
+        pseudonymId: row.pseudonym_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        email: row.account_email ?? row.email ?? null,
+        dateOfBirth: row.date_of_birth,
+        isActive: row.is_active ?? true,
+      };
+    } finally {
+      client.release();
+      await session.close();
+    }
+  }
+
+  async updateAdminProfile(pseudonymId: string, dto: UpdatePlayerAdminDto) {
+    const client = await this.pool.connect();
+    const neo4jSession: Session = this.neo4jDriver.session();
+
+    try {
+      await client.query("BEGIN");
+
+      const existingRes = await client.query(
+        `SELECT
+           pi.id as player_id,
+           ua.id as user_account_id
+         FROM player_identities pi
+         LEFT JOIN user_accounts ua
+           ON ua.pseudonym_id = pi.pseudonym_id AND ua.identity_type = 'player'
+         WHERE pi.pseudonym_id = $1
+         LIMIT 1`,
+        [pseudonymId],
+      );
+
+      if (existingRes.rows.length === 0) {
+        throw new NotFoundException(`Player identity ${pseudonymId} not found`);
+      }
+
+      const accountId: string | null =
+        existingRes.rows[0].user_account_id || null;
+
+      if (dto.email && accountId) {
+        const emailConflict = await client.query(
+          `SELECT 1 FROM user_accounts WHERE email = $1 AND id <> $2 LIMIT 1`,
+          [dto.email, accountId],
+        );
+        if (emailConflict.rows.length > 0) {
+          throw new ConflictException("Email address is already in use");
+        }
+      }
+
+      await client.query(
+        `UPDATE player_identities
+         SET first_name = COALESCE($2, first_name),
+             last_name = COALESCE($3, last_name),
+             email = COALESCE($4, email),
+             is_active = COALESCE($5, is_active),
+             updated_at = NOW()
+         WHERE pseudonym_id = $1`,
+        [
+          pseudonymId,
+          dto.firstName ?? null,
+          dto.lastName ?? null,
+          dto.email ?? null,
+          dto.isActive ?? null,
+        ],
+      );
+
+      if (accountId) {
+        await client.query(
+          `UPDATE user_accounts
+           SET email = COALESCE($2, email),
+               is_active = COALESCE($3, is_active),
+               updated_at = NOW()
+           WHERE id = $1`,
+          [accountId, dto.email ?? null, dto.isActive ?? null],
+        );
+      }
+
+      await client.query("COMMIT");
+
+      if (dto.isActive !== undefined) {
+        try {
+          await neo4jSession.run(
+            `MATCH (p:Player {pseudonymId: $pseudonymId})
+             SET p.isActive = $isActive,
+                 p.updatedAt = datetime()`,
+            { pseudonymId, isActive: dto.isActive },
+          );
+        } catch {
+          // Best-effort only
+        }
+      }
+
+      return this.getAdminProfile(pseudonymId);
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+      await neo4jSession.close();
     }
   }
 }

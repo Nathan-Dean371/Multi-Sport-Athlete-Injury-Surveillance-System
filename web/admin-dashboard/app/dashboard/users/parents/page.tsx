@@ -101,6 +101,21 @@ export default function ParentsPage() {
       className: "text-center",
     },
     {
+      header: "Edit",
+      accessor: (parent) =>
+        parent.pseudonymId ? (
+          <Link
+            href={`/dashboard/users/parents/${encodeURIComponent(parent.pseudonymId)}/edit`}
+            className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+          >
+            Edit
+          </Link>
+        ) : (
+          <span className="text-gray-500 text-sm">-</span>
+        ),
+      className: "text-center",
+    },
+    {
       header: "Activity",
       accessor: () => (
         <Link

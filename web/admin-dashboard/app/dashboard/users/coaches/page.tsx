@@ -99,6 +99,21 @@ export default function CoachesPage() {
       className: "text-center",
     },
     {
+      header: "Edit",
+      accessor: (coach) =>
+        coach.pseudonymId ? (
+          <Link
+            href={`/dashboard/users/coaches/${encodeURIComponent(coach.pseudonymId)}/edit`}
+            className="px-3 py-1 bg-gray-800 hover:bg-gray-700 text-sm text-white rounded"
+          >
+            Edit
+          </Link>
+        ) : (
+          <span className="text-gray-500 text-sm">-</span>
+        ),
+      className: "text-center",
+    },
+    {
       header: "Activity",
       accessor: () => (
         <Link

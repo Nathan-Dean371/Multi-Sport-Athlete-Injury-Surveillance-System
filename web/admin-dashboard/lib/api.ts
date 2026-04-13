@@ -109,6 +109,62 @@ export interface PlayerListResponse {
   total: number;
 }
 
+export interface CoachAdminProfile {
+  coachId: string | null;
+  pseudonymId: string;
+  firstName: string | null;
+  lastName: string | null;
+  email: string | null;
+  isActive: boolean;
+}
+
+export interface UpdateCoachAdminRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface ParentAdminProfile {
+  parentId: string;
+  pseudonymId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  phone: string | null;
+  isActive: boolean;
+}
+
+export interface UpdateParentAdminRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phone?: string;
+  isActive?: boolean;
+}
+
+export interface PlayerAdminProfile {
+  playerId: string;
+  pseudonymId: string;
+  firstName: string;
+  lastName: string;
+  email: string | null;
+  dateOfBirth: string;
+  isActive: boolean;
+}
+
+export interface UpdatePlayerAdminRequest {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  isActive?: boolean;
+}
+
+export interface AdminResetPasswordResponse {
+  message: string;
+  temporaryPassword: string;
+}
+
 export interface CreateCoachInvitationRequest {
   coachEmail: string;
   coachFirstName?: string;
@@ -434,6 +490,69 @@ class ApiClient {
     return this.request("/players/admin", {
       method: "GET",
     });
+  }
+
+  async getCoachAdminProfile(pseudonymId: string): Promise<CoachAdminProfile> {
+    return this.request(`/coaches/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "GET",
+    });
+  }
+
+  async updateCoachAdminProfile(
+    pseudonymId: string,
+    data: UpdateCoachAdminRequest,
+  ): Promise<CoachAdminProfile> {
+    return this.request(`/coaches/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getParentAdminProfile(
+    pseudonymId: string,
+  ): Promise<ParentAdminProfile> {
+    return this.request(`/parents/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "GET",
+    });
+  }
+
+  async updateParentAdminProfile(
+    pseudonymId: string,
+    data: UpdateParentAdminRequest,
+  ): Promise<ParentAdminProfile> {
+    return this.request(`/parents/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getPlayerAdminProfile(
+    pseudonymId: string,
+  ): Promise<PlayerAdminProfile> {
+    return this.request(`/players/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "GET",
+    });
+  }
+
+  async updatePlayerAdminProfile(
+    pseudonymId: string,
+    data: UpdatePlayerAdminRequest,
+  ): Promise<PlayerAdminProfile> {
+    return this.request(`/players/admin/${encodeURIComponent(pseudonymId)}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async adminResetUserPassword(
+    pseudonymId: string,
+  ): Promise<AdminResetPasswordResponse> {
+    return this.request(
+      `/auth/admin/users/${encodeURIComponent(pseudonymId)}/reset-password`,
+      {
+        method: "POST",
+      },
+    );
   }
 
   async inviteCoach(
