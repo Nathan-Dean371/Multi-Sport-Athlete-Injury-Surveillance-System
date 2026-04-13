@@ -3,12 +3,14 @@ import { PlayersService } from "./players.service";
 import { NotFoundException } from "@nestjs/common";
 import { Driver, Session } from "neo4j-driver";
 import { Pool } from "pg";
+import { ParentsService } from "../parents/parents.service";
 
 describe("PlayersService", () => {
   let service: PlayersService;
   let mockNeo4jDriver: jest.Mocked<Driver>;
   let mockSession: jest.Mocked<Session>;
   let mockPostgresPool: jest.Mocked<Pool>;
+  let mockParentsService: Pick<ParentsService, "createAdminParent">;
 
   const mockPlayerProperties = {
     playerId: "PLAYER-001",
@@ -61,6 +63,10 @@ describe("PlayersService", () => {
       end: jest.fn(),
     } as any;
 
+    mockParentsService = {
+      createAdminParent: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PlayersService,
@@ -71,6 +77,10 @@ describe("PlayersService", () => {
         {
           provide: "POSTGRES_POOL",
           useValue: mockPostgresPool,
+        },
+        {
+          provide: ParentsService,
+          useValue: mockParentsService,
         },
       ],
     }).compile();
