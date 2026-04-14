@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Endpoint Visualization</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: #4ec9b0;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #858585;
+            margin-bottom: 40px;
+            font-size: 14px;
+        }
+        
+        .endpoint-tree {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 30px;
+        }
+        
+        .api-root {
+            color: #569cd6;
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        
+        .domain {
+            margin-bottom: 30px;
+        }
+        
+        .domain-name {
+            color: #dcdcaa;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .domain-name:hover {
+            color: #f0f0aa;
+        }
+        
+        .domain-name::before {
+            content: '▼ ';
+            display: inline-block;
+            transition: transform 0.2s;
+        }
+        
+        .domain-name.collapsed::before {
+            transform: rotate(-90deg);
+        }
+        
+        .endpoints {
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 2px solid #3e3e42;
+        }
+        
+        .endpoints.hidden {
+            display: none;
+        }
+        
+        .endpoint {
+            margin: 8px 0;
+            padding: 10px 15px;
+            background: #1e1e1e;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: background 0.2s;
+        }
+        
+        .endpoint:hover {
+            background: #2d2d30;
+        }
+        
+        .method {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 12px;
+            width: 70px;
+            text-align: center;
+        }
+        
+        .method.get {
+            background: #264f78;
+            color: #4fc3f7;
+        }
+        
+        .method.post {
+            background: #1e5631;
+            color: #4caf50;
+        }
+        
+        .method.patch {
+            background: #5c4e1a;
+            color: #ffc107;
+        }
+        
+        .method.delete {
+            background: #5c1a1a;
+            color: #f44336;
+        }
+        
+        .path {
+            color: #ce9178;
+            flex: 1;
+            font-size: 14px;
+        }
+        
+        .description {
+            color: #858585;
+            font-size: 12px;
+            font-style: italic;
+        }
+        
+        .badge {
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        .badge.mvp {
+            background: #1e5631;
+            color: #4caf50;
+        }
+        
+        .badge.phase2 {
+            background: #5c4e1a;
+            color: #ffc107;
+        }
+        
+        .badge.phase3 {
+            background: #264f78;
+            color: #4fc3f7;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4ec9b0;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #858585;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .sample-indicator {
+            width: 8px;
+            height: 8px;
+            background: #ce9178;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Injury Surveillance System - API Endpoints</h1>
+        <p class="subtitle">Backend REST API Structure | Neo4j + NestJS</p>
+        
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">32</div>
+                <div class="stat-label">Total Endpoints</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">7</div>
+                <div class="stat-label">MVP Required</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">~35</div>
+                <div class="stat-label">Estimated Hours</div>
+            </div>
+        </div>
+        
+        <!-- Legend -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="sample-indicator"></div>
+                <span>= Sample endpoint (detailed in docs)</span>
+            </div>
+            <div class="legend-item">
+                <span class="badge mvp">MVP</span>
+                <span>Must have (Weeks 3-5)</span>
+            </div>
+            <div class="legend-item">
+                <span class="badge phase2">Phase 2</span>
+                <span>Should have (Week 6)</span>
+            </div>
+            <div class="legend-item">
+                <span class="badge phase3">Phase 3</span>
+                <span>Nice to have</span>
+            </div>
+        </div>
+        
+        <!-- Endpoint Tree -->
+        <div class="endpoint-tree">
+            <div class="api-root">/api</div>
+            
+            <!-- Authentication Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /auth - Authentication & Authorization
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/register</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Create new user account</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/login</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Authenticate user and return JWT</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/logout</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Invalidate refresh token</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/refresh-token</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get new access token</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/forgot-password</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Request password reset</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Players Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /players - Player Management
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:playerId</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get player profile</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method patch">PATCH</div>
+                        <div class="path">/:playerId</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Update player profile</div>
+                    </div>
+                    <div class="endpoint" style="border-left: 3px solid #ce9178;">
+                        <div class="method patch">PATCH</div>
+                        <div class="path">/:playerId/status</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Update daily status (GREEN/ORANGE/RED) ★ SAMPLE</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:playerId/injuries</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Get injury history</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:playerId/teams</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Get all teams player belongs to</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method delete">DELETE</div>
+                        <div class="path">/:playerId</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Delete player account (GDPR)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Coaches Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /coaches - Coach Operations
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:coachId</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get coach profile</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/teams</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Get all teams managed by coach</div>
+                    </div>
+                    <div class="endpoint" style="border-left: 3px solid #ce9178;">
+                        <div class="method get">GET</div>
+                        <div class="path">/teams/:teamId/players</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get team roster with status ★ SAMPLE</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/teams/:teamId/analytics</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Get injury analytics for team</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/dashboard</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Get aggregated coach dashboard data</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Injuries Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /injuries - Injury Reporting & Tracking
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint" style="border-left: 3px solid #ce9178;">
+                        <div class="method post">POST</div>
+                        <div class="path">/</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Report new injury ★ SAMPLE</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:injuryId</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get injury details</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method patch">PATCH</div>
+                        <div class="path">/:injuryId</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Update injury details</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/:injuryId/recovery-update</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Add recovery progress note</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/:injuryId/resolve</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Mark injury as resolved</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Teams Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /teams - Team Management
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">List all teams (admin)</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Create new team (admin)</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/:teamId</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Get team details</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method patch">PATCH</div>
+                        <div class="path">/:teamId</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Update team details</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/:teamId/players/:playerId</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Add player to team</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method delete">DELETE</div>
+                        <div class="path">/:teamId/players/:playerId</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Remove player from team</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /notifications - Push Notifications
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/token</div>
+                        <span class="badge mvp">MVP</span>
+                        <div class="description">Register FCM device token</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Get user notifications</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method patch">PATCH</div>
+                        <div class="path">/:notificationId/read</div>
+                        <span class="badge phase2">Phase 2</span>
+                        <div class="description">Mark notification as read</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Admin Domain -->
+            <div class="domain">
+                <div class="domain-name" onclick="toggleDomain(this)">
+                    /admin - System Administration
+                </div>
+                <div class="endpoints">
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/users</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">List all users</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/organizations</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Create new organization</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method get">GET</div>
+                        <div class="path">/analytics/system-wide</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Get anonymized system analytics</div>
+                    </div>
+                    <div class="endpoint">
+                        <div class="method post">POST</div>
+                        <div class="path">/invite</div>
+                        <span class="badge phase3">Phase 3</span>
+                        <div class="description">Send invitation to new organization</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleDomain(element) {
+            const endpoints = element.nextElementSibling;
+            endpoints.classList.toggle('hidden');
+            element.classList.toggle('collapsed');
+        }
+    </script>
+</body>
+</html>

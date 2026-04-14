@@ -425,14 +425,14 @@ jobs:
               -e POSTGRES_SSL=${{ secrets.POSTGRES_SSL }} \
               $IMAGE_URI
 
-            # Pull frontend image
+            # Pull admin dashboard image
             docker pull $ADMIN_IMAGE_URI
 
-            # Stop existing frontend container
+            # Stop existing admin dashboard container
             docker stop injury-surveillance-admin || true
             docker rm injury-surveillance-admin || true
 
-            # Run new frontend container
+            # Run new admin dashboard container
             docker run -d \
               --name injury-surveillance-admin \
               --restart unless-stopped \

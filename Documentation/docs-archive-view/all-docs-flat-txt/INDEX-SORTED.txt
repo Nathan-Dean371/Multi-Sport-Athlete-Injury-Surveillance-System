@@ -1,0 +1,73 @@
+Flat TXT-friendly documentation archive
+Source: all-docs-flat
+Rule: .md filenames renamed to .txt (content unchanged)
+
+
+from-fyp-doc-repo__FYP dev diary.txt
+from-fyp-doc-repo__Html Docs__api_endpoints.html
+from-fyp-doc-repo__Html Docs__api_endpoints.pdf
+from-fyp-doc-repo__Html Docs__neo 4j schema.pdf
+from-fyp-doc-repo__Html Docs__Neo4j-Schema-Interactive.html
+from-fyp-doc-repo__neo4j_database_documentation.txt
+from-fyp-doc-repo__plan.txt
+from-fyp-doc-repo__Planning Sprint 1.txt
+from-fyp-doc-repo__Planning Sprint 2.txt
+from-fyp-doc-repo__README.txt
+from-main-repo__.github__workflows__README.txt
+from-main-repo__backend__README.txt
+from-main-repo__database__neo4j__migrations__README.txt
+from-main-repo__database__neo4j__README.txt
+from-main-repo__database__neo4j__utilities__README.txt
+from-main-repo__database__postgres__migrations__BASELINE-STRATEGY.txt
+from-main-repo__database__postgres__migrations__README.txt
+from-main-repo__database__postgres__README.txt
+from-main-repo__DEMO-CHEAT-SHEET.txt
+from-main-repo__docs__architecture__README.txt
+from-main-repo__docs__architecture__schema-management-workflow.txt
+from-main-repo__docs__authentication-implementation.txt
+from-main-repo__docs__COACH-INJURY-REPORTING.txt
+from-main-repo__docs__decisions__adr-0001-monorepo-architecture.txt
+from-main-repo__docs__decisions__adr-0002-neo4j-graph-database.txt
+from-main-repo__docs__decisions__adr-0003-two-database-privacy-architecture.txt
+from-main-repo__docs__decisions__adr-0004.1-mvp-endpoints-implementation.txt
+from-main-repo__docs__decisions__adr-0004-nestjs-backend-framework.txt
+from-main-repo__docs__decisions__adr-0005-react-native-mobile.txt
+from-main-repo__docs__decisions__adr-0006-jwt-authentication.txt
+from-main-repo__docs__decisions__adr-0007-react-web-dashboard.txt
+from-main-repo__docs__decisions__adr-0008-testing-before-deployment.txt
+from-main-repo__docs__decisions__adr-0009-deployment-strategy.txt
+from-main-repo__docs__decisions__adr-0010-cicd-pipeline.txt
+from-main-repo__docs__decisions__adr-0011-schema-migration-governance.txt
+from-main-repo__docs__decisions__README.txt
+from-main-repo__docs__DOCUMENTATION-STYLE-GUIDE.txt
+from-main-repo__docs__README.txt
+from-main-repo__docs__REPORT-BUILDER.txt
+from-main-repo__docs__setup__AWS-DEPLOYMENT-GUIDE.txt
+from-main-repo__docs__setup__DOCKER-REFERENCE.txt
+from-main-repo__docs__setup__docker-troubleshooting.txt
+from-main-repo__docs__setup__IMPLEMENTATION-SUMMARY.txt
+from-main-repo__docs__setup__mobile-app-setup.txt
+from-main-repo__docs__setup__neo4j-setup-guide.txt
+from-main-repo__docs__setup__postgres-setup-guide.txt
+from-main-repo__docs__setup__QUICK_START.txt
+from-main-repo__docs__sprints__README.txt
+from-main-repo__docs__TESTING-STRATEGY.txt
+from-main-repo__docs__tests__database-tests.txt
+from-main-repo__docs__tests__TEST-DATABASE-SETUP.txt
+from-main-repo__Documentation__README.txt
+from-main-repo__mobile__.expo__README.txt
+from-main-repo__mobile__CHANGELOG.txt
+from-main-repo__mobile__MOBILE-APP-IMPLEMENTATION.txt
+from-main-repo__mobile__README.txt
+from-main-repo__ops__README.txt
+from-main-repo__plan-foundationsFeatures.prompt.txt
+from-main-repo__QUICK-REFERENCE.txt
+from-main-repo__README.txt
+from-main-repo__scratch.txt
+from-main-repo__scripts__README.txt
+from-main-repo__shared__README.txt
+from-main-repo__tests__README.txt
+from-main-repo__tools__neo4j-migrations-runner__README.txt
+from-main-repo__web__admin-dashboard__docs__ENTITY-MANAGEMENT-PATTERN.txt
+from-main-repo__web__admin-dashboard__README.txt
+from-main-repo__web__README.txt

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo4j Database Schema - Injury Surveillance System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+        
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+        
+        .schema-canvas {
+            background: white;
+            border-radius: 16px;
+            padding: 60px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .legend-node {
+            width: 30px;
+            height: 30px;
+            border-radius: 15px;
+            border: 3px solid;
+        }
+        
+        .legend-relationship {
+            width: 60px;
+            height: 3px;
+            background: #666;
+            position: relative;
+        }
+        
+        .legend-relationship::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: -4px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid #666;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+        }
+        
+        .graph-container {
+            position: relative;
+            width: 100%;
+            height: 900px;
+            background: #fafbfc;
+            border-radius: 8px;
+            border: 2px solid #e1e4e8;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .node:hover {
+            transform: scale(1.05);
+        }
+        
+        .node-circle {
+            fill: white;
+            stroke-width: 4;
+        }
+        
+        .node-label {
+            font-size: 16px;
+            font-weight: 600;
+            text-anchor: middle;
+            fill: #333;
+            pointer-events: none;
+        }
+        
+        .node-properties {
+            font-size: 11px;
+            text-anchor: middle;
+            fill: #666;
+            pointer-events: none;
+        }
+        
+        .relationship {
+            stroke: #666;
+            stroke-width: 3;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        
+        .relationship-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-anchor: middle;
+            fill: #fff;
+            pointer-events: none;
+        }
+        
+        .relationship-label-bg {
+            fill: #666;
+            rx: 4;
+        }
+        
+        .cardinality {
+            font-size: 11px;
+            fill: #999;
+            font-weight: 600;
+        }
+        
+        /* Node type colors */
+        .player-node { stroke: #4CAF50; }
+        .coach-node { stroke: #2196F3; }
+        .admin-node { stroke: #9C27B0; }
+        .team-node { stroke: #FF9800; }
+        .sport-node { stroke: #F44336; }
+        .injury-node { stroke: #E91E63; }
+        .status-node { stroke: #00BCD4; }
+        .session-node { stroke: #FFC107; }
+        .audit-node { stroke: #795548; }
+        
+        .info-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-width: 320px;
+            display: none;
+            max-height: 800px;
+            overflow-y: auto;
+        }
+        
+        .info-panel.active {
+            display: block;
+        }
+        
+        .info-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .info-section {
+            margin-bottom: 15px;
+        }
+        
+        .info-section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        
+        .property-item {
+            font-size: 13px;
+            color: #666;
+            padding: 4px 0;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .property-name {
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .property-type {
+            color: #999;
+        }
+        
+        .tier-label {
+            font-size: 14px;
+            font-weight: 600;
+            fill: #999;
+            text-anchor: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Neo4j Database Schema</h1>
+        <div class="subtitle">Multi-Sport Athlete Injury Surveillance System - Privacy-First Design</div>
+        
+        <div class="schema-canvas">
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-node admin-node"></div>
+                    <span>Admin</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node coach-node"></div>
+                    <span>Coach</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node team-node"></div>
+                    <span>Team</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node sport-node"></div>
+                    <span>Sport</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node player-node"></div>
+                    <span>Player</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node injury-node"></div>
+                    <span>Injury</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node status-node"></div>
+                    <span>Status Update</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node session-node"></div>
+                    <span>Session</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-node audit-node"></div>
+                    <span>Audit Log</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-relationship"></div>
+                    <span>Relationship</span>
+                </div>
+            </div>
+            
+            <div class="graph-container">
+                <svg viewBox="0 0 1200 900" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                            <polygon points="0 0, 10 3, 0 6" fill="#666" />
+                        </marker>
+                    </defs>
+                    
+                    <!-- Tier Labels -->
+                    <text class="tier-label" x="50" y="80">Admin Tier</text>
+                    <text class="tier-label" x="50" y="220">Management Tier</text>
+                    <text class="tier-label" x="50" y="400">Team Tier</text>
+                    <text class="tier-label" x="50" y="590">Player Tier</text>
+                    <text class="tier-label" x="50" y="780">Data Tier</text>
+                    
+                    <!-- TIER 1: ADMIN (Top of Pyramid) -->
+                    <g class="node" onclick="showInfo('admin')">
+                        <circle class="node-circle admin-node" cx="600" cy="80" r="50" />
+                        <text class="node-label" x="600" y="77">Admin</text>
+                        <text class="node-properties" x="600" y="90">pseudoId, role</text>
+                    </g>
+                    
+                    <!-- TIER 2: COACH & SPORT (Management) -->
+                    <g class="node" onclick="showInfo('coach')">
+                        <circle class="node-circle coach-node" cx="400" cy="220" r="50" />
+                        <text class="node-label" x="400" y="217">Coach</text>
+                        <text class="node-properties" x="400" y="230">pseudoId, role</text>
+                    </g>
+                    
+                    <g class="node" onclick="showInfo('sport')">
+                        <circle class="node-circle sport-node" cx="800" cy="220" r="50" />
+                        <text class="node-label" x="800" y="217">Sport</text>
+                        <text class="node-properties" x="800" y="230">id, name</text>
+                    </g>
+                    
+                    <!-- TIER 3: TEAM (Middle) -->
+                    <g class="node" onclick="showInfo('team')">
+                        <circle class="node-circle team-node" cx="600" cy="400" r="55" />
+                        <text class="node-label" x="600" y="397">Team</text>
+                        <text class="node-properties" x="600" y="410">id, pseudoName</text>
+                        <text class="node-properties" x="600" y="422">level, season</text>
+                    </g>
+                    
+                    <!-- TIER 4: PLAYER (Base) -->
+                    <g class="node" onclick="showInfo('player')">
+                        <circle class="node-circle player-node" cx="600" cy="590" r="60" />
+                        <text class="node-label" x="600" y="585">Player</text>
+                        <text class="node-properties" x="600" y="598">pseudoId, status</text>
+                        <text class="node-properties" x="600" y="610">position, ageGroup</text>
+                    </g>
+                    
+                    <!-- TIER 5: DATA NODES (Bottom - Supporting) -->
+                    <g class="node" onclick="showInfo('injury')">
+                        <circle class="node-circle injury-node" cx="300" cy="780" r="55" />
+                        <text class="node-label" x="300" y="777">Injury</text>
+                        <text class="node-properties" x="300" y="790">id, bodyPart</text>
+                        <text class="node-properties" x="300" y="802">severity, painLevel</text>
+                    </g>
+                    
+                    <g class="node" onclick="showInfo('status')">
+                        <circle class="node-circle status-node" cx="550" cy="780" r="55" />
+                        <text class="node-label" x="550" y="773">StatusUpdate</text>
+                        <text class="node-properties" x="550" y="786">id, status</text>
+                        <text class="node-properties" x="550" y="798">date, painLevel</text>
+                    </g>
+                    
+                    <g class="node" onclick="showInfo('session')">
+                        <circle class="node-circle session-node" cx="800" cy="780" r="55" />
+                        <text class="node-label" x="800" y="777">Session</text>
+                        <text class="node-properties" x="800" y="790">id, type</text>
+                        <text class="node-properties" x="800" y="802">date, intensity</text>
+                    </g>
+                    
+                    <g class="node" onclick="showInfo('audit')">
+                        <circle class="node-circle audit-node" cx="1050" cy="780" r="55" />
+                        <text class="node-label" x="1050" y="777">AuditLog</text>
+                        <text class="node-properties" x="1050" y="790">id, action</text>
+                        <text class="node-properties" x="1050" y="802">timestamp</text>
+                    </g>
+                    
+                    <!-- RELATIONSHIPS -->
+                    
+                    <!-- Admin -> Coach -->
+                    <path class="relationship" d="M 570 115 L 430 185" />
+                    <rect class="relationship-label-bg" x="460" y="140" width="80" height="20" />
+                    <text class="relationship-label" x="500" y="154">EMPLOYS</text>
+                    
+                    <!-- Coach -> Team -->
+                    <path class="relationship" d="M 430 270 L 570 350" />
+                    <rect class="relationship-label-bg" x="460" y="300" width="80" height="20" />
+                    <text class="relationship-label" x="500" y="314">MANAGES</text>
+                    
+                    <!-- Sport -> Team -->
+                    <path class="relationship" d="M 770 270 L 630 350" />
+                    <rect class="relationship-label-bg" x="660" y="300" width="100" height="20" />
+                    <text class="relationship-label" x="710" y="314">PARTICIPATES_IN</text>
+                    
+                    <!-- Team -> Player -->
+                    <path class="relationship" d="M 600 455 L 600 530" />
+                    <rect class="relationship-label-bg" x="555" y="485" width="90" height="20" />
+                    <text class="relationship-label" x="600" y="499">BELONGS_TO</text>
+                    
+                    <!-- Player -> Injury -->
+                    <path class="relationship" d="M 555 630 L 345 735" />
+                    <rect class="relationship-label-bg" x="410" y="675" width="90" height="20" />
+                    <text class="relationship-label" x="455" y="689">HAS_INJURY</text>
+                    
+                    <!-- Player -> StatusUpdate -->
+                    <path class="relationship" d="M 580 650 L 560 725" />
+                    <rect class="relationship-label-bg" x="520" y="680" width="100" height="20" />
+                    <text class="relationship-label" x="570" y="694">HAD_STATUS</text>
+                    
+                    <!-- Player -> Session -->
+                    <path class="relationship" d="M 645 630 L 755 735" />
+                    <rect class="relationship-label-bg" x="665" y="675" width="120" height="20" />
+                    <text class="relationship-label" x="725" y="689">PARTICIPATED_IN</text>
+                    
+                    <!-- StatusUpdate -> Injury -->
+                    <path class="relationship" d="M 495 780 Q 425 850, 355 780" />
+                    <rect class="relationship-label-bg" x="390" y="830" width="90" height="20" />
+                    <text class="relationship-label" x="435" y="844">RELATES_TO</text>
+                    
+                    <!-- Injury -> Session -->
+                    <path class="relationship" d="M 355 780 Q 550 860, 745 780" />
+                    <rect class="relationship-label-bg" x="500" y="845" width="100" height="20" />
+                    <text class="relationship-label" x="550" y="859">OCCURRED_IN</text>
+                    
+                    <!-- Coach -> Injury -->
+                    <path class="relationship" d="M 370 260 L 320 725" stroke-dasharray="5,5" />
+                    <rect class="relationship-label-bg" x="300" y="480" width="80" height="20" />
+                    <text class="relationship-label" x="340" y="494">MONITORS</text>
+                    
+                    <!-- Coach -> StatusUpdate -->
+                    <path class="relationship" d="M 400 270 L 540 725" stroke-dasharray="5,5" />
+                    <rect class="relationship-label-bg" x="430" y="480" width="80" height="20" />
+                    <text class="relationship-label" x="470" y="494">RECORDED</text>
+                    
+                    <!-- AuditLog -> Player (dotted) -->
+                    <path class="relationship" d="M 1020 735 L 650 630" stroke-dasharray="3,3" opacity="0.5" />
+                    <rect class="relationship-label-bg" x="800" y="675" width="130" height="20" />
+                    <text class="relationship-label" x="865" y="689">TRACKS_ACCESS_TO</text>
+                </svg>
+            </div>
+            
+            <!-- Info Panel -->
+            <div id="infoPanel" class="info-panel">
+                <div class="info-title">Select a node</div>
+                <div class="info-section">
+                    <div class="info-section-title">Click on any node to view details</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const nodeData = {
+            player: {
+                title: 'Player Node',
+                properties: [
+                    { name: 'pseudoId', type: 'UUID', required: true, unique: true },
+                    { name: 'position', type: 'String', required: false },
+                    { name: 'status', type: 'Enum', required: true, values: ['active', 'inactive', 'injured'] },
+                    { name: 'ageGroup', type: 'String', required: false, note: 'Generalized for k-anonymity' },
+                    { name: 'gender', type: 'String', required: false },
+                    { name: 'createdAt', type: 'DateTime', required: true },
+                    { name: 'lastModified', type: 'DateTime', required: true }
+                ],
+                relationships: [
+                    'BELONGS_TO → Team (many-to-one)',
+                    'HAS_INJURY → Injury (one-to-many)',
+                    'HAD_STATUS → StatusUpdate (one-to-many)',
+                    'PARTICIPATED_IN → Session (many-to-many)'
+                ],
+                indexes: ['pseudoId', 'status', 'ageGroup', 'position'],
+                constraints: ['UNIQUE(pseudoId)'],
+                privacy: 'NO PII - All personal data stored in separate Identity Service'
+            },
+            coach: {
+                title: 'Coach Node',
+                properties: [
+                    { name: 'pseudoId', type: 'UUID', required: true, unique: true },
+                    { name: 'role', type: 'String', required: true, values: ['head_coach', 'assistant_coach', 'physiotherapist', 'doctor'] },
+                    { name: 'specialization', type: 'String', required: false },
+                    { name: 'createdAt', type: 'DateTime', required: true }
+                ],
+                relationships: [
+                    'MANAGES → Team (one-to-many)',
+                    'MONITORS → Injury (many-to-many)',
+                    'RECORDED → StatusUpdate (one-to-many)'
+                ],
+                indexes: ['pseudoId', 'role'],
+                constraints: ['UNIQUE(pseudoId)'],
+                privacy: 'NO PII - All personal data stored in separate Identity Service'
+            },
+            team: {
+                title: 'Team Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'pseudoName', type: 'String', required: true, note: 'Generic identifier' },
+                    { name: 'level', type: 'String', required: false, values: ['professional', 'amateur', 'youth'] },
+                    { name: 'season', type: 'String', required: false },
+                    { name: 'createdAt', type: 'DateTime', required: true }
+                ],
+                relationships: [
+                    '← BELONGS_TO - Player (one-to-many)',
+                    'PARTICIPATES_IN → Sport (many-to-one)',
+                    '← MANAGES - Coach (many-to-one)'
+                ],
+                indexes: ['id'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'Real team names stored in Identity Service'
+            },
+            sport: {
+                title: 'Sport Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'name', type: 'String', required: true },
+                    { name: 'category', type: 'String', required: false }
+                ],
+                relationships: [
+                    '← PARTICIPATES_IN - Team (one-to-many)'
+                ],
+                indexes: ['id', 'name'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'No privacy concerns - public data'
+            },
+            injury: {
+                title: 'Injury Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'bodyPart', type: 'String', required: true, note: 'Standardized/coded' },
+                    { name: 'injuryType', type: 'String', required: true, note: 'Standardized/coded' },
+                    { name: 'severity', type: 'Integer', required: true, range: '1-5' },
+                    { name: 'painLevel', type: 'Integer', required: true, range: '0-10' },
+                    { name: 'occurredAt', type: 'DateTime', required: true },
+                    { name: 'reportedAt', type: 'DateTime', required: true },
+                    { name: 'resolvedAt', type: 'DateTime', required: false },
+                    { name: 'isResolved', type: 'Boolean', required: true },
+                    { name: 'mechanism', type: 'String', required: false, note: 'Coded values only' }
+                ],
+                relationships: [
+                    '← HAS_INJURY - Player (many-to-one)',
+                    '← RELATES_TO - StatusUpdate (many-to-one)',
+                    'OCCURRED_IN → Session (many-to-one)',
+                    '← MONITORS - Coach (many-to-many)'
+                ],
+                indexes: ['id', 'occurredAt', 'bodyPart', 'isResolved', 'injuryType', 'severity'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'NO free-text descriptions - use coded values only'
+            },
+            status: {
+                title: 'StatusUpdate Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'status', type: 'Enum', required: true, values: ['healthy', 'recovering', 'injured', 'ill'] },
+                    { name: 'date', type: 'DateTime', required: true },
+                    { name: 'painLevel', type: 'Integer', required: false, range: '0-10' },
+                    { name: 'availability', type: 'Enum', required: true, values: ['available', 'limited', 'unavailable'] }
+                ],
+                relationships: [
+                    '← HAD_STATUS - Player (many-to-one)',
+                    'RELATES_TO → Injury (many-to-one)',
+                    '← RECORDED - Coach (many-to-one)'
+                ],
+                indexes: ['id', 'date', 'status'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'NO detailed notes - use coded status values only'
+            },
+            session: {
+                title: 'Session Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'type', type: 'Enum', required: true, values: ['training', 'match', 'practice'] },
+                    { name: 'date', type: 'DateTime', required: true },
+                    { name: 'duration', type: 'Integer', required: false, note: 'Minutes' },
+                    { name: 'intensity', type: 'Enum', required: false, values: ['low', 'medium', 'high'] },
+                    { name: 'location', type: 'String', required: false, note: 'Generalized' }
+                ],
+                relationships: [
+                    '← PARTICIPATED_IN - Player (many-to-many)',
+                    '← OCCURRED_IN - Injury (one-to-many)'
+                ],
+                indexes: ['id', 'date', 'type'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'Use generalized locations only'
+            },
+            audit: {
+                title: 'AuditLog Node',
+                properties: [
+                    { name: 'id', type: 'UUID', required: true, unique: true },
+                    { name: 'action', type: 'String', required: true, values: ['read', 'create', 'update', 'delete', 'research_query', 'export_for_research'] },
+                    { name: 'actorPseudoId', type: 'String', required: true },
+                    { name: 'entityType', type: 'String', required: true },
+                    { name: 'entityId', type: 'String', required: true },
+                    { name: 'timestamp', type: 'DateTime', required: true },
+                    { name: 'researchPurpose', type: 'String', required: false, note: 'Coded purpose for research actions' },
+                    { name: 'ipAddress', type: 'String', required: false, note: 'Hashed/anonymized' },
+                    { name: 'result', type: 'Enum', required: true, values: ['success', 'failure', 'unauthorized'] }
+                ],
+                relationships: [
+                    'TRACKS_ACCESS_TO → Player/Injury/Coach (many-to-one)'
+                ],
+                indexes: ['id', 'timestamp', 'actorPseudoId', 'entityType'],
+                constraints: ['UNIQUE(id)'],
+                privacy: 'Required for GDPR compliance and research ethics - tracks all data access including research queries'
+            },
+            admin: {
+                title: 'Admin Node',
+                properties: [
+                    { name: 'pseudoId', type: 'UUID', required: true, unique: true },
+                    { name: 'role', type: 'Enum', required: true, values: ['system_admin', 'org_admin', 'data_officer'] },
+                    { name: 'permissions', type: '[String]', required: true },
+                    { name: 'createdAt', type: 'DateTime', required: true }
+                ],
+                relationships: [
+                    'EMPLOYS → Coach (one-to-many)'
+                ],
+                indexes: ['pseudoId'],
+                constraints: ['UNIQUE(pseudoId)'],
+                privacy: 'NO PII - All personal data stored in separate Identity Service'
+            }
+        };
+
+        function showInfo(nodeType) {
+            const data = nodeData[nodeType];
+            const panel = document.getElementById('infoPanel');
+            
+            let html = `
+                <div class="info-title">${data.title}</div>
+                
+                <div class="info-section">
+                    <div class="info-section-title">Properties</div>
+                    ${data.properties.map(prop => `
+                        <div class="property-item">
+                            <span class="property-name">${prop.name}</span>: 
+                            <span class="property-type">${prop.type}${prop.required ? ' (required)' : ''}${prop.unique ? ' (unique)' : ''}</span>
+                            ${prop.note ? `<br><span style="color: #999; font-size: 11px;">${prop.note}</span>` : ''}
+                            ${prop.values ? `<br><span style="color: #999; font-size: 11px;">Values: ${prop.values.join(', ')}</span>` : ''}
+                            ${prop.range ? `<br><span style="color: #999; font-size: 11px;">Range: ${prop.range}</span>` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-section-title">Relationships</div>
+                    ${data.relationships.map(rel => `
+                        <div class="property-item">${rel}</div>
+                    `).join('')}
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-section-title">Indexes</div>
+                    ${data.indexes.map(idx => `
+                        <div class="property-item">INDEX ON :${data.title.replace(' Node', '')}(${idx})</div>
+                    `).join('')}
+                </div>
+                
+                <div class="info-section">
+                    <div class="info-section-title">Constraints</div>
+                    ${data.constraints.map(con => `
+                        <div class="property-item">${con}</div>
+                    `).join('')}
+                </div>
+                
+                ${data.privacy ? `
+                    <div class="info-section">
+                        <div class="info-section-title">Privacy Notes</div>
+                        <div class="property-item" style="color: #E91E63; font-weight: 600;">${data.privacy}</div>
+                    </div>
+                ` : ''}
+            `;
+            
+            panel.innerHTML = html;
+            panel.classList.add('active');
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+Combined flat documentation archive
+Sources: from-main-repo + from-fyp-doc-repo
+Naming: <source>__<path with __ separators>
+
+
+from-fyp-doc-repo__FYP dev diary.md
+from-fyp-doc-repo__Html Docs__api_endpoints.html
+from-fyp-doc-repo__Html Docs__api_endpoints.pdf
+from-fyp-doc-repo__Html Docs__neo 4j schema.pdf
+from-fyp-doc-repo__Html Docs__Neo4j-Schema-Interactive.html
+from-fyp-doc-repo__neo4j_database_documentation.md
+from-fyp-doc-repo__plan.md
+from-fyp-doc-repo__Planning Sprint 1.md
+from-fyp-doc-repo__Planning Sprint 2.md
+from-fyp-doc-repo__README.md
+from-main-repo__.github__workflows__README.md
+from-main-repo__backend__README.md
+from-main-repo__database__neo4j__migrations__README.md
+from-main-repo__database__neo4j__README.md
+from-main-repo__database__neo4j__utilities__README.md
+from-main-repo__database__postgres__migrations__BASELINE-STRATEGY.md
+from-main-repo__database__postgres__migrations__README.md
+from-main-repo__database__postgres__README.md
+from-main-repo__DEMO-CHEAT-SHEET.md
+from-main-repo__docs__architecture__README.md
+from-main-repo__docs__architecture__schema-management-workflow.md
+from-main-repo__docs__authentication-implementation.md
+from-main-repo__docs__COACH-INJURY-REPORTING.md
+from-main-repo__docs__decisions__adr-0001-monorepo-architecture.md
+from-main-repo__docs__decisions__adr-0002-neo4j-graph-database.md
+from-main-repo__docs__decisions__adr-0003-two-database-privacy-architecture.md
+from-main-repo__docs__decisions__adr-0004.1-mvp-endpoints-implementation.md
+from-main-repo__docs__decisions__adr-0004-nestjs-backend-framework.md
+from-main-repo__docs__decisions__adr-0005-react-native-mobile.md
+from-main-repo__docs__decisions__adr-0006-jwt-authentication.md
+from-main-repo__docs__decisions__adr-0007-react-web-dashboard.md
+from-main-repo__docs__decisions__adr-0008-testing-before-deployment.md
+from-main-repo__docs__decisions__adr-0009-deployment-strategy.md
+from-main-repo__docs__decisions__adr-0010-cicd-pipeline.md
+from-main-repo__docs__decisions__adr-0011-schema-migration-governance.md
+from-main-repo__docs__decisions__README.md
+from-main-repo__docs__DOCUMENTATION-STYLE-GUIDE.md
+from-main-repo__docs__README.md
+from-main-repo__docs__REPORT-BUILDER.md
+from-main-repo__docs__setup__AWS-DEPLOYMENT-GUIDE.md
+from-main-repo__docs__setup__DOCKER-REFERENCE.md
+from-main-repo__docs__setup__docker-troubleshooting.md
+from-main-repo__docs__setup__IMPLEMENTATION-SUMMARY.md
+from-main-repo__docs__setup__mobile-app-setup.md
+from-main-repo__docs__setup__neo4j-setup-guide.md
+from-main-repo__docs__setup__postgres-setup-guide.md
+from-main-repo__docs__setup__QUICK_START.md
+from-main-repo__docs__sprints__README.md
+from-main-repo__docs__TESTING-STRATEGY.md
+from-main-repo__docs__tests__database-tests.md
+from-main-repo__docs__tests__TEST-DATABASE-SETUP.md
+from-main-repo__Documentation__README.md
+from-main-repo__mobile__.expo__README.md
+from-main-repo__mobile__CHANGELOG.md
+from-main-repo__mobile__MOBILE-APP-IMPLEMENTATION.md
+from-main-repo__mobile__README.md
+from-main-repo__ops__README.md
+from-main-repo__plan-foundationsFeatures.prompt.md
+from-main-repo__QUICK-REFERENCE.md
+from-main-repo__README.md
+from-main-repo__scratch.md
+from-main-repo__scripts__README.md
+from-main-repo__shared__README.md
+from-main-repo__tests__README.md
+from-main-repo__tools__neo4j-migrations-runner__README.md
+from-main-repo__web__admin-dashboard__docs__ENTITY-MANAGEMENT-PATTERN.md
+from-main-repo__web__admin-dashboard__README.md
+from-main-repo__web__README.md
