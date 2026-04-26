@@ -99,6 +99,10 @@ Sample player logins:
 - `emma.oconnor@email.com`
 - `sean.kelly@email.com`
 
+Admin dashboard login:
+
+- `james.osullivan@admin.ie`
+
 More sample identities are defined in `database/postgres/003-sample-identities.sql`.
 
 ### Stopping The Demo
