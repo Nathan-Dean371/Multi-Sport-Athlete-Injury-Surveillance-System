@@ -11,6 +11,10 @@ This project is a full-stack injury surveillance system:
 
 ---
 
+## Screencast
+
+Demo walkthrough (YouTube): https://youtu.be/oRDTvf_CQ80
+
 ## Prerequisites
 
 - **Node.js (LTS)** + **npm**
