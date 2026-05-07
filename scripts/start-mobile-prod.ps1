@@ -1,2 +1,2 @@
 Set-Location (Split-Path $PSScriptRoot -Parent)
-& .\scripts\start-mobile.ps1 -Mode prod
+& .\scripts\start-mobile.ps1 -Mode prod -Runtime devClient

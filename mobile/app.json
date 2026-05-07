@@ -8,7 +8,9 @@
     "splash": {
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourorg.injurysurveillance"
@@ -17,6 +19,13 @@
       "package": "com.yourorg.injurysurveillance",
       "usesCleartextTraffic": true
     },
-    "plugins": ["expo-notifications"]
+    "plugins": [
+      "expo-notifications"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "4ecacac6-18d7-4ac5-ac02-ff771d0eb276"
+      }
+    }
   }
 }

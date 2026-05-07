@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+  <!-- Release builds block cleartext (http) by default on Android 9+. -->
+  <!-- This enables cleartext traffic for this app (used for the current prod API URL). -->
+  <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

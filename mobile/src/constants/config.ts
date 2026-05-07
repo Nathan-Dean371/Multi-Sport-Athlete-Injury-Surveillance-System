@@ -12,6 +12,8 @@ const EXPO_PUBLIC_APP_MODE: string | undefined =
     ? (process.env.EXPO_PUBLIC_APP_MODE as string | undefined)
     : undefined) ?? (globalThis as any).process?.env?.EXPO_PUBLIC_APP_MODE;
 
+const DEFAULT_APP_MODE = (__DEV__ ? "dev" : "prod").toLowerCase();
+
 const getExpoHost = (): string | undefined => {
   const hostUri =
     Constants.expoConfig?.hostUri ??
@@ -87,7 +89,7 @@ const getApiUrl = (): string => {
     return rewriteLocalhostApiUrl(manualApiUrl);
   }
 
-  const appMode = (EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase();
+  const appMode = (EXPO_PUBLIC_APP_MODE ?? DEFAULT_APP_MODE).toLowerCase();
   if (appMode === "prod") {
     return PROD_API_URL;
   }
@@ -96,7 +98,7 @@ const getApiUrl = (): string => {
 };
 
 const ENV = {
-  appMode: (EXPO_PUBLIC_APP_MODE ?? "dev").toLowerCase(),
+  appMode: (EXPO_PUBLIC_APP_MODE ?? DEFAULT_APP_MODE).toLowerCase(),
   apiUrl: getApiUrl(),
 };
 

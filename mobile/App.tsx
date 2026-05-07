@@ -1,5 +1,5 @@
 import React from "react";
-import { Provider as PaperProvider } from "react-native-paper";
+import { MD3LightTheme, Provider as PaperProvider } from "react-native-paper";
 import Toast from "react-native-toast-message";
 import * as Notifications from "expo-notifications";
 import { AuthProvider } from "./src/contexts/AuthContext";
@@ -20,7 +20,7 @@ Notifications.setNotificationHandler({
 export default function App() {
   return (
     <ErrorBoundary>
-      <PaperProvider>
+      <PaperProvider theme={MD3LightTheme}>
         <AuthProvider>
           <AppNavigator />
           <Toast />
