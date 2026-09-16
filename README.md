@@ -162,4 +162,4 @@ If you don’t want the all-in-one demo script, you can run the per-component sc
 
 ## Documentation
 
-Project documentation has been split into a dedicated repository: [FYP Documentation Repo](https://github.com/Nathan-Dean371/FYP-Documentation-Repo). Use this source repo for code and the documentation repo for all design, decisions, and guides.
+
